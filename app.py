@@ -401,7 +401,7 @@ def generar_pdf(datos, x, y, filename):
             if not seleccion.empty:
                 for _, props in seleccion.iterrows():
                     codigo_vp = props.get("VP_COD", "N/A")  # Código de la vía
-                    nombre = props.get("VP_NB", "N/A")  # Nombre de la vía
+                    nombre = props.get("vp_nb", "N/A")  # Nombre de la vía
                     municipio = props.get("VP_MUN", "N/A")  # Término municipal
                     situacion_legal = props.get("VP_SIT_LEG", "N/A")  # Situación legal
                     ancho_legal = props.get("VP_ANCH_LG", "N/A")  # Ancho legal
@@ -480,7 +480,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "", 10)
         for codigo_vp, nombre, municipio, situacion_legal, ancho_legal in vp_detectado:
             pdf.cell(col_widths[0], row_height, str(codigo_vp), border=1)  # Código de la vía (VP_COD)
-            pdf.cell(col_widths[1], row_height, str(nombre), border=1)  # Nombre (VP_NB)
+            pdf.cell(col_widths[1], row_height, str(nombre), border=1)  # Nombre (vp_nb)
             pdf.cell(col_widths[2], row_height, str(municipio), border=1)  # Municipio (VP_MUN)
             pdf.cell(col_widths[3], row_height, str(situacion_legal), border=1)  # Situación Legal (VP_SIT_LEG)
             pdf.cell(col_widths[4], row_height, str(ancho_legal), border=1)  # Ancho Legal (VP_ANCH_LG)
@@ -676,7 +676,7 @@ if submitted:
             afeccion_enp = consultar_geojson(query_geom, enp_url, "ENP", campo_nombre="nombre")
             afeccion_zepa = consultar_geojson(query_geom, zepa_url, "ZEPA", campo_nombre="SITE_NAME")
             afeccion_lic = consultar_geojson(query_geom, lic_url, "LIC", campo_nombre="SITE_NAME")
-            afeccion_vp = consultar_geojson(query_geom, vp_url, "VP", campo_nombre="VP_NB")
+            afeccion_vp = consultar_geojson(query_geom, vp_url, "VP", campo_nombre="vp_nb")
             afeccion_tm = consultar_geojson(query_geom, tm_url, "TM", campo_nombre="NAMEUNIT")
             afeccion_mup = consultar_mup(query_geom, mup_url)
 
