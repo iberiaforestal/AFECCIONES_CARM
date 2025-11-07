@@ -1,11 +1,7 @@
 streamlit==1.38.0
 folium==0.17.0
 fpdf2==2.7.9
-pyproj==3.6.1
 requests==2.32.3
-geopandas==1.0.1
-owslib==0.31.0
 py-staticmaps==0.2.1
-shapely==2.0.6
 branca==0.7.2
 pandas==2.2.2
