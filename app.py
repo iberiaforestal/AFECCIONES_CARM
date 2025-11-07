@@ -483,11 +483,10 @@ def generar_pdf(datos, x, y, filename):
 
             line_height = 5  # altura base de una línea
 
-            # --- CALCULAR ALTURA REAL DEL NOMBRE (multi-line) ---
+            # Calcular alturas necesarias
             nombre_lines = pdf.multi_cell(col_widths[1], line_height, str(nombre), split_only=True)
             nombre_height = line_height * len(nombre_lines)
 
-            # --- Calcular altura de Situación Legal ---
             sit_leg_lines = pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), split_only=True)
             sit_leg_height = line_height * len(sit_leg_lines)
 
@@ -519,6 +518,7 @@ def generar_pdf(datos, x, y, filename):
 
         # Bajar a la siguiente fila
         pdf.ln(row_h)
+        
     pdf.ln(10)  # Espacio adicional después de la tabla
 
     # Procesar MUP para tabla si hay detecciones
