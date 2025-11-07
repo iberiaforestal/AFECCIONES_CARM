@@ -507,4 +507,174 @@ def generar_pdf(datos, x, y, filename):
         "- 3483 Autorización de proyectos o actuaciones materiales en dominio público forestal que no conlleven concesión administrativa.\n"
         "- 3485 Deslinde y amojonamiento de montes a instancia de parte.\n"
         "- 3487 Clasificación, deslinde, desafectación y amojonamiento de vías pecuarias.\n"
-        "- 3488 Emisión de certificaciones de colindancia de fincas particulares respecto
+        "- 3488 Emisión de certificaciones de colindancia de fincas particulares respecto a montes incluidos en el Catálogo de Utilidad Pública.\n"
+        "- 3489 Autorizaciones en dominio público pecuario sin uso privativo.\n"
+        "- 3490 Emisión de certificación o informe de colindancia de finca particular respecto de vía pecuaria.\n"
+        "- 5883 (INM) Emisión de certificación o informe para inmatriculación o inscripción registral de fincas colindantes con monte incluido en el Catálogo de Montes de Utilidad Pública.\n"
+        "- 7002 Expedición de certificados de no afección a la Red Natura 2000.\n"
+        "- 7186 Ocupación renovable de carácter temporal de vias pecuarias con concesión demanial.\n"
+        "- 7202 Modificación de trazados en vias pecuarias.\n"
+        "- 7222 Concesión para la utilización privativa y aprovechamiento especial del dominio público.\n"
+        "- 7242 Autorización de permutas en montes públicos.\n"
+    )
+    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, procedimientos, border=0, align="J")
+    pdf.ln(2)
+    pdf.set_font("Arial", "B", 10)
+    texto_final = (
+        "\nDe acuerdo con lo establecido en el artículo 22 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculación o inscripción de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un término municipal en el que existan montes demaniales requerirá el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del órgano forestal de la comunidad autónoma.\n\n"
+        "En cuanto a vias pecuarias, salvaguardando lo que pudiera resultar de los futuros deslindes, en las parcelas objeto este informe-borrador, cualquier construcción, plantación, vallado, obras, instalaciones, etc., no deberían realizarse dentro del área delimitada como dominio público pecuario provisional para evitar invadir éste.\n\n"
+        "En todo caso, no podrá interrumpirse el tránsito por las Vías Pecuarias, dejando siempre el paso adecuado para el tránsito ganadero y otros usos legalmente establecidos en la Ley 3/1995, de 23 de marzo, de Vías Pecuarias."
+    )
+    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, texto_final, border=0, align="J")
+    pdf.ln(2)
+    pdf.set_text_color(0, 0, 0)
+    pdf.output(filename)
+    return filename
+
+# === INTERFAZ (COMO LA SEC) ===
+st.image("https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg", use_container_width=True)
+st.title("Informe preliminar de Afecciones Forestales")
+
+modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
+
+x = 0.0
+y = 0.0
+municipio_sel = ""
+masa_sel = ""
+parcela_sel = ""
+parcela = None
+
+if modo == "Por parcela":
+    provincia = st.selectbox("Provincia*", ["Murcia"])
+    municipio_sel = st.selectbox("Municipio*", sorted(municipio_codes.keys()))
+    code = municipio_codes[municipio_sel]
+    masa_sel = st.text_input("Polígono*", placeholder="Ej: V1K")
+    if len(masa_sel) < 3:
+        st.warning("Polígono debe tener al menos 3 caracteres.")
+    else:
+        parcela_sel = st.text_input("Parcela*", placeholder="Ej: 4810")
+        if len(parcela_sel) != 4 or not parcela_sel.isdigit():
+            st.warning("Parcela debe ser 4 dígitos numéricos.")
+        else:
+            refcat = f"{code}{masa_sel.upper().ljust(3)[:3]}{parcela_sel.zfill(4)}"
+            st.write(f"REFCAT generada: `{refcat}`")
+            with st.spinner("Consultando Catastro..."):
+                parcela = cargar_parcela_por_refcat(refcat)
+            if parcela is not None:
+                centroide = parcela.geometry.centroid.iloc[0]
+                x = centroide.x
+                y = centroide.y
+                st.success("Parcela cargada desde Catastro.")
+                st.write(f"X: {x:.2f}, Y: {y:.2f}")
+            else:
+                st.error(f"No se encontró parcela con REFCAT: `{refcat}`")
+else:
+    x = st.number_input("Coordenada X (ETRS89)*", format="%.2f", help="Sistema ETRS89 UTM zona 30N")
+    y = st.number_input("Coordenada Y (ETRS89)*", format="%.2f")
+    if x != 0.0 and y != 0.0:
+        municipio_sel, masa_sel, parcela_sel, parcela = encontrar_municipio_poligono_parcela(x, y)
+        if municipio_sel != "N/A":
+            st.success(f"Parcela encontrada: Municipio: {municipio_sel}, Polígono: {masa_sel}, Parcela: {parcela_sel}")
+        else:
+            st.warning("No se encontró una parcela para las coordenadas proporcionadas.")
+
+# === FORMULARIO ===
+with st.form("formulario"):
+    if modo == "Por parcela":
+        st.info(f"Coordenadas obtenidas del centroide de la parcela: X = {x}, Y = {y}")
+    fecha_solicitud = st.date_input("Fecha de la solicitud*")
+    nombre = st.text_input("Nombre*")
+    apellidos = st.text_input("Apellidos*")
+    dni = st.text_input("DNI*")
+    direccion = st.text_input("Dirección")
+    telefono = st.text_input("Teléfono")
+    email = st.text_input("Correo electrónico")
+    objeto = st.text_area("Objeto de la solicitud", max_chars=255)
+    submitted = st.form_submit_button("Generar informe")
+
+if 'mapa_html' not in st.session_state:
+    st.session_state['mapa_html'] = None
+if 'pdf_file' not in st.session_state:
+    st.session_state['pdf_file'] = None
+if 'afecciones' not in st.session_state:
+    st.session_state['afecciones'] = []
+
+if submitted:
+    if not nombre or not apellidos or not dni or x == 0 or y == 0:
+        st.warning("Por favor, completa todos los campos obligatorios y asegúrate de que las coordenadas son válidas.")
+    else:
+        lon, lat = transformar_coordenadas(x, y)
+        if lon is None or lat is None:
+            st.error("No se pudo generar el informe debido a coordenadas inválidas.")
+        else:
+            if modo == "Por parcela":
+                query_geom = parcela.geometry.iloc[0]
+            else:
+                query_geom = Point(x, y)
+            st.write(f"Municipio seleccionado: {municipio_sel}")
+            st.write(f"Polígono seleccionado: {masa_sel}")
+            st.write(f"Parcela seleccionada: {parcela_sel}")
+            enp_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/ENP.json"
+            zepa_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/ZEPA.json"
+            lic_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/LIC.json"
+            vp_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/VP.json"
+            tm_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/TM.json"
+            mup_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/MUP.json"
+            afeccion_enp = consultar_geojson(query_geom, enp_url, "ENP", campo_nombre="nombre")
+            afeccion_zepa = consultar_geojson(query_geom, zepa_url, "ZEPA", campo_nombre="SITE_NAME")
+            afeccion_lic = consultar_geojson(query_geom, lic_url, "LIC", campo_nombre="SITE_NAME")
+            afeccion_vp = consultar_geojson(query_geom, vp_url, "VP", campo_nombre="VP_NB")
+            afeccion_tm = consultar_geojson(query_geom, tm_url, "TM", campo_nombre="NAMEUNIT")
+            afeccion_mup = consultar_mup(query_geom, mup_url)
+            afecciones = [afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
+           
+            datos = {
+                "fecha_solicitud": fecha_solicitud.strftime('%d/%m/%Y'),
+                "fecha_informe": datetime.today().strftime('%d/%m/%Y'),
+                "nombre": nombre,
+                "apellidos": apellidos,
+                "dni": dni,
+                "dirección": direccion,
+                "teléfono": telefono,
+                "email": email,
+                "objeto de la solicitud": objeto,
+                "afección MUP": afeccion_mup,
+                "afección VP": afeccion_vp,
+                "afección ENP": afeccion_enp,
+                "afección ZEPA": afeccion_zepa,
+                "afección LIC": afeccion_lic,
+                "afección TM": afeccion_tm,
+                "coordenadas_x": x,
+                "coordenadas_y": y,
+                "municipio": municipio_sel,
+                "polígono": masa_sel,
+                "parcela": parcela_sel
+            }
+           
+            mapa_html, afecciones = crear_mapa(lon, lat, afecciones, parcela_gdf=parcela)
+            if mapa_html:
+                st.session_state['mapa_html'] = mapa_html
+                st.session_state['afecciones'] = afecciones
+                st.subheader("Resultado de las afecciones")
+                for afeccion in afecciones:
+                    st.write(f"• {afeccion}")
+                with open(mapa_html, 'r') as f:
+                    html(f.read(), height=500)
+                pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
+                try:
+                    generar_pdf(datos, x, y, pdf_filename)
+                    st.session_state['pdf_file'] = pdf_filename
+                except Exception as e:
+                    st.error(f"Error al generar el PDF: {str(e)}")
+
+if st.session_state['mapa_html'] and st.session_state['pdf_file']:
+    try:
+        with open(st.session_state['pdf_file'], "rb") as f:
+            st.download_button("Descargar informe PDF", f, file_name="informe_afecciones.pdf")
+    except Exception as e:
+        st.error(f"Error al descargar el PDF: {str(e)}")
+    try:
+        with open(st.session_state['mapa_html'], "r") as f:
+            st.download_button("Descargar mapa HTML", f, file_name="mapa_busqueda.html")
+    except Exception as e:
+        st.error(f"Error al descargar el mapa HTML: {str(e)}")
