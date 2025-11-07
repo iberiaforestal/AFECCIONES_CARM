@@ -519,7 +519,7 @@ def generar_pdf(datos, x, y, filename):
 
         # Bajar a la siguiente fila
         pdf.ln(row_h)
-        pdf.ln(10)  # Espacio adicional después de la tabla
+    pdf.ln(10)  # Espacio adicional después de la tabla
 
     # Procesar MUP para tabla si hay detecciones
     if mup_detectado:
