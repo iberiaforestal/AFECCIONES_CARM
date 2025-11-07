@@ -428,6 +428,30 @@ def generar_pdf(datos, x, y, filename):
                 mup_detectado.append((id_monte, nombre, municipio, propiedad))
         mup_valor = ""
 
+    # Procesar afecciones ZEPA
+    zepa_valor = datos.get(zepa_key, "").strip()
+    zepa_detectado = []
+    if zepa_valor and not zepa_valor.startswith("No se encuentra") and not zepa_valor.startswith("Error"):
+        try:
+            gdf = gpd.read_file(zepa_url)
+            seleccion = gdf[gdf.intersects(query_geom)]
+            if not seleccion.empty:
+                for _, props in seleccion.iterrows():
+                    site_code = props.get("site_code", "N/A")
+                    site_name = props.get("site_name", "N/A")
+
+                    # Guardamos tupla con ambos datos
+                    zepa_detectado.append((site_code, site_name))
+
+            zepa_valor = ""
+
+        except Exception as e:
+            st.error(f"Error al procesar ZEPA desde {zepa_url}: {e}")
+            zepa_valor = "Error al consultar ZEPA"
+
+    else:
+        zepa_valor = "No se encuentra en ninguna ZEPA" if not zepa_detectado else ""
+
     # Procesar otras afecciones como texto
     otras_afecciones = []
     for key in afecciones_keys:
@@ -565,6 +589,23 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "", 12)
         pdf.cell(0, 8, "No se encuentra en ENP, ZEPA, LIC, VP, MUP", ln=True)
         pdf.ln(10)
+
+    # TABLA ZEPA — SOLO SI HAY RESULTADOS
+    if zepa_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Afección ZEPA", ln=True)
+        col_w_code = 40
+        col_w_name = pdf.w - 20 - col_w_code
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(220, 220, 220)
+        pdf.cell(col_w_code, 8, "Código", border=1, fill=True)
+        pdf.cell(col_w_name, 8, "Nombre", border=1, fill=True)
+        pdf.ln()
+        pdf.set_font("Arial", "", 11)
+        for site_code, site_name in zepa_detectado:
+            pdf.cell(col_w_code, 8, str(site_code), border=1)
+            pdf.multi_cell(col_w_name, 8, str(site_name), border=1)
+        pdf.ln(5)
 
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
