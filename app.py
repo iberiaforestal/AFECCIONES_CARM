@@ -517,9 +517,9 @@ def generar_pdf(datos, x, y, filename):
             # --- Columna 5: Ancho Legal ---
             pdf.multi_cell(col_widths[4], row_h, str(ancho_legal), border=1, align="L")
 
-            # Bajar a la siguiente fila
-            pdf.ln(row_h)
-            pdf.ln(10)  # Espacio adicional después de la tabla
+        # Bajar a la siguiente fila
+        pdf.ln(row_h)
+        pdf.ln(10)  # Espacio adicional después de la tabla
 
     # Procesar MUP para tabla si hay detecciones
     if mup_detectado:
