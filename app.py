@@ -594,7 +594,10 @@ def generar_pdf(datos, x, y, filename):
     # TABLA ZEPA — SOLO SI HAY RESULTADOS
     if zepa_detectado:
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, "Afección ZEPA", ln=True)
+        pdf.cell(0, 8, "Afección ZEPA:", ln=True)
+        pdf.ln(2)
+
+        # Configurar la tabla para MUP
         col_w_code = 40
         col_w_name = pdf.w - 20 - col_w_code
         pdf.set_font("Arial", "B", 11)
