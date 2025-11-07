@@ -17,6 +17,9 @@ from io import BytesIO
 from staticmap import StaticMap, CircleMarker
 import textwrap
 from owslib.wfs import WebFeatureService
+from owslib.wfs import WebFeatureService
+from owslib.etree import etree
+from owslib.fes import PropertyIsLike
 
 # WFS URLs
 WFS_CP_URL = "https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
@@ -69,43 +72,19 @@ municipio_codes = {
     "YECLA": "30043",
 }
 
-# Función para consultar municipio desde WFS AD (opcional para precisión)
-@st.cache_data
-def consultar_municipio_ad(geom_or_point, radio=0.0005):
-    try:
-        wfs = WebFeatureService(url=WFS_AD_URL, version='2.0.0')
-        layer = 'AD:Address'
-        if isinstance(geom_or_point, Point):
-            lon, lat = geom_or_point.x, geom_or_point.y
-            bbox = (lon - radio, lat - radio, lon + radio, lat + radio)
-        else:
-            bounds = geom_or_point.bounds
-            bbox = (bounds[0], bounds[1], bounds[2], bounds[3])
-        response = wfs.getfeature(
-            typename=layer,
-            bbox=bbox,
-            srsname='EPSG:4326',
-            outputFormat='application/gml+xml; version=3.2',
-            maxfeatures=5
-        )
-        gdf = gpd.read_file(BytesIO(response.read()))
-        if gdf.empty:
-            return "N/A"
-        municipio = gdf['designator'].iloc[0] if 'designator' in gdf.columns else "N/A"
-        return municipio
-    except:
-        return "N/A"
-
-# Función para obtener polígonos (MASA) para un municipio
+# === FUNCIÓN PARA OBTENER POLÍGONOS (MASA) ===
 @st.cache_data
 def obtener_masas_por_municipio(code):
     try:
         wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
-        # El localId tiene 14 caracteres: 5(INE) + 3(MASA) + 5(PARCELA) + 1(LETRA)
-        cql = f"localId LIKE '{code.zfill(5)}%'"
+        code = code.zfill(5)
+        
+        # Filtro CQL en XML
+        filter_xml = etree.tostring(PropertyIsLike('localId', f'{code}%').toXML()).decode()
+        
         response = wfs.getfeature(
             typename='CP:CadastralParcel',
-            cql_filter=cql,
+            filter=filter_xml,
             propertyname='localId',
             maxfeatures=1000,
             outputFormat='application/json'
@@ -113,23 +92,24 @@ def obtener_masas_por_municipio(code):
         gdf = gpd.read_file(BytesIO(response.read()))
         if gdf.empty:
             return []
-        # Extraer MASA: caracteres 5-8
         gdf['masa'] = gdf['localId'].str[5:8]
         return sorted(gdf['masa'].unique())
     except Exception as e:
         st.error(f"Error al cargar polígonos: {str(e)}")
         return []
 
-# Función para obtener parcelas
+# === FUNCIÓN PARA OBTENER PARCELAS ===
 @st.cache_data
 def obtener_parcelas_por_masa(code, masa):
     try:
         wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
         prefix = f"{code.zfill(5)}{masa.zfill(3)}"
-        cql = f"localId LIKE '{prefix}%'"
+        
+        filter_xml = etree.tostring(PropertyIsLike('localId', f'{prefix}%').toXML()).decode()
+        
         response = wfs.getfeature(
             typename='CP:CadastralParcel',
-            cql_filter=cql,
+            filter=filter_xml,
             propertyname='localId',
             maxfeatures=1000,
             outputFormat='application/json'
@@ -137,24 +117,24 @@ def obtener_parcelas_por_masa(code, masa):
         gdf = gpd.read_file(BytesIO(response.read()))
         if gdf.empty:
             return []
-        # Extraer PARCELA: caracteres 8-13
         gdf['parcela'] = gdf['localId'].str[8:13]
         return sorted(gdf['parcela'].unique())
     except Exception as e:
         st.error(f"Error al cargar parcelas: {str(e)}")
         return []
 
-# Función para obtener geometría
+# === FUNCIÓN PARA OBTENER GEOMETRÍA ===
 @st.cache_data
 def obtener_parcela_gdf(code, masa, parcela):
     try:
         wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
-        # Construir base: 5+3+5 = 13 caracteres
         base = f"{code.zfill(5)}{masa.zfill(3)}{parcela.zfill(5)}"
-        cql = f"localId LIKE '{base}%'"
+        
+        filter_xml = etree.tostring(PropertyIsLike('localId', f'{base}%').toXML()).decode()
+        
         response = wfs.getfeature(
             typename='CP:CadastralParcel',
-            cql_filter=cql,
+            filter=filter_xml,
             outputFormat='application/gml+xml; version=3.2',
             maxfeatures=1
         )
