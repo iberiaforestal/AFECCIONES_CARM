@@ -15,6 +15,11 @@ from io import BytesIO
 from staticmap import StaticMap, CircleMarker
 import textwrap
 from owslib.wfs import WebFeatureService
+import folium
+from PIL import Image
+import io
+import tempfile
+import os
 
 # ================================
 # CONFIGURACIÓN WFS CATASTRO
@@ -200,14 +205,31 @@ def crear_mapa(lon, lat, afecciones=[], parcela_gdf=None):
 
 def generar_imagen_estatica_mapa(x, y, zoom=16, size=(800, 600)):
     lon, lat = transformar_coordenadas(x, y)
-    if not lon: return None
+    if not lon or not lat:
+        return None
     try:
-        m = StaticMap(*size, url_template='http://a.tile.openstreetmap.org/{z}/{x}/{y}.png')
-        m.add_marker(CircleMarker((lon, lat), 'red', 12))
-        path = os.path.join(tempfile.mkdtemp(), "mapa.png")
-        m.render(zoom=zoom).save(path)
-        return path
-    except: return None
+        # Crear mapa con folium
+        m = folium.Map(location=[lat, lon], zoom_start=zoom, tiles="OpenStreetMap")
+        folium.CircleMarker([lat, lon], radius=8, color="red", fill=True).add_to(m)
+        
+        # Guardar como HTML temporal
+        tmp_html = tempfile.NamedTemporaryFile(delete=False, suffix=".html")
+        m.save(tmp_html.name)
+        tmp_html.close()
+        
+        # Convertir a imagen con selenium (NO, no en Streamlit Cloud)
+        # → Usamos folium + PIL directamente
+        img_data = m._to_png()
+        img = Image.open(io.BytesIO(img_data))
+        img = img.resize(size, Image.Resampling.LANCZOS)
+        
+        # Guardar
+        output_path = os.path.join(tempfile.mkdtemp(), "mapa.png")
+        img.save(output_path, "PNG")
+        return output_path
+    except Exception as e:
+        st.error(f"Error mapa: {e}")
+        return None
 
 class CustomPDF(FPDF):
     def __init__(self, logo_path): super().__init__(); self.logo_path = logo_path
