@@ -16,105 +16,184 @@ from branca.element import Template, MacroElement
 from io import BytesIO
 from staticmap import StaticMap, CircleMarker
 import textwrap
+from owslib.wfs import WebFeatureService
 
-# Diccionario con los nombres de municipios y sus nombres base de archivo
-shp_urls = {
-    "ABANILLA": "ABANILLA",
-    "ABARAN": "ABARAN",
-    "AGUILAS": "AGUILAS",
-    "ALBUDEITE": "ALBUDEITE",
-    "ALCANTARILLA": "ALCANTARILLA",
-    "ALEDO": "ALEDO",
-    "ALGUAZAS": "ALGUAZAS",
-    "ALHAMA_DE_MURCIA": "ALHAMA_DE_MURCIA",
-    "ARCHENA": "ARCHENA",
-    "BENIEL": "BENIEL",
-    "BLANCA": "BLANCA",
-    "BULLAS": "BULLAS",
-    "CALASPARRA": "CALASPARRA",
-    "CAMPOS_DEL_RIO": "CAMPOS_DEL_RIO",
-    "CARAVACA_DE_LA_CRUZ": "CARAVACA_DE_LA_CRUZ",
-    "CARTAGENA": "CARTAGENA",
-    "CEHEGIN": "CEHEGIN",
-    "CEUTI": "CEUTI",
-    "CIEZA": "CIEZA",
-    "FORTUNA": "FORTUNA",
-    "FUENTE_ALAMO_DE_MURCIA": "FUENTE_ALAMO_DE_MURCIA",
-    "JUMILLA": "JUMILLA",
-    "LAS_TORRES_DE_COTILLAS": "LAS_TORRES_DE_COTILLAS",
-    "LA_UNION": "LA_UNION",
-    "LIBRILLA": "LIBRILLA",
-    "LORCA": "LORCA",
-    "LORQUI": "LORQUI",
-    "LOS_ALCAZARES": "LOS_ALCAZARES",
-    "MAZARRON": "MAZARRON",
-    "MOLINA_DE_SEGURA": "MOLINA_DE_SEGURA",
-    "MORATALLA": "MORATALLA",
-    "MULA": "MULA",
-    "MURCIA": "MURCIA",
-    "OJOS": "OJOS",
-    "PLIEGO": "PLIEGO",
-    "PUERTO_LUMBRERAS": "PUERTO_LUMBRERAS",
-    "RICOTE": "RICOTE",
-    "SANTOMERA": "SANTOMERA",
-    "SAN_JAVIER": "SAN_JAVIER",
-    "SAN_PEDRO_DEL_PINATAR": "SAN_PEDRO_DEL_PINATAR",
-    "TORRE_PACHECO": "TORRE_PACHECO",
-    "TOTANA": "TOTANA",
-    "ULEA": "ULEA",
-    "VILLANUEVA_DEL_RIO_SEGURA": "VILLANUEVA_DEL_RIO_SEGURA",
-    "YECLA": "YECLA",
+# WFS URLs
+WFS_CP_URL = "https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
+WFS_AD_URL = "https://ovc.catastro.meh.es/INSPIRE/wfsAD.aspx"
+
+# Diccionario con nombres de municipios de Murcia y sus códigos INE
+municipio_codes = {
+    "ABANILLA": "30001",
+    "ABARAN": "30002",
+    "AGUILAS": "30003",
+    "ALBUDEITE": "30004",
+    "ALCANTARILLA": "30005",
+    "ALEDO": "30006",
+    "ALGUAZAS": "30007",
+    "ALHAMA_DE_MURCIA": "30008",
+    "ARCHENA": "30009",
+    "BENIEL": "30010",
+    "BLANCA": "30011",
+    "BULLAS": "30012",
+    "CALASPARRA": "30013",
+    "CAMPOS_DEL_RIO": "30014",
+    "CARAVACA_DE_LA_CRUZ": "30015",
+    "CARTAGENA": "30016",
+    "CEHEGIN": "30017",
+    "CEUTI": "30018",
+    "CIEZA": "30019",
+    "FORTUNA": "30020",
+    "FUENTE_ALAMO_DE_MURCIA": "30021",
+    "JUMILLA": "30022",
+    "LIBRILLA": "30023",
+    "LORCA": "30024",
+    "LORQUI": "30025",
+    "LOS_ALCAZARES": "30026",
+    "MAZARRON": "30027",
+    "MOLINA_DE_SEGURA": "30028",
+    "MORATALLA": "30029",
+    "MULA": "30030",
+    "MURCIA": "30031",
+    "OJOS": "30032",
+    "PLIEGO": "30033",
+    "PUERTO_LUMBRERAS": "30034",
+    "RICOTE": "30035",
+    "SANTOMERA": "30036",
+    "SAN_JAVIER": "30037",
+    "SAN_PEDRO_DEL_PINATAR": "30038",
+    "TORRE_PACHECO": "30039",
+    "TOTANA": "30040",
+    "ULEA": "30041",
+    "VILLANUEVA_DEL_RIO_SEGURA": "30042",
+    "YECLA": "30043",
 }
 
-# Función para cargar shapefiles desde GitHub
+# Función para consultar municipio desde WFS AD (opcional para precisión)
 @st.cache_data
-def cargar_shapefile_desde_github(base_name):
-    base_url ="https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/CATASTRO/"
-    exts = [".shp", ".shx", ".dbf", ".prj", ".cpg"]
-    
-    with tempfile.TemporaryDirectory() as tmpdir:
-        local_paths = {}
-        for ext in exts:
-            filename = base_name + ext
-            url = base_url + filename
-            try:
-                response = requests.get(url, timeout=100)
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                st.error(f"Error al descargar {url}: {str(e)}")
-                return None
-            
-            local_path = os.path.join(tmpdir, filename)
-            with open(local_path, "wb") as f:
-                f.write(response.content)
-            local_paths[ext] = local_path
-        
-        shp_path = local_paths[".shp"]
-        try:
-            gdf = gpd.read_file(shp_path)
-            return gdf
-        except Exception as e:
-            st.error(f"Error al leer shapefile {shp_path}: {str(e)}")
-            return None
+def consultar_municipio_ad(geom_or_point, radio=0.0005):
+    try:
+        wfs = WebFeatureService(url=WFS_AD_URL, version='2.0.0')
+        layer = 'AD:Address'
+        if isinstance(geom_or_point, Point):
+            lon, lat = geom_or_point.x, geom_or_point.y
+            bbox = (lon - radio, lat - radio, lon + radio, lat + radio)
+        else:
+            bounds = geom_or_point.bounds
+            bbox = (bounds[0], bounds[1], bounds[2], bounds[3])
+        response = wfs.getfeature(
+            typename=layer,
+            bbox=bbox,
+            srsname='EPSG:4326',
+            outputFormat='application/gml+xml; version=3.2',
+            maxfeatures=5
+        )
+        gdf = gpd.read_file(BytesIO(response.read()))
+        if gdf.empty:
+            return "N/A"
+        municipio = gdf['designator'].iloc[0] if 'designator' in gdf.columns else "N/A"
+        return municipio
+    except:
+        return "N/A"
 
-# Función para encontrar municipio, polígono y parcela a partir de coordenadas
+# Función para obtener polígonos (MASA) para un municipio usando WFS
+@st.cache_data
+def obtener_masas_por_municipio(code):
+    try:
+        wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
+        cql = f"localId LIKE '{code}%'"
+        response = wfs.getfeature(
+            typename='CP:CadastralParcel',
+            cql_filter=cql,
+            propertyname='localId',
+            maxfeatures=1000,
+            outputFormat='application/json'
+        )
+        gdf = gpd.read_file(BytesIO(response.read()))
+        if gdf.empty:
+            return []
+        gdf['masa'] = gdf['localId'].str[5:8]
+        return sorted(gdf['masa'].unique())
+    except:
+        st.error("Error al cargar polígonos")
+        return []
+
+# Función para obtener parcelas para un municipio y polígono usando WFS
+@st.cache_data
+def obtener_parcelas_por_masa(code, masa):
+    try:
+        wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
+        cql = f"localId LIKE '{code}{masa}%'"
+        response = wfs.getfeature(
+            typename='CP:CadastralParcel',
+            cql_filter=cql,
+            propertyname='localId',
+            maxfeatures=1000,
+            outputFormat='application/json'
+        )
+        gdf = gpd.read_file(BytesIO(response.read()))
+        if gdf.empty:
+            return []
+        gdf['parcela'] = gdf['localId'].str[8:13]
+        return sorted(gdf['parcela'].unique())
+    except:
+        st.error("Error al cargar parcelas")
+        return []
+
+# Función para obtener la geometría de la parcela usando WFS
+@st.cache_data
+def obtener_parcela_gdf(code, masa, parcela):
+    try:
+        wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
+        refcat_base = f"{code}{masa}{parcela}"
+        cql = f"localId LIKE '{refcat_base}%'"
+        response = wfs.getfeature(
+            typename='CP:CadastralParcel',
+            cql_filter=cql,
+            outputFormat='application/gml+xml; version=3.2',
+            maxfeatures=1
+        )
+        gdf = gpd.read_file(BytesIO(response.read()))
+        if not gdf.empty:
+            return gdf.to_crs("EPSG:25830")
+        return None
+    except:
+        st.error("Error al cargar geometría de la parcela")
+        return None
+
+# Función para encontrar municipio, polígono y parcela a partir de coordenadas usando WFS
 def encontrar_municipio_poligono_parcela(x, y):
     try:
-        punto = Point(x, y)
-        for municipio, archivo_base in shp_urls.items():
-            gdf = cargar_shapefile_desde_github(archivo_base)
-            if gdf is None:
-                continue
-            seleccion = gdf[gdf.contains(punto)]
-            if not seleccion.empty:
-                parcela_gdf = seleccion.iloc[[0]]
-                masa = parcela_gdf["MASA"].iloc[0]
-                parcela = parcela_gdf["PARCELA"].iloc[0]
-                return municipio, masa, parcela, parcela_gdf
-        return "N/A", "N/A", "N/A", None
+        transformer = Transformer.from_crs("EPSG:25830", "EPSG:4326", always_xy=True)
+        lon, lat = transformer.transform(x, y)
+        punto = Point(lon, lat)
+        bbox = (lon - 0.001, lat - 0.001, lon + 0.001, lat + 0.001)
+        wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
+        response = wfs.getfeature(
+            typename='CP:CadastralParcel',
+            bbox=bbox,
+            srsname='EPSG:4326',
+            outputFormat='application/gml+xml; version=3.2',
+            maxfeatures=10
+        )
+        gdf = gpd.read_file(BytesIO(response.read()))
+        if gdf.empty:
+            return "N/A", "N/A", "N/A", None
+        gdf_4326 = gdf.to_crs("EPSG:4326")
+        seleccion = gdf_4326[gdf_4326.contains(punto)]
+        if seleccion.empty:
+            return "N/A", "N/A", "N/A", None
+        refcat = seleccion['localId'].iloc[0]
+        code = refcat[0:5]
+        masa = refcat[5:8]
+        parcela = refcat[8:13]
+        municipio = next((k for k, v in municipio_codes.items() if v == code), "N/A")
+        return municipio, masa, parcela, seleccion.to_crs("EPSG:25830")
     except Exception as e:
         st.error(f"Error al buscar parcela: {str(e)}")
         return "N/A", "N/A", "N/A", None
+
+# El resto del código permanece igual
 
 # Función para transformar coordenadas de ETRS89 a WGS84
 def transformar_coordenadas(x, y):
@@ -172,7 +251,6 @@ def crear_mapa(lon, lat, afecciones=[], parcela_gdf=None):
     
     m = folium.Map(location=[lat, lon], zoom_start=16)
     folium.Marker([lat, lon], popup=f"Coordenadas transformadas: {lon}, {lat}").add_to(m)
-
     if parcela_gdf is not None and not parcela_gdf.empty:
         try:
             parcela_4326 = parcela_gdf.to_crs("EPSG:4326")
@@ -183,7 +261,6 @@ def crear_mapa(lon, lat, afecciones=[], parcela_gdf=None):
             ).add_to(m)
         except Exception as e:
             st.error(f"Error al añadir la parcela al mapa: {str(e)}")
-
     wms_layers = [
         ("Red Natura 2000", "SIG_LUP_SITES_CARM:RN2000"),
         ("Montes", "PFO_ZOR_DMVP_CARM:MONTES"),
@@ -202,9 +279,7 @@ def crear_mapa(lon, lat, afecciones=[], parcela_gdf=None):
             ).add_to(m)
         except Exception as e:
             st.error(f"Error al cargar la capa WMS {name}: {str(e)}")
-
     folium.LayerControl().add_to(m)
-
     legend_html = """
     {% macro html(this, kwargs) %}
 <div style="
@@ -231,21 +306,17 @@ def crear_mapa(lon, lat, afecciones=[], parcela_gdf=None):
 </div>
 {% endmacro %}
 """
-
     legend = MacroElement()
     legend._template = Template(legend_html)
     m.get_root().add_child(legend)
-
     for afeccion in afecciones:
         folium.Marker([lat, lon], popup=afeccion).add_to(m)
-
     uid = uuid.uuid4().hex[:8]
     mapa_html = f"mapa_{uid}.html"
     m.save(mapa_html)
-
     return mapa_html, afecciones
 
-# Función para generar la imagen estática del mapa usando py-staticmaps
+# Función para generar la imagen estática del mapa usando staticmap
 def generar_imagen_estatica_mapa(x, y, zoom=16, size=(800, 600)):
     lon, lat = transformar_coordenadas(x, y)
     if lon is None or lat is None:
@@ -283,7 +354,7 @@ class CustomPDF(FPDF):
 
     def footer(self):
         self.set_y(-15)
-        self.set_draw_color(0, 0, 255)  # Línea azul
+        self.set_draw_color(0, 0, 255) # Línea azul
         self.set_line_width(0.5)
         page_width = self.w - 2 * self.l_margin
         self.line(self.l_margin, self.get_y(), self.l_margin + page_width, self.get_y())
@@ -396,17 +467,17 @@ def generar_pdf(datos, x, y, filename):
     vp_detectado = []
     if vp_valor and not vp_valor.startswith("No se encuentra") and not vp_valor.startswith("Error"):
         try:
-            gdf = gpd.read_file(vp_url)  # Cargar el GeoJSON de Vías Pecuarias (VP.json)
-            seleccion = gdf[gdf.intersects(query_geom)]  # Filtrar geometrías que intersectan
+            gdf = gpd.read_file(vp_url) # Cargar el GeoJSON de Vías Pecuarias (VP.json)
+            seleccion = gdf[gdf.intersects(query_geom)] # Filtrar geometrías que intersectan
             if not seleccion.empty:
                 for _, props in seleccion.iterrows():
-                    codigo_vp = props.get("VP_COD", "N/A")  # Código de la vía
-                    nombre = props.get("VP_NB", "N/A")  # Nombre de la vía
-                    municipio = props.get("VP_MUN", "N/A")  # Término municipal
-                    situacion_legal = props.get("VP_SIT_LEG", "N/A")  # Situación legal
-                    ancho_legal = props.get("VP_ANCH_LG", "N/A")  # Ancho legal
+                    codigo_vp = props.get("VP_COD", "N/A") # Código de la vía
+                    nombre = props.get("VP_NB", "N/A") # Nombre de la vía
+                    municipio = props.get("VP_MUN", "N/A") # Término municipal
+                    situacion_legal = props.get("VP_SIT_LEG", "N/A") # Situación legal
+                    ancho_legal = props.get("VP_ANCH_LG", "N/A") # Ancho legal
                     vp_detectado.append((codigo_vp, nombre, municipio, situacion_legal, ancho_legal))
-            vp_valor = ""  # Evitamos poner "No se encuentra" si hay tabla
+            vp_valor = "" # Evitamos poner "No se encuentra" si hay tabla
         except Exception as e:
             st.error(f"Error al procesar VP desde {vp_url}: {e}")
             vp_valor = "Error al consultar VP"
@@ -427,7 +498,6 @@ def generar_pdf(datos, x, y, filename):
                 propiedad = lines[3].replace("Propiedad: ", "").strip() if len(lines) > 3 else "N/A"
                 mup_detectado.append((id_monte, nombre, municipio, propiedad))
         mup_valor = ""
-
     # Procesar otras afecciones como texto
     otras_afecciones = []
     for key in afecciones_keys:
@@ -436,14 +506,12 @@ def generar_pdf(datos, x, y, filename):
             otras_afecciones.append((key.capitalize(), valor))
         else:
             otras_afecciones.append((key.capitalize(), valor if valor else "No se encuentra"))
-
     # Solo incluir MUP o VP en "otras afecciones" si NO tienen detecciones
     if not vp_detectado:
         otras_afecciones.append(("Afección VP", vp_valor if vp_valor else "No se encuentra"))
     if not mup_detectado:
         otras_afecciones.append(("Afección MUP", mup_valor if mup_valor else "No se encuentra"))
-
-    # Mostrar otras afecciones con títulos en negrita    
+    # Mostrar otras afecciones con títulos en negrita
     if otras_afecciones:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Otras afecciones:", ln=True)
@@ -457,15 +525,13 @@ def generar_pdf(datos, x, y, filename):
                 for line in wrapped_valor:
                     pdf.cell(0, 8, line, ln=1)
         pdf.ln(2)
-
     # Procesar VP para tabla si hay detecciones
     if vp_detectado:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afecciones de Vías Pecuarias (VP):", ln=True)
         pdf.ln(2)
-
         # Configurar la tabla para VP
-        col_widths = [30, 50, 40, 40, 30]  # Anchos: Código, Nombre, Municipio, Situación Legal, Ancho Legal
+        col_widths = [30, 50, 40, 40, 30] # Anchos: Código, Nombre, Municipio, Situación Legal, Ancho Legal
         row_height = 8
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
@@ -475,24 +541,21 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(col_widths[3], row_height, "Situación Legal", border=1, fill=True)
         pdf.cell(col_widths[4], row_height, "Ancho Legal", border=1, fill=True)
         pdf.ln()
-
         # Agregar filas a la tabla
         pdf.set_font("Arial", "", 10)
         for codigo_vp, nombre, municipio, situacion_legal, ancho_legal in vp_detectado:
-            pdf.cell(col_widths[0], row_height, str(codigo_vp), border=1)  # Código de la vía (VP_COD)
-            pdf.cell(col_widths[1], row_height, str(nombre), border=1)  # Nombre (VP_NB)
-            pdf.cell(col_widths[2], row_height, str(municipio), border=1)  # Municipio (VP_MUN)
-            pdf.cell(col_widths[3], row_height, str(situacion_legal), border=1)  # Situación Legal (VP_SIT_LEG)
-            pdf.cell(col_widths[4], row_height, str(ancho_legal), border=1)  # Ancho Legal (VP_ANCH_LG)
+            pdf.cell(col_widths[0], row_height, str(codigo_vp), border=1)
+            pdf.cell(col_widths[1], row_height, str(nombre), border=1)
+            pdf.cell(col_widths[2], row_height, str(municipio), border=1)
+            pdf.cell(col_widths[3], row_height, str(situacion_legal), border=1)
+            pdf.cell(col_widths[4], row_height, str(ancho_legal), border=1)
             pdf.ln()
-        pdf.ln(10)  # Espacio adicional después de la tabla
-
+        pdf.ln(10)
     # Procesar MUP para tabla si hay detecciones
     if mup_detectado:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afecciones de Montes (MUP):", ln=True)
         pdf.ln(2)
-
         # Configurar la tabla para MUP
         col_widths = [30, 80, 40, 40]
         row_height = 8
@@ -503,7 +566,6 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(col_widths[2], row_height, "Municipio", border=1, fill=True)
         pdf.cell(col_widths[3], row_height, "Propiedad", border=1, fill=True)
         pdf.ln()
-
         # Agregar filas a la tabla
         pdf.set_font("Arial", "", 10)
         for id_monte, nombre, municipio, propiedad in mup_detectado:
@@ -517,35 +579,32 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "", 12)
         pdf.cell(0, 8, "No se encuentra en ENP, ZEPA, LIC, VP, MUP", ln=True)
         pdf.ln(10)
-
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
     pdf.set_font("Arial", "B", 10)
     pdf.set_text_color(255, 0, 0)
-    pdf.set_draw_color(0, 0, 0) # Borde negro  
+    pdf.set_draw_color(0, 0, 0) # Borde negro
     pdf.set_line_width(0.5)
     pdf.set_fill_color(200, 200, 200) # Fondo gris
     
     # Parte 1: Texto en rojo y negrita dentro de un cuadro con fondo gris
-    pdf.set_text_color(255, 0, 0)  # Color rojo
+    pdf.set_text_color(255, 0, 0) # Color rojo
     texto_rojo = (
         "Este borrador preliminar de afecciones no tiene el valor de una certificación oficial y por tanto carece de validez legal y solo sirve como información general con carácter orientativo."
     )
-    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, texto_rojo, border=1, align="J", fill=True)  # Con borde, fondo gris y texto justificado
+    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, texto_rojo, border=1, align="J", fill=True) # Con borde, fondo gris y texto justificado
     pdf.ln(2)
-
     # Parte 2: Texto en negrita (sin rojo) para el resto del documento
-    pdf.set_text_color(0, 0, 0)  # Color negro
-    pdf.set_font("Arial", "B", 8)  # Fuente en negrita para el texto general
+    pdf.set_text_color(0, 0, 0) # Color negro
+    pdf.set_font("Arial", "B", 8) # Fuente en negrita para el texto general
     texto_resto = (
     "En caso de ser detectadas afecciones a Dominio público forestal o pecuario, así como a Espacios Naturales Protegidos o RN2000, debe solicitar informe oficial a la D. G. de Patrimonio Natural y Acción Climática, a través de los procedimientos establecidos en sede electrónica:\n"
     )
     # Añadir el texto inicial en negrita
     pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, texto_resto, border=0, align="J")
     pdf.ln(2)
-
     # Procedimientos sin negrita
-    pdf.set_font("Arial", "", 8)  # Fuente normal para los procedimientos
+    pdf.set_font("Arial", "", 8) # Fuente normal para los procedimientos
     procedimientos = (
         "- 1609 Solicitudes, escritos y comunicaciones que no disponen de un procedimiento específico en la Guía de Procedimientos y Servicios.\n"
         "- 1802 Emisión de certificación sobre delimitación vías pecuarias con respecto a fincas particulares para inscripción registral.\n"
@@ -558,26 +617,25 @@ def generar_pdf(datos, x, y, filename):
         "- 3490 Emisión de certificación o informe de colindancia de finca particular respecto de vía pecuaria.\n"
         "- 5883 (INM) Emisión de certificación o informe para inmatriculación o inscripción registral de fincas colindantes con monte incluido en el Catálogo de Montes de Utilidad Pública.\n"
         "- 7002 Expedición de certificados de no afección a la Red Natura 2000.\n"
-        "- 7186 Ocupación renovable de carácter temporal de vías pecuarias con concesión demanial.\n"
-        "- 7202 Modificación de trazados en vías pecuarias.\n"
+        "- 7186 Ocupación renovable de carácter temporal de vias pecuarias con concesión demanial.\n"
+        "- 7202 Modificación de trazados en vias pecuarias.\n"
         "- 7222 Concesión para la utilización privativa y aprovechamiento especial del dominio público.\n"
         "- 7242 Autorización de permutas en montes públicos.\n"
     )
     pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, procedimientos, border=0, align="J")
     pdf.ln(2)
-
     # Volver a negrita para el resto del texto
-    pdf.set_font("Arial", "B", 10)  # Restaurar negrita
+    pdf.set_font("Arial", "B", 10) # Restaurar negrita
     texto_final = (
         "\nDe acuerdo con lo establecido en el artículo 22 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculación o inscripción de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un término municipal en el que existan montes demaniales requerirá el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del órgano forestal de la comunidad autónoma.\n\n"
-        "En cuanto a vías pecuarias, salvaguardando lo que pudiera resultar de los futuros deslindes, en las parcelas objeto este informe-borrador, cualquier construcción, plantación, vallado, obras, instalaciones, etc., no deberían realizarse dentro del área delimitada como dominio público pecuario provisional para evitar invadir éste.\n\n"
+        "En cuanto a vias pecuarias, salvaguardando lo que pudiera resultar de los futuros deslindes, en las parcelas objeto este informe-borrador, cualquier construcción, plantación, vallado, obras, instalaciones, etc., no deberían realizarse dentro del área delimitada como dominio público pecuario provisional para evitar invadir éste.\n\n"
         "En todo caso, no podrá interrumpirse el tránsito por las Vías Pecuarias, dejando siempre el paso adecuado para el tránsito ganadero y otros usos legalmente establecidos en la Ley 3/1995, de 23 de marzo, de Vías Pecuarias."
     )
     pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, texto_final, border=0, align="J")
     pdf.ln(2)
-   
+  
     # Cerrar el cuadro con borde
-    pdf.set_text_color(0, 0, 0)  # Restaurar color negro para el resto del documento
+    pdf.set_text_color(0, 0, 0) # Restaurar color negro para el resto del documento
     pdf.output(filename)
     return filename
 
@@ -585,7 +643,7 @@ def generar_pdf(datos, x, y, filename):
 st.image("https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg", use_container_width=True)
 st.title("Informe preliminar de Afecciones Forestales")
 
-modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
+modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coordenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
 
 x = 0.0
 y = 0.0
@@ -595,41 +653,40 @@ parcela_sel = ""
 parcela = None
 
 if modo == "Por parcela":
-    municipio_sel = st.selectbox("Municipio", sorted(shp_urls.keys()))
-    archivo_base = shp_urls[municipio_sel]
-    
-    gdf = cargar_shapefile_desde_github(archivo_base)
-    
-    if gdf is not None:
-        masa_sel = st.selectbox("Polígono", sorted(gdf["MASA"].unique()))
-        parcela_sel = st.selectbox("Parcela", sorted(gdf[gdf["MASA"] == masa_sel]["PARCELA"].unique()))
-        parcela = gdf[(gdf["MASA"] == masa_sel) & (gdf["PARCELA"] == parcela_sel)]
-        
-        if parcela.geometry.geom_type.isin(['Polygon', 'MultiPolygon']).all():
-            centroide = parcela.geometry.centroid.iloc[0]
-            x = centroide.x
-            y = centroide.y         
-                    
-            st.success("Parcela cargada correctamente.")
-            st.write(f"Municipio: {municipio_sel}")
-            st.write(f"Polígono: {masa_sel}")
-            st.write(f"Parcela: {parcela_sel}")
+    municipio_sel = st.selectbox("Municipio", sorted(municipio_codes.keys()))
+    code = municipio_codes[municipio_sel]
+
+    masas = obtener_masas_por_municipio(code)
+    masa_sel = st.selectbox("Polígono", masas)
+
+    if masa_sel:
+        parcels = obtener_parcelas_por_masa(code, masa_sel)
+        parcela_sel = st.selectbox("Parcela", parcels)
+
+        if parcela_sel:
+            parcela = obtener_parcela_gdf(code, masa_sel, parcela_sel)
+            if parcela is not None:
+                centroide = parcela.geometry.centroid.iloc[0]
+                x = centroide.x
+                y = centroide.y
+                st.success("Parcela cargada correctamente.")
+                st.write(f"Municipio: {municipio_sel}")
+                st.write(f"Polígono: {masa_sel}")
+                st.write(f"Parcela: {parcela_sel}")
+            else:
+                st.error("No se pudo cargar la geometría de la parcela.")
+else:
+    x = st.number_input("Coordenada X (ETRS89)", format="%.2f", help="Introduce coordenadas en metros, sistema ETRS89 / UTM zona 30")
+    y = st.number_input("Coordenada Y (ETRS89", format="%.2f")
+    if x != 0.0 and y != 0.0:
+        municipio_sel, masa_sel, parcela_sel, parcela = encontrar_municipio_poligono_parcela(x, y)
+        if municipio_sel != "N/A":
+            st.success(f"Parcela encontrada: Municipio: {municipio_sel}, Polígono: {masa_sel}, Parcela: {parcela_sel}")
         else:
-            st.error("La geometría seleccionada no es un polígono válido.")
-    else:
-        st.error(f"No se pudo cargar el shapefile para el municipio: {municipio_sel}")
+            st.warning("No se encontró una parcela para las coordenadas proporcionadas.")
 
 with st.form("formulario"):
-    if modo == "Por coordenadas":
-        x = st.number_input("Coordenada X (ETRS89)", format="%.2f", help="Introduce coordenadas en metros, sistema ETRS89 / UTM zona 30")
-        y = st.number_input("Coordenada Y (ETRS89)", format="%.2f")
-        if x != 0.0 and y != 0.0:
-            municipio_sel, masa_sel, parcela_sel, parcela = encontrar_municipio_poligono_parcela(x, y)
-            if municipio_sel != "N/A":
-                st.success(f"Parcela encontrada: Municipio: {municipio_sel}, Polígono: {masa_sel}, Parcela: {parcela_sel}")
-            else:
-                st.warning("No se encontró una parcela para las coordenadas proporcionadas.")
-    else:
+    if modo == "Por parcela":
         st.info(f"Coordenadas obtenidas del centroide de la parcela: X = {x}, Y = {y}")
         
     fecha_solicitud = st.date_input("Fecha de la solicitud")
@@ -661,27 +718,23 @@ if submitted:
                 query_geom = parcela.geometry.iloc[0]
             else:
                 query_geom = Point(x, y)
-
             st.write(f"Municipio seleccionado: {municipio_sel}")
             st.write(f"Polígono seleccionado: {masa_sel}")
             st.write(f"Parcela seleccionada: {parcela_sel}")
-
             enp_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/ENP.json"
             zepa_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/ZEPA.json"
             lic_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/LIC.json"
             vp_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/VP.json"
             tm_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/TM.json"
             mup_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/MUP.json"
-
             afeccion_enp = consultar_geojson(query_geom, enp_url, "ENP", campo_nombre="nombre")
             afeccion_zepa = consultar_geojson(query_geom, zepa_url, "ZEPA", campo_nombre="SITE_NAME")
             afeccion_lic = consultar_geojson(query_geom, lic_url, "LIC", campo_nombre="SITE_NAME")
             afeccion_vp = consultar_geojson(query_geom, vp_url, "VP", campo_nombre="VP_NB")
             afeccion_tm = consultar_geojson(query_geom, tm_url, "TM", campo_nombre="NAMEUNIT")
             afeccion_mup = consultar_mup(query_geom, mup_url)
-
             afecciones = [afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
-            
+           
             datos = {
                 "fecha_solicitud": fecha_solicitud.strftime('%d/%m/%Y'),
                 "fecha_informe": datetime.today().strftime('%d/%m/%Y'),
@@ -704,19 +757,16 @@ if submitted:
                 "polígono": masa_sel,
                 "parcela": parcela_sel
             }
-            
+           
             mapa_html, afecciones = crear_mapa(lon, lat, afecciones, parcela_gdf=parcela)
             if mapa_html:
                 st.session_state['mapa_html'] = mapa_html
                 st.session_state['afecciones'] = afecciones
-
                 st.subheader("Resultado de las afecciones")
                 for afeccion in afecciones:
                     st.write(f"• {afeccion}")
-
                 with open(mapa_html, 'r') as f:
                     html(f.read(), height=500)
-
                 pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
                 try:
                     generar_pdf(datos, x, y, pdf_filename)
@@ -730,7 +780,6 @@ if st.session_state['mapa_html'] and st.session_state['pdf_file']:
             st.download_button("📄 Descargar informe PDF", f, file_name="informe_afecciones.pdf")
     except Exception as e:
         st.error(f"Error al descargar el PDF: {str(e)}")
-
     try:
         with open(st.session_state['mapa_html'], "r") as f:
             st.download_button("🌍 Descargar mapa HTML", f, file_name="mapa_busqueda.html")
