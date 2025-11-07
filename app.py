@@ -714,16 +714,16 @@ if submitted:
             st.write(f"Polígono seleccionado: {masa_sel}")
             st.write(f"Parcela seleccionada: {parcela_sel}")
 
-            enp_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/ENP.json"
-            zepa_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/ZEPA.json"
-            lic_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/LIC.json"
+            enp_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ENP&outputFormat=application/json"
+            zepa_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ZEPA&outputFormat=application/json"
+            lic_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:LIC-ZEC&outputFormat=application/json"
             vp_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:VP_CARM&outputFormat=application/json"
             tm_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/TM.json"
             mup_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:MONTES&outputFormat=application/json"
 
             afeccion_enp = consultar_geojson(query_geom, enp_url, "ENP", campo_nombre="nombre")
-            afeccion_zepa = consultar_geojson(query_geom, zepa_url, "ZEPA", campo_nombre="SITE_NAME")
-            afeccion_lic = consultar_geojson(query_geom, lic_url, "LIC", campo_nombre="SITE_NAME")
+            afeccion_zepa = consultar_geojson(query_geom, zepa_url, "ZEPA", campo_nombre="site_name")
+            afeccion_lic = consultar_geojson(query_geom, lic_url, "LIC", campo_nombre="site_name")
             afeccion_vp = consultar_geojson(query_geom, vp_url, "VP", campo_nombre="vp_nb")
             afeccion_tm = consultar_geojson(query_geom, tm_url, "TM", campo_nombre="NAMEUNIT")
             afeccion_mup = consultar_mup(query_geom, mup_url)
