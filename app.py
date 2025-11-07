@@ -487,6 +487,10 @@ def generar_pdf(datos, x, y, filename):
             nombre_lines = pdf.multi_cell(col_widths[1], line_height, str(nombre), split_only=True)
             nombre_height = line_height * len(nombre_lines)
 
+            # --- Calcular altura de Situación Legal ---
+            sit_leg_lines = pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), split_only=True)
+            sit_leg_height = line_height * len(sit_leg_lines)
+
             # Altura final de la fila = máximo entre la altura del nombre y la altura estándar
             row_h = max(row_height, nombre_height)
 
