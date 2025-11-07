@@ -400,11 +400,11 @@ def generar_pdf(datos, x, y, filename):
             seleccion = gdf[gdf.intersects(query_geom)]  # Filtrar geometrías que intersectan
             if not seleccion.empty:
                 for _, props in seleccion.iterrows():
-                    codigo_vp = props.get("VP_COD", "N/A")  # Código de la vía
+                    codigo_vp = props.get("vp_cod", "N/A")  # Código de la vía
                     nombre = props.get("vp_nb", "N/A")  # Nombre de la vía
-                    municipio = props.get("VP_MUN", "N/A")  # Término municipal
-                    situacion_legal = props.get("VP_SIT_LEG", "N/A")  # Situación legal
-                    ancho_legal = props.get("VP_ANCH_LG", "N/A")  # Ancho legal
+                    municipio = props.get("vp_mun", "N/A")  # Término municipal
+                    situacion_legal = props.get("vp_sit_leg", "N/A")  # Situación legal
+                    ancho_legal = props.get("vp_anch_lg", "N/A")  # Ancho legal
                     vp_detectado.append((codigo_vp, nombre, municipio, situacion_legal, ancho_legal))
             vp_valor = ""  # Evitamos poner "No se encuentra" si hay tabla
         except Exception as e:
@@ -479,11 +479,11 @@ def generar_pdf(datos, x, y, filename):
         # Agregar filas a la tabla
         pdf.set_font("Arial", "", 10)
         for codigo_vp, nombre, municipio, situacion_legal, ancho_legal in vp_detectado:
-            pdf.cell(col_widths[0], row_height, str(codigo_vp), border=1)  # Código de la vía (VP_COD)
+            pdf.cell(col_widths[0], row_height, str(codigo_vp), border=1)  # Código de la vía (vp_cod)
             pdf.cell(col_widths[1], row_height, str(nombre), border=1)  # Nombre (vp_nb)
-            pdf.cell(col_widths[2], row_height, str(municipio), border=1)  # Municipio (VP_MUN)
-            pdf.cell(col_widths[3], row_height, str(situacion_legal), border=1)  # Situación Legal (VP_SIT_LEG)
-            pdf.cell(col_widths[4], row_height, str(ancho_legal), border=1)  # Ancho Legal (VP_ANCH_LG)
+            pdf.cell(col_widths[2], row_height, str(municipio), border=1)  # Municipio (vp_mun)
+            pdf.cell(col_widths[3], row_height, str(situacion_legal), border=1)  # Situación Legal (vp_sit_leg)
+            pdf.cell(col_widths[4], row_height, str(ancho_legal), border=1)  # Ancho Legal (vp_anch_lg)
             pdf.ln()
         pdf.ln(10)  # Espacio adicional después de la tabla
 
