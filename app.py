@@ -483,43 +483,49 @@ def generar_pdf(datos, x, y, filename):
 
             line_height = 5  # altura base de una línea
 
-            # Calcular alturas necesarias
+            # Obtener altura necesaria para columnas multilínea
             nombre_lines = pdf.multi_cell(col_widths[1], line_height, str(nombre), split_only=True)
-            nombre_height = line_height * len(nombre_lines)
+            nombre_height = len(nombre_lines) * line_height
 
-            sit_leg_lines = pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), split_only=True)
-            sit_leg_height = line_height * len(sit_leg_lines)
-
-            # Altura final de la fila = máximo entre la altura del nombre y la altura estándar
-            row_h = max(row_height, nombre_height, sit_leg_height)
+            # Altura real de la fila
+            row_h = max(row_height, nombre_height, sit_leg_height)    
 
             # Guardar posición actual
             x = pdf.get_x()
             y = pdf.get_y()
 
-            # --- Columna 1: Código ---
-            pdf.multi_cell(col_widths[0], row_h, str(codigo_vp), border=1, align="L")
+            # --- 1) DIBUJAR LA FILA (EL MARCO COMPLETO) ---
+            pdf.rect(x, y, col_widths[0], row_h)
+            pdf.rect(x + col_widths[0], y, col_widths[1], row_h)
+            pdf.rect(x + col_widths[0] + col_widths[1], y, col_widths[2], row_h)
+            pdf.rect(x + col_widths[0] + col_widths[1] + col_widths[2], y, col_widths[3], row_h)
+            pdf.rect(x + col_widths[0] + col_widths[1] + col_widths[2] + col_widths[3], y, col_widths[4], row_h)
+
+            # --- 2) ESCRIBIR EL TEXTO DENTRO DE LAS CELDAS ---
+            # Código
+            pdf.set_xy(x, y)
+            pdf.multi_cell(col_widths[0], line_height, str(codigo_vp), align="L")
+
+            # Nombre (multilínea)
             pdf.set_xy(x + col_widths[0], y)
+            pdf.multi_cell(col_widths[1], line_height, str(nombre), align="L")
 
-            # --- Columna 2: Nombre (MULTILÍNEA) ---
-            pdf.multi_cell(col_widths[1], line_height, str(nombre), border=1, align="L")
+            # Municipio
             pdf.set_xy(x + col_widths[0] + col_widths[1], y)
+            pdf.multi_cell(col_widths[2], line_height, str(municipio), align="L")
 
-            # --- Columna 3: Municipio ---
-            pdf.multi_cell(col_widths[2], row_h, str(municipio), border=1, align="L")
+            # Situación legal (multilínea)
             pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2], y)
+            pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), align="L")
 
-            # --- Columna 4: Situación Legal ---
-            pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), border=1, align="L")
+            # Ancho legal
             pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2] + col_widths[3], y)
+            pdf.multi_cell(col_widths[4], line_height, str(ancho_legal), align="L")
 
-            # --- Columna 5: Ancho Legal ---
-            pdf.multi_cell(col_widths[4], row_h, str(ancho_legal), border=1, align="L")
+            # Mover a la siguiente fila
+            pdf.set_xy(x, y + row_h)
 
-        # Bajar a la siguiente fila
-        pdf.ln(row_h)
-        
-    pdf.ln(10)  # Espacio adicional después de la tabla
+        pdf.ln(10)  # Espacio adicional después de la tabla
 
     # Procesar MUP para tabla si hay detecciones
     if mup_detectado:
