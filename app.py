@@ -296,7 +296,7 @@ class CustomPDF(FPDF):
 # Función para generar el PDF con los datos de la solicitud
 def generar_pdf(datos, x, y, filename):
     # Descargar y guardar el logo en un archivo temporal
-    logo_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/logos.jpg"
+    logo_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg"
     logo_path = None
     try:
         response = requests.get(logo_url, timeout=10)
@@ -582,7 +582,7 @@ def generar_pdf(datos, x, y, filename):
     return filename
 
 # Interfaz de Streamlit
-st.image("https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/logos.jpg", use_container_width=True)
+st.image("https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg", use_container_width=True)
 st.title("Informe preliminar de Afecciones Forestales")
 
 modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
@@ -666,12 +666,12 @@ if submitted:
             st.write(f"Polígono seleccionado: {masa_sel}")
             st.write(f"Parcela seleccionada: {parcela_sel}")
 
-            enp_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/GeoJSON/ENP.json"
-            zepa_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/GeoJSON/ZEPA.json"
-            lic_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/GeoJSON/LIC.json"
-            vp_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/GeoJSON/VP.json"
-            tm_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/GeoJSON/TM.json"
-            mup_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/GeoJSON/MUP.json"
+            enp_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/ENP.json"
+            zepa_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/ZEPA.json"
+            lic_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/LIC.json"
+            vp_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/VP.json"
+            tm_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/TM.json"
+            mup_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/MUP.json"
 
             afeccion_enp = consultar_geojson(query_geom, enp_url, "ENP", campo_nombre="nombre")
             afeccion_zepa = consultar_geojson(query_geom, zepa_url, "ZEPA", campo_nombre="SITE_NAME")
