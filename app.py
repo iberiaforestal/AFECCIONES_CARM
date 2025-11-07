@@ -210,7 +210,7 @@ def crear_mapa(lon, lat, afecciones, parcela_gdf):
 # === PDF ===
 class CustomPDF(FPDF):
     def __init__(self, logo_path):
-        super().__init__(orientation='P', unit='mm', format='A4')
+        super().__init__()  
         self.logo_path = logo_path
     def header(self):
         if self.logo_path and os.path.exists(self.logo_path):
