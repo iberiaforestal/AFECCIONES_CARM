@@ -485,7 +485,15 @@ def generar_pdf(datos, x, y, filename):
 
             # Obtener altura necesaria para columnas multilínea
             nombre_lines = pdf.multi_cell(col_widths[1], line_height, str(nombre), split_only=True)
+            if not nombre_lines:
+                nombre_lines = [""]  # evitar None
             nombre_height = len(nombre_lines) * line_height
+
+            # Situación legal
+            sit_leg_lines = pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), split_only=True)
+            if not sit_leg_lines:
+                sit_leg_lines = [""]  # evitar None
+            sit_leg_height = len(sit_leg_lines) * line_height
 
             # Altura real de la fila
             row_h = max(row_height, nombre_height, sit_leg_height)    
