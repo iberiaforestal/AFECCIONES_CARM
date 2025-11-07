@@ -1,0 +1,7 @@
+owslib
+geopandas
+pyproj
+shapely
+fiona
+rtree
+pyogrio
