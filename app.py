@@ -152,10 +152,10 @@ def consultar_mup(geom, geojson_url):
         if not seleccion.empty:
             info = []
             for _, props in seleccion.iterrows():
-                id_monte = props.get("ID_MONTE", "Desconocido")
-                nombre_monte = props.get("NOMBREMONT", "Desconocido")
-                municipio = props.get("MUNICIPIO", "Desconocido")
-                propiedad = props.get("PROPIEDAD", "Desconocido")
+                id_monte = props.get("id_monte", "Desconocido")
+                nombre_monte = props.get("nombremont", "Desconocido")
+                municipio = props.get("municipio", "Desconocido")
+                propiedad = props.get("propiedad", "Desconocido")
                 info.append(f"ID: {id_monte}\nNombre: {nombre_monte}\nMunicipio: {municipio}\nPropiedad: {propiedad}")
             return "Dentro de MUP:\n" + "\n\n".join(info)
         else:
@@ -719,7 +719,7 @@ if submitted:
             lic_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/LIC.json"
             vp_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:VP_CARM&outputFormat=application/json"
             tm_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/TM.json"
-            mup_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/GeoJSON/MUP.json"
+            mup_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:MONTES&outputFormat=application/json"
 
             afeccion_enp = consultar_geojson(query_geom, enp_url, "ENP", campo_nombre="nombre")
             afeccion_zepa = consultar_geojson(query_geom, zepa_url, "ZEPA", campo_nombre="SITE_NAME")
