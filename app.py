@@ -507,7 +507,7 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2], y)
 
             # --- Columna 4: Situación Legal ---
-            pdf.multi_cell(col_widths[3], row_h, str(situacion_legal), border=1, align="L")
+            pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), border=1, align="L")
             pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2] + col_widths[3], y)
 
             # --- Columna 5: Ancho Legal ---
