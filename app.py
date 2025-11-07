@@ -429,6 +429,7 @@ def generar_pdf(datos, x, y, filename):
         mup_valor = ""
 
     # Procesar afecciones ZEPA
+    zepa_key = "afección ZEPA"
     zepa_valor = datos.get(zepa_key, "").strip()
     zepa_detectado = []
     if zepa_valor and not zepa_valor.startswith("No se encuentra") and not zepa_valor.startswith("Error"):
