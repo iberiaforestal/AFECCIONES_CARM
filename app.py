@@ -492,7 +492,7 @@ def generar_pdf(datos, x, y, filename):
             sit_leg_height = line_height * len(sit_leg_lines)
 
             # Altura final de la fila = máximo entre la altura del nombre y la altura estándar
-            row_h = max(row_height, nombre_height)
+            row_h = max(row_height, nombre_height, sit_leg_height)
 
             # Guardar posición actual
             x = pdf.get_x()
