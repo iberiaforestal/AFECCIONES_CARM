@@ -660,24 +660,31 @@ if modo == "Por parcela":
     code = municipio_codes[municipio_sel]
 
     masas = obtener_masas_por_municipio(code)
-    masa_sel = st.selectbox("Polígono", masas)
+    if not masas:
+        st.warning("No se encontraron polígonos para este municipio.")
+    else:
+        masa_sel = st.selectbox("Polígono", masas)
 
-    if masa_sel:
-        parcels = obtener_parcelas_por_masa(code, masa_sel)
-        parcela_sel = st.selectbox("Parcela", parcels)
-
-        if parcela_sel:
-            parcela = obtener_parcela_gdf(code, masa_sel, parcela_sel)
-            if parcela is not None:
-                centroide = parcela.geometry.centroid.iloc[0]
-                x = centroide.x
-                y = centroide.y
-                st.success("Parcela cargada correctamente.")
-                st.write(f"Municipio: {municipio_sel}")
-                st.write(f"Polígono: {masa_sel}")
-                st.write(f"Parcela: {parcela_sel}")
+        if masa_sel:
+            parcels = obtener_parcelas_por_masa(code, masa_sel)
+            if not parcels:
+                st.warning("No se encontraron parcelas para este polígono.")
             else:
-                st.error("No se pudo cargar la geometría de la parcela.")
+                parcela_sel = st.selectbox("Parcela", parcels)
+
+                if parcela_sel:
+                    with st.spinner("Cargando geometría de la parcela..."):
+                        parcela = obtener_parcela_gdf(code, masa_sel, parcela_sel)
+                    if parcela is not None:
+                        centroide = parcela.geometry.centroid.iloc[0]
+                        x = centroide.x
+                        y = centroide.y
+                        st.success("Parcela cargada correctamente.")
+                        st.write(f"Municipio: {municipio_sel}")
+                        st.write(f"Polígono: {masa_sel}")
+                        st.write(f"Parcela: {parcela_sel}")
+                    else:
+                        st.error("No se pudo cargar la geometría de la parcela.")
 else:
     x = st.number_input("Coordenada X (ETRS89)", format="%.2f", help="Introduce coordenadas en metros, sistema ETRS89 / UTM zona 30")
     y = st.number_input("Coordenada Y (ETRS89", format="%.2f")
