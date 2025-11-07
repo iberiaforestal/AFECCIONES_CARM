@@ -96,12 +96,13 @@ def consultar_municipio_ad(geom_or_point, radio=0.0005):
     except:
         return "N/A"
 
-# Función para obtener polígonos (MASA) para un municipio usando WFS
+# Función para obtener polígonos (MASA) para un municipio
 @st.cache_data
 def obtener_masas_por_municipio(code):
     try:
         wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
-        cql = f"localId LIKE '{code}%'"
+        # El localId tiene 14 caracteres: 5(INE) + 3(MASA) + 5(PARCELA) + 1(LETRA)
+        cql = f"localId LIKE '{code.zfill(5)}%'"
         response = wfs.getfeature(
             typename='CP:CadastralParcel',
             cql_filter=cql,
@@ -112,18 +113,20 @@ def obtener_masas_por_municipio(code):
         gdf = gpd.read_file(BytesIO(response.read()))
         if gdf.empty:
             return []
+        # Extraer MASA: caracteres 5-8
         gdf['masa'] = gdf['localId'].str[5:8]
         return sorted(gdf['masa'].unique())
-    except:
-        st.error("Error al cargar polígonos")
+    except Exception as e:
+        st.error(f"Error al cargar polígonos: {str(e)}")
         return []
 
-# Función para obtener parcelas para un municipio y polígono usando WFS
+# Función para obtener parcelas
 @st.cache_data
 def obtener_parcelas_por_masa(code, masa):
     try:
         wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
-        cql = f"localId LIKE '{code}{masa}%'"
+        prefix = f"{code.zfill(5)}{masa.zfill(3)}"
+        cql = f"localId LIKE '{prefix}%'"
         response = wfs.getfeature(
             typename='CP:CadastralParcel',
             cql_filter=cql,
@@ -134,19 +137,21 @@ def obtener_parcelas_por_masa(code, masa):
         gdf = gpd.read_file(BytesIO(response.read()))
         if gdf.empty:
             return []
+        # Extraer PARCELA: caracteres 8-13
         gdf['parcela'] = gdf['localId'].str[8:13]
         return sorted(gdf['parcela'].unique())
-    except:
-        st.error("Error al cargar parcelas")
+    except Exception as e:
+        st.error(f"Error al cargar parcelas: {str(e)}")
         return []
 
-# Función para obtener la geometría de la parcela usando WFS
+# Función para obtener geometría
 @st.cache_data
 def obtener_parcela_gdf(code, masa, parcela):
     try:
         wfs = WebFeatureService(url=WFS_CP_URL, version='2.0.0')
-        refcat_base = f"{code}{masa}{parcela}"
-        cql = f"localId LIKE '{refcat_base}%'"
+        # Construir base: 5+3+5 = 13 caracteres
+        base = f"{code.zfill(5)}{masa.zfill(3)}{parcela.zfill(5)}"
+        cql = f"localId LIKE '{base}%'"
         response = wfs.getfeature(
             typename='CP:CadastralParcel',
             cql_filter=cql,
@@ -157,11 +162,11 @@ def obtener_parcela_gdf(code, masa, parcela):
         if not gdf.empty:
             return gdf.to_crs("EPSG:25830")
         return None
-    except:
-        st.error("Error al cargar geometría de la parcela")
+    except Exception as e:
+        st.error(f"Error al cargar geometría: {str(e)}")
         return None
 
-# Función para encontrar municipio, polígono y parcela a partir de coordenadas usando WFS
+# Función para encontrar por coordenadas
 def encontrar_municipio_poligono_parcela(x, y):
     try:
         transformer = Transformer.from_crs("EPSG:25830", "EPSG:4326", always_xy=True)
@@ -192,8 +197,6 @@ def encontrar_municipio_poligono_parcela(x, y):
     except Exception as e:
         st.error(f"Error al buscar parcela: {str(e)}")
         return "N/A", "N/A", "N/A", None
-
-# El resto del código permanece igual
 
 # Función para transformar coordenadas de ETRS89 a WGS84
 def transformar_coordenadas(x, y):
