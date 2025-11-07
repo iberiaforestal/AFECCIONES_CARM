@@ -1,7 +1,7 @@
 import streamlit as st
 import folium
 from streamlit.components.v1 import html
-from fpdf2 import FPDF
+from fpdf import FPDF
 from pyproj import Transformer
 import requests
 from io import BytesIO
