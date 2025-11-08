@@ -637,15 +637,20 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for site_code, site_name in zepa_detectado:
+            code_lines = pdf.multi_cell(col_w_code, 5, str(site_code), split_only=True)
             name_lines = pdf.multi_cell(col_w_name, 5, str(site_name), split_only=True)
-            row_h = max(row_height, len(name_lines) * 5)
+            row_h = max(row_height, len(code_lines) * 5, len(name_lines) * 5)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_code, row_h)
             pdf.rect(x + col_w_code, y, col_w_name, row_h)
-            pdf.set_xy(x, y)
+            code_h = len(code_lines) * 5
+            y_code = y + (row_h - code_h) / 2
+            pdf.set_xy(x, y_code)
             pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
-            pdf.set_xy(x + col_w_code, y)
+            name_h = len(name_lines) * 5
+            y_name = y + (row_h - name_h) / 2
+            pdf.set_xy(x + col_w_code, y_name)
             pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(10)
@@ -665,15 +670,20 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for site_code, site_name in lic_detectado:
+            code_lines = pdf.multi_cell(col_w_code, 5, str(site_code), split_only=True)
             name_lines = pdf.multi_cell(col_w_name, 5, str(site_name), split_only=True)
-            row_h = max(row_height, len(name_lines) * 5)
+            row_h = max(row_height, len(code_lines) * 5, len(name_lines) * 5)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_code, row_h)
             pdf.rect(x + col_w_code, y, col_w_name, row_h)
-            pdf.set_xy(x, y)
+            code_h = len(code_lines) * 5
+            y_code = y + (row_h - code_h) / 2
+            pdf.set_xy(x, y_code)
             pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
-            pdf.set_xy(x + col_w_code, y)
+            name_h = len(name_lines) * 5
+            y_name = y + (row_h - name_h) / 2
+            pdf.set_xy(x + col_w_code, y_name)
             pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(10)
