@@ -741,11 +741,11 @@ def generar_pdf(datos, x, y, filename):
             nombre_h = len(nombre_lines) * 5
             y_nombre = y + (row_h - nombre_h) / 2
             pdf.set_xy(x, y_nombre)
-            pdf.multi_cell(col_w_nombre, 5, str(site_nombre), align="L")
+            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
             figura_h = len(figura_lines) * 5
             y_figura = y + (row_h - figura_h) / 2
             pdf.set_xy(x + col_w_nombre, y_figura)
-            pdf.multi_cell(col_w_figura, 5, str(site_figura), align="L")
+            pdf.multi_cell(col_w_figura, 5, str(figura), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(10)
 
