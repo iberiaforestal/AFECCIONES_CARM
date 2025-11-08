@@ -717,7 +717,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(10)
         
     # Procesar tabla para ENP
-if enp_detectado:
+    if enp_detectado:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Espacio Natural Protegido (ENP):", ln=True)
         pdf.ln(2)
