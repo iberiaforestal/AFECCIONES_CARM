@@ -726,8 +726,8 @@ def generar_pdf(datos, x, y, filename):
         row_height = 8
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
-        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
-        pdf.cell(col_w_figura, row_height, "Figura", border=1, fill=True)
+        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True, align="C")
+        pdf.cell(col_w_figura, row_height, "Figura", border=1, fill=True, align="C")
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for nombre, figura in enp_detectado:
