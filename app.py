@@ -387,9 +387,10 @@ def generar_pdf(datos, x, y, filename):
     pdf.add_page()
     seccion_titulo("3. Afecciones detectadas")
 
-    afecciones_keys = ["afección ENP", "afección ZEPA", "afección LIC", "afección TM"]
+    afecciones_keys = ["afección ENP","afección LIC", "afección TM"]
     vp_key = "afección VP"
     mup_key = "afección MUP"
+    zepa_key = "afección ZEPA"
     
     # Procesar afecciones VP
     vp_valor = datos.get(vp_key, "").strip()
@@ -462,7 +463,9 @@ def generar_pdf(datos, x, y, filename):
         else:
             otras_afecciones.append((key.capitalize(), valor if valor else "No se encuentra"))
 
-    # Solo incluir MUP o VP en "otras afecciones" si NO tienen detecciones
+    # Solo incluir MUP, VP, ZEPA en "otras afecciones" si NO tienen detecciones
+    if not zepa_detectado:
+        otras_afecciones.append(("Afección ZEPA", zepa_valor if zepa_valor else "No se encuentra en ninguna ZEPA"))
     if not vp_detectado:
         otras_afecciones.append(("Afección VP", vp_valor if vp_valor else "No se encuentra"))
     if not mup_detectado:
@@ -591,25 +594,33 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 8, "No se encuentra en ENP, ZEPA, LIC, VP, MUP", ln=True)
         pdf.ln(10)
 
-    # TABLA ZEPA — SOLO SI HAY RESULTADOS
+    # Procesar tabla para ZEPA
     if zepa_detectado:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afección ZEPA:", ln=True)
         pdf.ln(2)
-
-        # Configurar la tabla para MUP
-        col_w_code = 40
-        col_w_name = pdf.w - 20 - col_w_code
+        col_w_code = 50
+        col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
+        row_height = 8
         pdf.set_font("Arial", "B", 11)
-        pdf.set_fill_color(220, 220, 220)
-        pdf.cell(col_w_code, 8, "Código", border=1, fill=True)
-        pdf.cell(col_w_name, 8, "Nombre", border=1, fill=True)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_w_code, row_height, "Código", border=1, fill=True)
+        pdf.cell(col_w_name, row_height, "Nombre", border=1, fill=True)
         pdf.ln()
-        pdf.set_font("Arial", "", 11)
+        pdf.set_font("Arial", "", 10)
         for site_code, site_name in zepa_detectado:
-            pdf.cell(col_w_code, 8, str(site_code), border=1)
-            pdf.multi_cell(col_w_name, 8, str(site_name), border=1)
-        pdf.ln(5)
+            name_lines = pdf.multi_cell(col_w_name, 5, str(site_name), split_only=True)
+            row_h = max(row_height, len(name_lines) * 5)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.rect(x, y, col_w_code, row_h)
+            pdf.rect(x + col_w_code, y, col_w_name, row_h)
+            pdf.set_xy(x, y)
+            pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
+            pdf.set_xy(x + col_w_code, y)
+            pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
+            pdf.set_y(y + row_h)
+        pdf.ln(10)
 
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
