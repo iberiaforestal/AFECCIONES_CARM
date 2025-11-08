@@ -387,10 +387,11 @@ def generar_pdf(datos, x, y, filename):
     pdf.add_page()
     seccion_titulo("3. Afecciones detectadas")
 
-    afecciones_keys = ["afección ENP","afección LIC", "afección TM"]
+    afecciones_keys = ["afección ENP","afección TM"]
     vp_key = "afección VP"
     mup_key = "afección MUP"
     zepa_key = "afección ZEPA"
+    lic_key = "afección LIC"
     
     # Procesar afecciones VP
     vp_valor = datos.get(vp_key, "").strip()
@@ -454,6 +455,31 @@ def generar_pdf(datos, x, y, filename):
     else:
         zepa_valor = "No afecta a ninguna ZEPA" if not zepa_detectado else ""
 
+    # Procesar afecciones LIC
+    lic_key = "afección LIC"
+    lic_valor = datos.get(lic_key, "").strip()
+    zepa_detectado = []
+    if lic_valor and not lic_valor.startswith("No afecta") and not lic_valor.startswith("Error"):
+        try:
+            gdf = gpd.read_file(lic_url)
+            seleccion = gdf[gdf.intersects(query_geom)]
+            if not seleccion.empty:
+                for _, props in seleccion.iterrows():
+                    site_code = props.get("site_code", "N/A")
+                    site_name = props.get("site_name", "N/A")
+
+                    # Guardamos tupla con ambos datos
+                    lic_detectado.append((site_code, site_name))
+
+            lic_valor = ""
+
+        except Exception as e:
+            st.error(f"Error al procesar LIC desde {zepa_url}: {e}")
+            zepa_valor = "Error al consultar LIC"
+
+    else:
+        lic_valor = "No afecta a ningun LIC" if not zepa_detectado else ""
+
     # Procesar otras afecciones como texto
     otras_afecciones = []
     for key in afecciones_keys:
@@ -464,12 +490,14 @@ def generar_pdf(datos, x, y, filename):
             otras_afecciones.append((key.capitalize(), valor if valor else "No afecta"))
 
     # Solo incluir MUP, VP, ZEPA en "otras afecciones" si NO tienen detecciones
+    if not lic_detectado:
+        otras_afecciones.append(("Afección LIC", lic_valor if lic_valor else "No afecta a ningún LIC"))
     if not zepa_detectado:
         otras_afecciones.append(("Afección ZEPA", zepa_valor if zepa_valor else "No afecta a ninguna ZEPA"))
     if not vp_detectado:
-        otras_afecciones.append(("Afección VP", vp_valor if vp_valor else "No afecta"))
+        otras_afecciones.append(("Afección VP", vp_valor if vp_valor else "No afecta a ninguna VP"))
     if not mup_detectado:
-        otras_afecciones.append(("Afección MUP", mup_valor if mup_valor else "No afecta"))
+        otras_afecciones.append(("Afección MUP", mup_valor if mup_valor else "No afecta a ningún MUP"))
 
     # Mostrar otras afecciones con títulos en negrita    
     if otras_afecciones:
@@ -621,6 +649,35 @@ def generar_pdf(datos, x, y, filename):
             pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(10)
+
+    # Procesar tabla para LIC
+    if lic_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Afección Lugar de Importancia Comunitaria (LIC):", ln=True)
+        pdf.ln(2)
+        col_w_code = 30
+        col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
+        row_height = 8
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_w_code, row_height, "Código", border=1, fill=True)
+        pdf.cell(col_w_name, row_height, "Nombre", border=1, fill=True)
+        pdf.ln()
+        pdf.set_font("Arial", "", 10)
+        for site_code, site_name in lic_detectado:
+            name_lines = pdf.multi_cell(col_w_name, 5, str(site_name), split_only=True)
+            row_h = max(row_height, len(name_lines) * 5)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.rect(x, y, col_w_code, row_h)
+            pdf.rect(x + col_w_code, y, col_w_name, row_h)
+            pdf.set_xy(x, y)
+            pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
+            pdf.set_xy(x + col_w_code, y)
+            pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
+            pdf.set_y(y + row_h)
+        pdf.ln(10)
+
 
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
