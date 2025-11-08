@@ -597,7 +597,7 @@ def generar_pdf(datos, x, y, filename):
     # Procesar tabla para ZEPA
     if zepa_detectado:
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, "Afección ZEPA:", ln=True)
+        pdf.cell(0, 8, "Afección Zonas de Especial Protección para las Aves (ZEPA):", ln=True)
         pdf.ln(2)
         col_w_code = 30
         col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
