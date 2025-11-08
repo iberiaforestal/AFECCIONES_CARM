@@ -599,7 +599,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afección ZEPA:", ln=True)
         pdf.ln(2)
-        col_w_code = 50
+        col_w_code = 30
         col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
         row_height = 8
         pdf.set_font("Arial", "B", 11)
