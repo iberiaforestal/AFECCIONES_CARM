@@ -721,38 +721,31 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Espacio Natural Protegido (ENP):", ln=True)
         pdf.ln(2)
-        col_w_nombre = 90
+        col_w_nombre = 30
         col_w_figura = pdf.w - 2 * pdf.l_margin - col_w_nombre
         row_height = 8
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
-        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True, align="C")
-        pdf.cell(col_w_figura, row_height, "Figura", border=1, fill=True, align="C")
+        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
+        pdf.cell(col_w_figura, row_height, "Nombre", border=1, fill=True)
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for nombre, figura in enp_detectado:
-            # === CALCULAR LÍNEAS ===
             nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
             figura_lines = pdf.multi_cell(col_w_figura, 5, str(figura), split_only=True)
             row_h = max(row_height, len(nombre_lines) * 5, len(figura_lines) * 5)
-            
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_nombre, row_h)
             pdf.rect(x + col_w_nombre, y, col_w_figura, row_h)
-
-            # === ESCRIBIR NOMBRE (partido en líneas) ===
             nombre_h = len(nombre_lines) * 5
             y_nombre = y + (row_h - nombre_h) / 2
             pdf.set_xy(x, y_nombre)
-            pdf.multi_cell(col_w_nombre, 5, "\n".join(nombre_lines), align="L")
-
-            # === ESCRIBIR FIGURA (partido en líneas) ===
+            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
             figura_h = len(figura_lines) * 5
             y_figura = y + (row_h - figura_h) / 2
             pdf.set_xy(x + col_w_nombre, y_figura)
-            pdf.multi_cell(col_w_figura, 5, "\n".join(figura_lines), align="L")
-
+            pdf.multi_cell(col_w_figura, 5, str(figura), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(10)
 
