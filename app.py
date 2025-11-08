@@ -139,7 +139,7 @@ def consultar_geojson(geom, geojson_url, nombre_afeccion="Afección", campo_nomb
             nombres = ', '.join(seleccion[campo_nombre].dropna().unique())
             return f"Dentro de {nombre_afeccion}: {nombres}"
         else:
-            return f"No se encuentra en ninguna {nombre_afeccion}"
+            return f"No afecta en ninguna {nombre_afeccion}"
     except Exception as e:
         st.error(f"Error al leer GeoJSON de {nombre_afeccion}: {e}")
         return f"Error al consultar {nombre_afeccion}"
@@ -159,7 +159,7 @@ def consultar_mup(geom, geojson_url):
                 info.append(f"ID: {id_monte}\nNombre: {nombre_monte}\nMunicipio: {municipio}\nPropiedad: {propiedad}")
             return "Dentro de MUP:\n" + "\n\n".join(info)
         else:
-            return "No se encuentra en ningún MUP"
+            return "No afecta a ningún MUP"
     except Exception as e:
         st.error(f"Error al consultar MUP: {e}")
         return "Error al consultar MUP"
@@ -395,7 +395,7 @@ def generar_pdf(datos, x, y, filename):
     # Procesar afecciones VP
     vp_valor = datos.get(vp_key, "").strip()
     vp_detectado = []
-    if vp_valor and not vp_valor.startswith("No se encuentra") and not vp_valor.startswith("Error"):
+    if vp_valor and not vp_valor.startswith("No afecta") and not vp_valor.startswith("Error"):
         try:
             gdf = gpd.read_file(vp_url)  # Cargar el GeoJSON de Vías Pecuarias (VP.json)
             seleccion = gdf[gdf.intersects(query_geom)]  # Filtrar geometrías que intersectan
@@ -407,17 +407,17 @@ def generar_pdf(datos, x, y, filename):
                     situacion_legal = props.get("vp_sit_leg", "N/A")  # Situación legal
                     ancho_legal = props.get("vp_anch_lg", "N/A")  # Ancho legal
                     vp_detectado.append((codigo_vp, nombre, municipio, situacion_legal, ancho_legal))
-            vp_valor = ""  # Evitamos poner "No se encuentra" si hay tabla
+            vp_valor = ""  # Evitamos poner "No afecta" si hay tabla
         except Exception as e:
             st.error(f"Error al procesar VP desde {vp_url}: {e}")
             vp_valor = "Error al consultar VP"
     else:
-        vp_valor = "No se encuentra en ninguna VP" if not vp_detectado else ""
+        vp_valor = "No afecta a ninguna VP" if not vp_detectado else ""
 
     # Procesar afecciones MUP
     mup_valor = datos.get(mup_key, "").strip()
     mup_detectado = []
-    if mup_valor and not mup_valor.startswith("No se encuentra") and not mup_valor.startswith("Error"):
+    if mup_valor and not mup_valor.startswith("No afecta") and not mup_valor.startswith("Error"):
         entries = mup_valor.replace("Dentro de MUP:\n", "").split("\n\n")
         for entry in entries:
             lines = entry.split("\n")
@@ -433,7 +433,7 @@ def generar_pdf(datos, x, y, filename):
     zepa_key = "afección ZEPA"
     zepa_valor = datos.get(zepa_key, "").strip()
     zepa_detectado = []
-    if zepa_valor and not zepa_valor.startswith("No se encuentra") and not zepa_valor.startswith("Error"):
+    if zepa_valor and not zepa_valor.startswith("No afecta") and not zepa_valor.startswith("Error"):
         try:
             gdf = gpd.read_file(zepa_url)
             seleccion = gdf[gdf.intersects(query_geom)]
@@ -452,7 +452,7 @@ def generar_pdf(datos, x, y, filename):
             zepa_valor = "Error al consultar ZEPA"
 
     else:
-        zepa_valor = "No se encuentra en ninguna ZEPA" if not zepa_detectado else ""
+        zepa_valor = "No afecta a ninguna ZEPA" if not zepa_detectado else ""
 
     # Procesar otras afecciones como texto
     otras_afecciones = []
@@ -461,15 +461,15 @@ def generar_pdf(datos, x, y, filename):
         if valor and not valor.startswith("Error"):
             otras_afecciones.append((key.capitalize(), valor))
         else:
-            otras_afecciones.append((key.capitalize(), valor if valor else "No se encuentra"))
+            otras_afecciones.append((key.capitalize(), valor if valor else "No afecta"))
 
     # Solo incluir MUP, VP, ZEPA en "otras afecciones" si NO tienen detecciones
     if not zepa_detectado:
-        otras_afecciones.append(("Afección ZEPA", zepa_valor if zepa_valor else "No se encuentra en ninguna ZEPA"))
+        otras_afecciones.append(("Afección ZEPA", zepa_valor if zepa_valor else "No afecta a ninguna ZEPA"))
     if not vp_detectado:
-        otras_afecciones.append(("Afección VP", vp_valor if vp_valor else "No se encuentra"))
+        otras_afecciones.append(("Afección VP", vp_valor if vp_valor else "No afecta"))
     if not mup_detectado:
-        otras_afecciones.append(("Afección MUP", mup_valor if mup_valor else "No se encuentra"))
+        otras_afecciones.append(("Afección MUP", mup_valor if mup_valor else "No afecta"))
 
     # Mostrar otras afecciones con títulos en negrita    
     if otras_afecciones:
@@ -589,9 +589,9 @@ def generar_pdf(datos, x, y, filename):
             pdf.cell(col_widths[3], row_height, propiedad, border=1)
             pdf.ln()
         pdf.ln(10)
-    elif not any(valor != "No se encuentra" and valor != "No se encuentra en ninguna VP" and valor != "No se encuentra en ningún MUP" for _, valor in otras_afecciones):
+    elif not any(valor != "No afecta" and valor != "No afecta a ninguna VP" and valor != "No afecta a ningún MUP" for _, valor in otras_afecciones):
         pdf.set_font("Arial", "", 12)
-        pdf.cell(0, 8, "No se encuentra en ENP, ZEPA, LIC, VP, MUP", ln=True)
+        pdf.cell(0, 8, "No afecta a ENP, ZEPA, LIC, VP, MUP", ln=True)
         pdf.ln(10)
 
     # Procesar tabla para ZEPA
