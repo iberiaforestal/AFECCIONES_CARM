@@ -458,7 +458,7 @@ def generar_pdf(datos, x, y, filename):
     # Procesar afecciones LIC
     lic_key = "afección LIC"
     lic_valor = datos.get(lic_key, "").strip()
-    zepa_detectado = []
+    lic_detectado = []
     if lic_valor and not lic_valor.startswith("No afecta") and not lic_valor.startswith("Error"):
         try:
             gdf = gpd.read_file(lic_url)
@@ -474,11 +474,11 @@ def generar_pdf(datos, x, y, filename):
             lic_valor = ""
 
         except Exception as e:
-            st.error(f"Error al procesar LIC desde {zepa_url}: {e}")
-            zepa_valor = "Error al consultar LIC"
+            st.error(f"Error al procesar LIC desde {lic_url}: {e}")
+            lic_valor = "Error al consultar LIC"
 
     else:
-        lic_valor = "No afecta a ningun LIC" if not zepa_detectado else ""
+        lic_valor = "No afecta a ningun LIC" if not lic_detectado else ""
 
     # Procesar otras afecciones como texto
     otras_afecciones = []
