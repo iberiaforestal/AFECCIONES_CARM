@@ -387,11 +387,12 @@ def generar_pdf(datos, x, y, filename):
     pdf.add_page()
     seccion_titulo("3. Afecciones detectadas")
 
-    afecciones_keys = ["afección ENP","afección TM"]
+    afecciones_keys = ["afección TM"]
     vp_key = "afección VP"
     mup_key = "afección MUP"
     zepa_key = "afección ZEPA"
     lic_key = "afección LIC"
+    enp_key = "afección ENP"
     
     # Procesar afecciones VP
     vp_valor = datos.get(vp_key, "").strip()
@@ -480,6 +481,31 @@ def generar_pdf(datos, x, y, filename):
     else:
         lic_valor = "No afecta a ningun LIC" if not lic_detectado else ""
 
+    # Procesar afecciones ENP
+    enp_key = "afección ENP"
+    enp_valor = datos.get(enp_key, "").strip()
+    enp_detectado = []
+    if enp_valor and not enp_valor.startswith("No afecta") and not enp_valor.startswith("Error"):
+        try:
+            gdf = gpd.read_file(enp_url)
+            seleccion = gdf[gdf.intersects(query_geom)]
+            if not seleccion.empty:
+                for _, props in seleccion.iterrows():
+                    nombre = props.get("nombre", "N/A")
+                    figura = props.get("figura", "N/A")
+
+                    # Guardamos tupla con ambos datos
+                    enp_detectado.append((nombre, figura))
+
+            enp_valor = ""
+
+        except Exception as e:
+            st.error(f"Error al procesar ENP desde {enp_url}: {e}")
+            enp_valor = "Error al consultar ENP"
+
+    else:
+        enp_valor = "No afecta a ningun ENP" if not enp_detectado else ""
+
     # Procesar otras afecciones como texto
     otras_afecciones = []
     for key in afecciones_keys:
@@ -489,7 +515,9 @@ def generar_pdf(datos, x, y, filename):
         else:
             otras_afecciones.append((key.capitalize(), valor if valor else "No afecta"))
 
-    # Solo incluir MUP, VP, ZEPA en "otras afecciones" si NO tienen detecciones
+    # Solo incluir MUP, VP, ZEPA, LIC, ENP en "otras afecciones" si NO tienen detecciones
+    if not enp_detectado:
+        otras_afecciones.append(("Afección ENP", enp_valor if enp_valor else "No se encuentra en ningún ENP"))
     if not lic_detectado:
         otras_afecciones.append(("Afección LIC", lic_valor if lic_valor else "No afecta a ningún LIC"))
     if not zepa_detectado:
@@ -687,7 +715,39 @@ def generar_pdf(datos, x, y, filename):
             pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(10)
-
+        
+    # Procesar tabla para ENP
+    if enp_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Espacio Natural Protegido (ENP):", ln=True)
+        pdf.ln(2)
+        col_w_nombre = 30
+        col_w_figura = pdf.w - 2 * pdf.l_margin - col_w_nombre
+        row_height = 8
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
+        pdf.cell(col_w_figura, row_height, "Figura", border=1, fill=True)
+        pdf.ln()
+        pdf.set_font("Arial", "", 10)
+        for nombre, figura in enp_detectado:
+            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
+            figura_lines = pdf.multi_cell(col_w_figura, 5, str(figura), split_only=True)
+            row_h = max(row_height, len(nombre_lines) * 5, len(figura_lines) * 5)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.rect(x, y, col_w_nombre, row_h)
+            pdf.rect(x + col_w_nombre, y, col_w_figura, row_h)
+            nombre_h = len(nombre_lines) * 5
+            y_nombre = y + (row_h - nombre_h) / 2
+            pdf.set_xy(x, y_nombre)
+            pdf.multi_cell(col_w_nombre, 5, str(site_nombre), align="L")
+            figura_h = len(figura_lines) * 5
+            y_figura = y + (row_h - figura_h) / 2
+            pdf.set_xy(x + col_w_nombre, y_figura)
+            pdf.multi_cell(col_w_figura, 5, str(site_figura), align="L")
+            pdf.set_y(y + row_h)
+        pdf.ln(10)
 
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
