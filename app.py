@@ -568,23 +568,23 @@ def generar_pdf(datos, x, y, filename):
             # --- 2) ESCRIBIR EL TEXTO DENTRO DE LAS CELDAS ---
             # Código
             pdf.set_xy(x, y)
-            pdf.multi_cell(col_widths[0], line_height, str(codigo_vp), align="L")
+            pdf.multi_cell(col_widths[0], line_height, str(codigo_vp), align="C")
 
             # Nombre (multilínea)
             pdf.set_xy(x + col_widths[0], y)
-            pdf.multi_cell(col_widths[1], line_height, str(nombre), align="L")
+            pdf.multi_cell(col_widths[1], line_height, str(nombre), align="C")
 
             # Municipio
             pdf.set_xy(x + col_widths[0] + col_widths[1], y)
-            pdf.multi_cell(col_widths[2], line_height, str(municipio), align="L")
+            pdf.multi_cell(col_widths[2], line_height, str(municipio), align="C")
 
             # Situación legal (multilínea)
             pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2], y)
-            pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), align="L")
+            pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), align="C")
 
             # Ancho legal
             pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2] + col_widths[3], y)
-            pdf.multi_cell(col_widths[4], line_height, str(ancho_legal), align="L")
+            pdf.multi_cell(col_widths[4], line_height, str(ancho_legal), align="C")
 
             # Mover a la siguiente fila
             pdf.set_xy(x, y + row_h)
