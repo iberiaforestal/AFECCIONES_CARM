@@ -568,23 +568,23 @@ def generar_pdf(datos, x, y, filename):
             # --- 2) ESCRIBIR EL TEXTO DENTRO DE LAS CELDAS ---
             # Código
             pdf.set_xy(x, y)
-            pdf.multi_cell(col_widths[0], line_height, str(codigo_vp), align="C")
+            pdf.multi_cell(col_widths[0], line_height, str(codigo_vp), align="L")
 
             # Nombre (multilínea)
             pdf.set_xy(x + col_widths[0], y)
-            pdf.multi_cell(col_widths[1], line_height, str(nombre), align="C")
+            pdf.multi_cell(col_widths[1], line_height, str(nombre), align="L")
 
             # Municipio
             pdf.set_xy(x + col_widths[0] + col_widths[1], y)
-            pdf.multi_cell(col_widths[2], line_height, str(municipio), align="C")
+            pdf.multi_cell(col_widths[2], line_height, str(municipio), align="L")
 
             # Situación legal (multilínea)
             pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2], y)
-            pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), align="C")
+            pdf.multi_cell(col_widths[3], line_height, str(situacion_legal), align="L")
 
             # Ancho legal
             pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2] + col_widths[3], y)
-            pdf.multi_cell(col_widths[4], line_height, str(ancho_legal), align="C")
+            pdf.multi_cell(col_widths[4], line_height, str(ancho_legal), align="L")
 
             # Mover a la siguiente fila
             pdf.set_xy(x, y + row_h)
@@ -644,9 +644,9 @@ def generar_pdf(datos, x, y, filename):
             pdf.rect(x, y, col_w_code, row_h)
             pdf.rect(x + col_w_code, y, col_w_name, row_h)
             pdf.set_xy(x, y)
-            pdf.multi_cell(col_w_code, 5, str(site_code), align="C")
+            pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
             pdf.set_xy(x + col_w_code, y)
-            pdf.multi_cell(col_w_name, 5, str(site_name), align="C")
+            pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(10)
 
@@ -672,9 +672,9 @@ def generar_pdf(datos, x, y, filename):
             pdf.rect(x, y, col_w_code, row_h)
             pdf.rect(x + col_w_code, y, col_w_name, row_h)
             pdf.set_xy(x, y)
-            pdf.multi_cell(col_w_code, 5, str(site_code), align="C")
+            pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
             pdf.set_xy(x + col_w_code, y)
-            pdf.multi_cell(col_w_name, 5, str(site_name), align="C")
+            pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(10)
 
