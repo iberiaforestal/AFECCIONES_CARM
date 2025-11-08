@@ -644,9 +644,9 @@ def generar_pdf(datos, x, y, filename):
             pdf.rect(x, y, col_w_code, row_h)
             pdf.rect(x + col_w_code, y, col_w_name, row_h)
             pdf.set_xy(x, y)
-            pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
+            pdf.multi_cell(col_w_code, 5, str(site_code), align="C")
             pdf.set_xy(x + col_w_code, y)
-            pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
+            pdf.multi_cell(col_w_name, 5, str(site_name), align="C")
             pdf.set_y(y + row_h)
         pdf.ln(10)
 
@@ -672,9 +672,9 @@ def generar_pdf(datos, x, y, filename):
             pdf.rect(x, y, col_w_code, row_h)
             pdf.rect(x + col_w_code, y, col_w_name, row_h)
             pdf.set_xy(x, y)
-            pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
+            pdf.multi_cell(col_w_code, 5, str(site_code), align="C")
             pdf.set_xy(x + col_w_code, y)
-            pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
+            pdf.multi_cell(col_w_name, 5, str(site_name), align="C")
             pdf.set_y(y + row_h)
         pdf.ln(10)
 
