@@ -1051,7 +1051,7 @@ if submitted:
                 "afección MUP": afeccion_mup, "afección VP": afeccion_vp,
                 "afección ENP": afeccion_enp, "afección ZEPA": afeccion_zepa,
                 "afección LIC": afeccion_lic, "Afección TM": afeccion_tm,
-                "afección esteparias": afeccion_esteparia,
+                "afección esteparias": esteparias_valor,
                 "coordenadas_x": x, "coordenadas_y": y,
                 "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
