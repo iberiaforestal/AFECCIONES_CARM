@@ -626,6 +626,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(2)
 
         # Configurar la tabla para MUP
+        line_height = 5
         col_widths = [30, 80, 40, 40]
         row_height = 8
         pdf.set_font("Arial", "B", 11)
