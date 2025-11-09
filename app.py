@@ -851,27 +851,28 @@ def generar_pdf(datos, x, y, filename):
         ("7222", "Concesión para la utilización privativa y aprovechamiento especial del dominio público.", None),
         ("7242", "Autorización de permutas en montes públicos.", "https://sede.carm.es/web/pagina?IDCONTENIDO=7242&IDTIPO=240&RASTRO=c$m40288"),
     ]
-
-    for codigo, texto, url in procedimientos_con_enlace:
+    line_height = 4  # 4mm por línea
+    for i, (codigo, texto, url) in enumerate(procedimientos_con_enlace):
         x_start = pdf.get_x()
         y_start = pdf.get_y()
     
         # Escribir código (con enlace si existe)
         if url:
             pdf.set_text_color(0, 0, 255)  # Azul
-            pdf.cell(22, 8, f"- {codigo}", 0, 0)
+            pdf.cell(22, line_height, f"- {codigo}", border=0)
             pdf.set_text_color(0, 0, 0)   # Negro
         else:
-            pdf.cell(22, 8, f"- {codigo}", 0, 0)
+            pdf.cell(22, line_height, f"- {codigo}", border=0)
     
         # Escribir texto
-        pdf.multi_cell(pdf.w - 2 * pdf.l_margin - 22, 8, f" {texto}", border=0, align="J")
+        pdf.set_xy(x_start + 22, y_start)
+        pdf.multi_cell(pdf.w - 2 * pdf.l_margin - 22, line_height, f" {texto}", border=0, align="J")
     
         # Añadir hipervínculo (solo si hay URL)
         if url:
-            pdf.link(x=x_start, y=y_start, w=22, h=8, link=url)
-    
-        pdf.ln(2)  # Espacio entre líneas
+            pdf.link(x=x_start, y=y_start, w=22, h=line_height, link=url)
+        if i < len(procedimientos_con_enlace) - 1:
+            pdf.ln(1)  # Espacio entre líneas
 
     # Volver a negrita para el resto del texto
     pdf.set_font("Arial", "B", 10)  # Restaurar negrita
