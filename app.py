@@ -819,7 +819,7 @@ def generar_pdf(datos, x, y, filename):
 
         pdf.ln(5)
     # Procesar tabla para ESTEPARIAS
-   esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))
+    esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))
     if esteparias_detectado:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afecciones a zonas de distribución de aves esteparias:", ln=True)
