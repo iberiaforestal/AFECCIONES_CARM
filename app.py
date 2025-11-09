@@ -774,49 +774,38 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afecciones a Espacios Naturales Protegidos (ENP):", ln=True)
         pdf.ln(2)
-
         # --- ANCHO TOTAL DISPONIBLE ---
         page_width = pdf.w - 2 * pdf.l_margin
         col_widths = [page_width * 0.6, page_width * 0.4]  # 60% | 40%
         line_height = 8
-
         # --- CABECERA ---
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_widths[0], 10, "Nombre", border=1, fill=True)
         pdf.cell(col_widths[1], 10, "Figura", border=1, fill=True, ln=True)
-
         # --- FILAS ---
         pdf.set_font("Arial", "", 10)
         for nombre, figura in enp_detectado:
             nombre = str(nombre)
             figura = str(figura)
-
             # Calcular líneas necesarias
             nombre_lines = len(pdf.multi_cell(col_widths[0], line_height, nombre, split_only=True))
             figura_lines = len(pdf.multi_cell(col_widths[1], line_height, figura, split_only=True))
             row_height = max(10, nombre_lines * line_height, figura_lines * line_height)
-
             # Salto de página si no cabe
             if pdf.get_y() + row_height > pdf.h - pdf.b_margin:
                 pdf.add_page()
-
             x = pdf.get_x()
             y = pdf.get_y()
-
             # Dibujar bordes
             pdf.rect(x, y, col_widths[0], row_height)
             pdf.rect(x + col_widths[0], y, col_widths[1], row_height)
-
             # Texto centrado verticalmente
             pdf.set_xy(x, y + (row_height - nombre_lines * line_height) / 2)
             pdf.multi_cell(col_widths[0], line_height, nombre)
-
             pdf.set_xy(x + col_widths[0], y + (row_height - figura_lines * line_height) / 2)
             pdf.multi_cell(col_widths[1], line_height, figura)
-
             pdf.set_y(y + row_height)
-
         pdf.ln(5)
         
     # Procesar tabla para ESTEPARIAS
