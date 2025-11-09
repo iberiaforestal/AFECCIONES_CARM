@@ -466,7 +466,7 @@ def generar_pdf(datos, x, y, filename):
     # === ZEPA ===
     zepa_detectado = []
     zepa_valor = procesar_capa(
-        zepa_url, "afección ZEPA", "No afecta a ninguna Zona de especial protección las aves",
+        zepa_url, "afección ZEPA", "No afecta a ninguna Zona de especial protección para las aves",
         ["site_code", "site_name"],
         zepa_detectado
     )
@@ -538,7 +538,7 @@ def generar_pdf(datos, x, y, filename):
 
     # Mostrar otras afecciones con títulos en negrita    
     if otras_afecciones:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Otras afecciones:", ln=True)
         pdf.ln(2)
 
@@ -553,12 +553,12 @@ def generar_pdf(datos, x, y, filename):
 
                 # Título
                 pdf.set_xy(x, y)
-                pdf.set_font("Arial", "B", 12)
+                pdf.set_font("Arial", "B", 11)
                 pdf.cell(label_width, line_height, f"{titulo}:", border=0)
 
                 # Valor
                 pdf.set_xy(x + label_width, y)
-                pdf.set_font("Arial", "", 12)
+                pdf.set_font("Arial", "", 11)
                 pdf.multi_cell(text_width, line_height, valor, border=0)
 
                 pdf.ln(line_height)  # Avanzar solo lo necesario
