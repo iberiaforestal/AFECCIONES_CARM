@@ -347,6 +347,7 @@ def generar_pdf(datos, x, y, filename):
     lic_url = urls.get('lic')
     enp_url = urls.get('enp')
     esteparias_url = urls.get('esteparias')
+    uso_suelo_url = urls.get('uso suelo')
 
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
@@ -495,6 +496,14 @@ def generar_pdf(datos, x, y, filename):
         esteparias_detectado
     )
 
+    # === USO DEL SUELO ===
+    uso_suelo_detectado = []
+    uso_suelo_valor = procesar_capa(
+        uso_suelo_url, "afección uso_suelo", "No afecta a ningún uso del suelo protegido",
+        ["Uso_Especifico", "Municipio", "Ambito", "Clasificacion"],  # Campos principales
+        uso_suelo_detectado
+    )
+
     # === MUP (ya funciona bien, lo dejamos igual) ===
     mup_valor = datos.get("afección MUP", "").strip()
     mup_detectado = []
@@ -523,6 +532,8 @@ def generar_pdf(datos, x, y, filename):
             otras_afecciones.append((key_corregido, valor if valor else "No afecta"))
 
     # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS en "otras afecciones" si NO tienen detecciones
+    if not uso_suelo_detectado:
+        otras_afecciones.append(("Afección Uso del Suelo", uso_suelo_valor if uso_suelo_valor else "No afecta a ningún uso del suelo protegido"))
     if not esteparias_detectado:
         otras_afecciones.append(("Afección Esteparias", esteparias_valor if esteparias_valor else "No se encuentra en zona de distribución de aves esteparias"))
     if not enp_detectado:
@@ -885,6 +896,60 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_y(y + row_h)
 
         pdf.ln(5)  # Espacio final
+
+    # === TABLA USO DEL SUELO ===
+    uso_suelo_detectado = list(set(tuple(row) for row in uso_suelo_detectado))
+    if uso_suelo_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Afecciones a Usos del Suelo:", ln=True)
+        pdf.ln(2)
+
+        page_width = pdf.w - 2 * pdf.l_margin
+        col_widths = [page_width * 0.25, page_width * 0.25, page_width * 0.25, page_width * 0.25]  # 25% cada columna
+        line_height = 8
+
+        # Cabecera
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_widths[0], 10, "Uso Específico", border=1, fill=True)
+        pdf.cell(col_widths[1], 10, "Municipio", border=1, fill=True)
+        pdf.cell(col_widths[2], 10, "Ámbito", border=1, fill=True)
+        pdf.cell(col_widths[3], 10, "Clasificación", border=1, fill=True, ln=True)
+
+        # Filas
+        pdf.set_font("Arial", "", 10)
+        for uso_especifico, municipio, ambito, clasificacion in uso_suelo_detectado:
+            uso_l = len(pdf.multi_cell(col_widths[0], line_height, str(uso_especifico), split_only=True))
+            mun_l = len(pdf.multi_cell(col_widths[1], line_height, str(municipio), split_only=True))
+            amb_l = len(pdf.multi_cell(col_widths[2], line_height, str(ambito), split_only=True))
+            clas_l = len(pdf.multi_cell(col_widths[3], line_height, str(clasificacion), split_only=True))
+            row_h = max(10, uso_l * line_height, mun_l * line_height, amb_l * line_height, clas_l * line_height)
+
+            if pdf.get_y() + row_h > pdf.h - pdf.b_margin:
+                pdf.add_page()
+
+            x, y = pdf.get_x(), pdf.get_y()
+
+            pdf.rect(x, y, col_widths[0], row_h)
+            pdf.rect(x + col_widths[0], y, col_widths[1], row_h)
+            pdf.rect(x + col_widths[0] + col_widths[1], y, col_widths[2], row_h)
+            pdf.rect(x + col_widths[0] + col_widths[1] + col_widths[2], y, col_widths[3], row_h)
+
+            pdf.set_xy(x, y + (row_h - uso_l * line_height) / 2)
+            pdf.multi_cell(col_widths[0], line_height, str(uso_especifico))
+
+            pdf.set_xy(x + col_widths[0], y + (row_h - mun_l * line_height) / 2)
+            pdf.multi_cell(col_widths[1], line_height, str(municipio))
+
+            pdf.set_xy(x + col_widths[0] + col_widths[1], y + (row_h - amb_l * line_height) / 2)
+            pdf.multi_cell(col_widths[2], line_height, str(ambito))
+
+            pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2], y + (row_h - clas_l * line_height) / 2)
+            pdf.multi_cell(col_widths[3], line_height, str(clasificacion))
+
+            pdf.set_y(y + row_h)
+
+        pdf.ln(5)
     
     pdf.add_page()
     # Nueva sección para el texto en cuadro
@@ -1069,6 +1134,7 @@ if submitted:
 
             # === 5. GUARDAR query_geom Y URLs EN SESSION_STATE ===
             st.session_state['query_geom'] = query_geom
+            uso_suelo_url = "https://mapas-gis-inter.carm.es/geoserver/SIT_USU_PLA_URB_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIT_USU_PLA_URB_CARM:plu_ze_37_mun_uso_suelo&outputFormat=application/json"
             esteparias_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_DES_BIOTA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_DES_BIOTA_CARM:esteparias_ceea_2019_10x10&outputFormat=application/json"
             enp_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ENP&outputFormat=application/json"
             zepa_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ZEPA&outputFormat=application/json"
@@ -1083,6 +1149,7 @@ if submitted:
             }
 
             # === 6. CONSULTAR AFECCIONES ===
+            afeccion_uso_suelo = consultar_wfs_seguro(query_geom, uso_suelo_url, "PLANEAMIENTO", campo_nombre="Clasificacion")
             afeccion_esteparias = consultar_wfs_seguro(query_geom, esteparias_url, "ESTEPARIAS", campo_nombre="nombre")
             afeccion_enp = consultar_wfs_seguro(query_geom, enp_url, "ENP", campo_nombre="nombre")
             afeccion_zepa = consultar_wfs_seguro(query_geom, zepa_url, "ZEPA", campo_nombre="site_name")
@@ -1093,7 +1160,7 @@ if submitted:
                 query_geom, mup_url, "MUP",
                 campos_mup=["id_monte:ID", "nombremont:Nombre", "municipio:Municipio", "propiedad:Propiedad"]
             )
-            afecciones = [afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
+            afecciones = [afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
 
             # === 7. CREAR DICCIONARIO `datos` ===
             datos = {
@@ -1105,6 +1172,7 @@ if submitted:
                 "afección ENP": afeccion_enp, "afección ZEPA": afeccion_zepa,
                 "afección LIC": afeccion_lic, "Afección TM": afeccion_tm,
                 "afección esteparias": afeccion_esteparias,
+                "afección uso_suelo": afeccion_uso_suelo,
                 "coordenadas_x": x, "coordenadas_y": y,
                 "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
