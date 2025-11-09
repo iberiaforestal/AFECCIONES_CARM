@@ -346,6 +346,7 @@ def generar_pdf(datos, x, y, filename):
     zepa_url = urls.get('zepa')
     lic_url = urls.get('lic')
     enp_url = urls.get('enp')
+    esteparias_url = urls.get('esteparias')
 
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
@@ -486,6 +487,14 @@ def generar_pdf(datos, x, y, filename):
         enp_detectado
     )
 
+    # === ESTEPARIAS ===
+    esteparias_detectado = []
+    esteparias_valor = procesar_capa(
+        esteparias_url, "afección esteparias", "No afecta a zona de distribución de aves esteparias",
+        ["cuad_10km", "especie", "nombre"],
+        esteparias_detectado
+    )
+
     # === MUP (ya funciona bien, lo dejamos igual) ===
     mup_valor = datos.get("afección MUP", "").strip()
     mup_detectado = []
@@ -513,7 +522,9 @@ def generar_pdf(datos, x, y, filename):
         else:
             otras_afecciones.append((key_corregido, valor if valor else "No afecta"))
 
-    # Solo incluir MUP, VP, ZEPA, LIC, ENP en "otras afecciones" si NO tienen detecciones
+    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS en "otras afecciones" si NO tienen detecciones
+    if not esteparias_detectado:
+        otras_afecciones.append(("Afección ESTEPARIAS", esteparias_valor if esteparias_valor else "No se encuentra en zona de distribución de aves esteparias"))
     if not enp_detectado:
         otras_afecciones.append(("Afección ENP", enp_valor if enp_valor else "No se encuentra en ningún ENP"))
     if not lic_detectado:
@@ -807,7 +818,56 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_y(y + row_height)
 
         pdf.ln(5)
-        pdf.add_page()
+    # Procesar tabla para ESTEPARIAS
+    esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))  # Elimina duplicados
+    if esteparias_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Afecciones a zonas de distribución de aves esteparias:", ln=True)
+        pdf.ln(2)
+        # --- ANCHOS DE COLUMNAS ---
+        col_cuad = 35
+        col_esp  = 50
+        col_nom  = pdf.w - 2 * pdf.l_margin - col_cuad - col_esp
+        line_height = 6
+        # --- CABECERA ---
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_cuad, 10, "Cuadrícula", border=1, fill=True)
+        pdf.cell(col_esp,  10, "Especie",     border=1, fill=True)
+        pdf.cell(col_nom,  10, "Nombre común", border=1, fill=True, ln=True)
+        # --- FILAS ---
+        pdf.set_font("Arial", "", 10)
+        for cuad, especie, nombre in esteparias_detectado:
+            # Calcular líneas necesarias
+            cuad_l = len(pdf.multi_cell(col_cuad, line_height, str(cuad), split_only=True))
+            esp_l  = len(pdf.multi_cell(col_esp,  line_height, str(especie), split_only=True))
+            nom_l  = len(pdf.multi_cell(col_nom,  line_height, str(nombre), split_only=True))
+            row_h = max(10, cuad_l * line_height, esp_l * line_height, nom_l * line_height)
+        # Salto de página si no cabe
+        if pdf.get_y() + row_h > pdf.h - pdf.b_margin:
+            pdf.add_page()
+
+        x, y = pdf.get_x(), pdf.get_y()
+
+        # Dibujar bordes
+        pdf.rect(x, y, col_cuad, row_h)
+        pdf.rect(x + col_cuad, y, col_esp, row_h)
+        pdf.rect(x + col_cuad + col_esp, y, col_nom, row_h)
+
+        # Escribir texto centrado verticalmente
+        pdf.set_xy(x, y + (row_h - cuad_l * line_height) / 2)
+        pdf.multi_cell(col_cuad, line_height, str(cuad))
+
+        pdf.set_xy(x + col_cuad, y + (row_h - esp_l * line_height) / 2)
+        pdf.multi_cell(col_esp, line_height, str(especie))
+
+        pdf.set_xy(x + col_cuad + col_esp, y + (row_h - nom_l * line_height) / 2)
+        pdf.multi_cell(col_nom, line_height, str(nombre))
+
+        pdf.set_y(y + row_h)
+
+    pdf.ln(5)
+    pdf.add_page()
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
     pdf.set_font("Arial", "B", 10)
@@ -990,6 +1050,7 @@ if submitted:
 
             # === 5. GUARDAR query_geom Y URLs EN SESSION_STATE ===
             st.session_state['query_geom'] = query_geom
+            esteparias_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_DES_BIOTA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_DES_BIOTA_CARM:esteparias_ceea_2019_10x10&outputFormat=application/json"
             enp_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ENP&outputFormat=application/json"
             zepa_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ZEPA&outputFormat=application/json"
             lic_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:LIC-ZEC&outputFormat=application/json"
@@ -1022,6 +1083,7 @@ if submitted:
                 "afección MUP": afeccion_mup, "afección VP": afeccion_vp,
                 "afección ENP": afeccion_enp, "afección ZEPA": afeccion_zepa,
                 "afección LIC": afeccion_lic, "Afección TM": afeccion_tm,
+                "afección esteparias": afeccion_esteparias,
                 "coordenadas_x": x, "coordenadas_y": y,
                 "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
