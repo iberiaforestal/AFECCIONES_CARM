@@ -614,7 +614,7 @@ def generar_pdf(datos, x, y, filename):
             # Mover a la siguiente fila
             pdf.set_xy(x, y + row_h)
 
-        pdf.ln(10)  # Espacio adicional después de la tabla
+        pdf.ln(5)  # Espacio adicional después de la tabla
 
     # Procesar MUP para tabla si hay detecciones
     if mup_detectado:
@@ -688,7 +688,7 @@ def generar_pdf(datos, x, y, filename):
             # Mover a siguiente fila
             pdf.set_y(y + row_h)
 
-        pdf.ln(10)  # Espacio después de la tabla
+        pdf.ln(5)  # Espacio después de la tabla
 
     # Procesar tabla para ZEPA
     if zepa_detectado:
@@ -721,7 +721,7 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_xy(x + col_w_code, y_name)
             pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
             pdf.set_y(y + row_h)
-        pdf.ln(10)
+        pdf.ln(5)
 
     # Procesar tabla para LIC
     if lic_detectado:
@@ -754,7 +754,7 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_xy(x + col_w_code, y_name)
             pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
             pdf.set_y(y + row_h)
-        pdf.ln(10)
+        pdf.ln(5)
         
     # Procesar tabla para ENP
     if enp_detectado:
@@ -802,7 +802,7 @@ def generar_pdf(datos, x, y, filename):
 
             pdf.set_y(y + row_height)
 
-        pdf.ln(10)
+        pdf.ln(5)
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
     pdf.set_font("Arial", "B", 10)
