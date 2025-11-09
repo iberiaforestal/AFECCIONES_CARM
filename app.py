@@ -851,17 +851,17 @@ def generar_pdf(datos, x, y, filename):
         ("7222", "Concesión para la utilización privativa y aprovechamiento especial del dominio público.", None),
         ("7242", "Autorización de permutas en montes públicos.", "https://sede.carm.es/web/pagina?IDCONTENIDO=7242&IDTIPO=240&RASTRO=c$m40288"),
     ]
-    line_height = 4  # Altura de línea: 4mm
+    line_height = 4  # 4mm por línea
     margin = pdf.l_margin
+    x_codigo = margin
+    x_texto = margin + 22
 
-    # Guardar posición inicial
-    start_y = pdf.get_y()
+    # Guardar Y inicial
+    y = pdf.get_y()
 
-    for i, (codigo, texto, url) in enumerate(procedimientos_con_enlace):
-        y = start_y + i * (line_height + 1)  # 4mm línea + 1mm espacio
-
+    for codigo, texto, url in procedimientos_con_enlace:
         # --- CÓDIGO (EN AZUL SI TIENE ENLACE) ---
-        pdf.set_y(y)
+        pdf.set_xy(x_codigo, y)
         if url:
             pdf.set_text_color(0, 0, 255)
             pdf.cell(22, line_height, f"- {codigo}", border=0)
@@ -869,16 +869,16 @@ def generar_pdf(datos, x, y, filename):
         else:
             pdf.cell(22, line_height, f"- {codigo}", border=0)
 
-        # --- TEXTO (EN LA MISMA LÍNEA, SIN SALTO) ---
-        pdf.set_xy(margin + 22, y)
+        # --- TEXTO (EN LA MISMA LÍNEA) ---
+        pdf.set_xy(x_texto, y)
         pdf.multi_cell(pdf.w - 2 * margin - 22, line_height, f" {texto}", border=0, align="J")
 
-        # --- HIPERVÍNCULO (SOLO EN CÓDIGO) ---
+        # --- HIPERVÍNCULO ---
         if url:
-            pdf.link(margin, y, 22, line_height, url)
+            pdf.link(x_codigo, y, 22, line_height, url)
 
-    # Ajustar cursor final
-    pdf.set_y(start_y + len(procedimientos_con_enlace) * (line_height + 1))
+        # --- AVANZAR A LA SIGUIENTE LÍNEA (SOLO 4mm) ---
+        y += line_height  # NO `ln(1)` → evita doble salto
 
     # Volver a negrita para el resto del texto
     pdf.set_font("Arial", "B", 10)  # Restaurar negrita
