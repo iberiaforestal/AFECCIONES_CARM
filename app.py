@@ -16,6 +16,16 @@ from branca.element import Template, MacroElement
 from io import BytesIO
 from staticmap import StaticMap, CircleMarker
 import textwrap
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from io import BytesIO
+
+# Sesión segura con reintentos
+session = requests.Session()
+retry = Retry(total=3, backoff_factor=2, status_forcelist=[500, 502, 503, 504, 429])
+adapter = HTTPAdapter(max_retries=retry)
+session.mount('http://', adapter)
+session.mount('https://', adapter)
 
 # Diccionario con los nombres de municipios y sus nombres base de archivo
 shp_urls = {
@@ -131,38 +141,38 @@ def transformar_coordenadas(x, y):
         return None, None
 
 # Función para consultar si la geometría intersecta con algún polígono del GeoJSON
-def consultar_geojson(geom, geojson_url, nombre_afeccion="Afección", campo_nombre="nombre"):
+@st.cache_data(show_spinner=False)
+def consultar_wfs_seguro(geom, url, nombre_afeccion, campo_nombre=None, campos_mup=None):
+    """
+    Función universal para consultar cualquier WFS.
+    - Para ENP, ZEPA, LIC, VP, TM → usa campo_nombre
+    - Para MUP → usa campos_mup (lista de campos a extraer)
+    """
     try:
-        gdf = gpd.read_file(geojson_url)
+        response = session.get(url, timeout=30)
+        response.raise_for_status()
+        gdf = gpd.read_file(BytesIO(response.content))
         seleccion = gdf[gdf.intersects(geom)]
-        if not seleccion.empty:
+        
+        if seleccion.empty:
+            return f"No afecta en ninguna {nombre_afeccion}"
+
+        # --- MODO MUP: extraer campos personalizados ---
+        if campos_mup:
+            info = []
+            for _, row in seleccion.iterrows():
+                valores = [str(row.get(campo, "Desconocido")) for campo in campos_mup]
+                info.append("\n".join([f"{campos_mup[i].split(':')[0]}: {valores[i]}" for i in range(len(campos_mup))]))
+            return f"Dentro de {nombre_afeccion}:\n" + "\n\n".join(info)
+
+        # --- MODO NORMAL: nombres simples ---
+        else:
             nombres = ', '.join(seleccion[campo_nombre].dropna().unique())
             return f"Dentro de {nombre_afeccion}: {nombres}"
-        else:
-            return f"No afecta en ninguna {nombre_afeccion}"
-    except Exception as e:
-        st.error(f"Error al leer GeoJSON de {nombre_afeccion}: {e}")
-        return f"Error al consultar {nombre_afeccion}"
 
-# Función para consultar si la geometría intersecta con algún MUP del GeoJSON
-def consultar_mup(geom, geojson_url):
-    try:
-        gdf = gpd.read_file(geojson_url)
-        seleccion = gdf[gdf.intersects(geom)]
-        if not seleccion.empty:
-            info = []
-            for _, props in seleccion.iterrows():
-                id_monte = props.get("id_monte", "Desconocido")
-                nombre_monte = props.get("nombremont", "Desconocido")
-                municipio = props.get("municipio", "Desconocido")
-                propiedad = props.get("propiedad", "Desconocido")
-                info.append(f"ID: {id_monte}\nNombre: {nombre_monte}\nMunicipio: {municipio}\nPropiedad: {propiedad}")
-            return "Dentro de MUP:\n" + "\n\n".join(info)
-        else:
-            return "No afecta a ningún MUP"
     except Exception as e:
-        st.error(f"Error al consultar MUP: {e}")
-        return "Error al consultar MUP"
+        st.warning(f"Servicio {nombre_afeccion} no disponible.")
+        return f"Indeterminado: {nombre_afeccion} (servicio no disponible)"
 
 # Función para crear el mapa con afecciones específicas
 def crear_mapa(lon, lat, afecciones=[], parcela_gdf=None):
@@ -947,12 +957,15 @@ if submitted:
             tm_url = "https://mapas-gis-inter.carm.es/geoserver/MAP_UAD_DIVISION-ADMINISTRATIVA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=MAP_UAD_DIVISION-ADMINISTRATIVA_CARM:recintos_municipales_inspire_carm_etrs89&outputFormat=application/json"
             mup_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:MONTES&outputFormat=application/json"
 
-            afeccion_enp = consultar_geojson(query_geom, enp_url, "ENP", campo_nombre="nombre")
-            afeccion_zepa = consultar_geojson(query_geom, zepa_url, "ZEPA", campo_nombre="site_name")
-            afeccion_lic = consultar_geojson(query_geom, lic_url, "LIC", campo_nombre="site_name")
-            afeccion_vp = consultar_geojson(query_geom, vp_url, "VP", campo_nombre="vp_nb")
-            afeccion_tm = consultar_geojson(query_geom, tm_url, "TM", campo_nombre="nameunit")
-            afeccion_mup = consultar_mup(query_geom, mup_url)
+            afeccion_enp = consultar_wfs_seguro(query_geom, enp_url, "ENP", campo_nombre="nombre")
+            afeccion_zepa = consultar_wfs_seguro(query_geom, zepa_url, "ZEPA", campo_nombre="site_name")
+            afeccion_lic = consultar_wfs_seguro(query_geom, lic_url, "LIC", campo_nombre="site_name")
+            afeccion_vp = consultar_wfs_seguro(query_geom, vp_url, "VP", campo_nombre="vp_nb")
+            afeccion_tm = consultar_wfs_seguro(query_geom, tm_url, "TM", campo_nombre="nameunit")
+            afeccion_mup = consultar_wfs_seguro(
+                query_geom, mup_url, "MUP",
+                campos_mup=["id_monte:ID", "nombremont:Nombre", "municipio:Municipio", "propiedad:Propiedad"]
+            )
 
             afecciones = [afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
             
