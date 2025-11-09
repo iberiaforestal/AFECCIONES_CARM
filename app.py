@@ -834,8 +834,6 @@ def generar_pdf(datos, x, y, filename):
 
     # Procedimientos sin negrita
     pdf.set_font("Arial", "", 8)  # Fuente normal para los procedimientos
-    pdf.set_font("Arial", "", 8)  # Fuente normal
-
     procedimientos_con_enlace = [
         ("1609", "Solicitudes, escritos y comunicaciones que no disponen de un procedimiento específico en la Guía de Procedimientos y Servicios.", "https://sede.carm.es/web/pagina?IDCONTENIDO=1609&IDTIPO=240&RASTRO=c$m40288"),
         ("1802", "Emisión de certificación sobre delimitación vías pecuarias con respecto a fincas particulares para inscripción registral.", "https://sede.carm.es/web/pagina?IDCONTENIDO=1802&IDTIPO=240&RASTRO=c$m40288"),
