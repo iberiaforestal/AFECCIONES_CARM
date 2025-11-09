@@ -903,55 +903,52 @@ def generar_pdf(datos, x, y, filename):
     uso_suelo_detectado = list(set(tuple(row) for row in uso_suelo_detectado))
     if uso_suelo_detectado:
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, "Afecciones a Usos del Suelo:", ln=True)
+        pdf.cell(0, 8, "Afección a Planeamiento Municipal:", ln=True)
         pdf.ln(2)
 
         page_width = pdf.w - 2 * pdf.l_margin
-        col_widths = [page_width * 0.25, page_width * 0.25, page_width * 0.25, page_width * 0.25]  # 25% cada columna
-        line_height = 8
+        col_uso = page_width * 0.5
+        col_clas = page_width * 0.5
+        line_height = 6
 
-        # Cabecera
+        # --- CABECERA ---
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
-        pdf.cell(col_widths[0], 10, "Uso Específico", border=1, fill=True)
-        pdf.cell(col_widths[1], 10, "Municipio", border=1, fill=True)
-        pdf.cell(col_widths[2], 10, "Ámbito", border=1, fill=True)
-        pdf.cell(col_widths[3], 10, "Clasificación", border=1, fill=True, ln=True)
+        pdf.cell(col_uso, 10, "Uso Específico", border=1, fill=True)
+        pdf.cell(col_clas, 10, "Clasificación", border=1, fill=True, ln=True)
 
-        # Filas
+        # --- FILAS ---
         pdf.set_font("Arial", "", 10)
-        for uso_especifico, municipio, ambito, clasificacion in uso_suelo_detectado:
-            uso_l = len(pdf.multi_cell(col_widths[0], line_height, str(uso_especifico), split_only=True))
-            mun_l = len(pdf.multi_cell(col_widths[1], line_height, str(municipio), split_only=True))
-            amb_l = len(pdf.multi_cell(col_widths[2], line_height, str(ambito), split_only=True))
-            clas_l = len(pdf.multi_cell(col_widths[3], line_height, str(clasificacion), split_only=True))
-            row_h = max(10, uso_l * line_height, mun_l * line_height, amb_l * line_height, clas_l * line_height)
+        for uso_especifico, clasificacion in uso_suelo_detectado:
+            uso_especifico = str(uso_especifico)
+            clasificacion = str(clasificacion)
 
+            # Calcular altura necesaria
+            uso_l = len(pdf.multi_cell(col_uso, line_height, uso_especifico, split_only=True))
+            clas_l = len(pdf.multi_cell(col_clas, line_height, clasificacion, split_only=True))
+            row_h = max(10, uso_l * line_height, clas_l * line_height)
+
+            # Salto de página si no cabe
             if pdf.get_y() + row_h > pdf.h - pdf.b_margin:
                 pdf.add_page()
 
             x, y = pdf.get_x(), pdf.get_y()
 
-            pdf.rect(x, y, col_widths[0], row_h)
-            pdf.rect(x + col_widths[0], y, col_widths[1], row_h)
-            pdf.rect(x + col_widths[0] + col_widths[1], y, col_widths[2], row_h)
-            pdf.rect(x + col_widths[0] + col_widths[1] + col_widths[2], y, col_widths[3], row_h)
+            # Dibujar bordes
+            pdf.rect(x, y, col_uso, row_h)
+            pdf.rect(x + col_uso, y, col_clas, row_h)
 
+            # Escribir texto (centrado verticalmente)
             pdf.set_xy(x, y + (row_h - uso_l * line_height) / 2)
-            pdf.multi_cell(col_widths[0], line_height, str(uso_especifico))
+            pdf.multi_cell(col_uso, line_height, uso_especifico)
 
-            pdf.set_xy(x + col_widths[0], y + (row_h - mun_l * line_height) / 2)
-            pdf.multi_cell(col_widths[1], line_height, str(municipio))
+            pdf.set_xy(x + col_uso, y + (row_h - clas_l * line_height) / 2)
+            pdf.multi_cell(col_clas, line_height, clasificacion)
 
-            pdf.set_xy(x + col_widths[0] + col_widths[1], y + (row_h - amb_l * line_height) / 2)
-            pdf.multi_cell(col_widths[2], line_height, str(ambito))
-
-            pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2], y + (row_h - clas_l * line_height) / 2)
-            pdf.multi_cell(col_widths[3], line_height, str(clasificacion))
-
+            # Avanzar fila
             pdf.set_y(y + row_h)
 
-        pdf.ln(5)
+        pdf.ln(5)  # Espacio final
     
     pdf.add_page()
     # Nueva sección para el texto en cuadro
