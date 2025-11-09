@@ -834,25 +834,46 @@ def generar_pdf(datos, x, y, filename):
 
     # Procedimientos sin negrita
     pdf.set_font("Arial", "", 8)  # Fuente normal para los procedimientos
-    procedimientos = (
-        "- 1609 Solicitudes, escritos y comunicaciones que no disponen de un procedimiento específico en la Guía de Procedimientos y Servicios.\n"
-        "- 1802 Emisión de certificación sobre delimitación vías pecuarias con respecto a fincas particulares para inscripción registral.\n"
-        "- 3482 Emisión de Informe en el ejercicio de los derechos de adquisición preferente (tanteo y retracto) en transmisiones onerosas de fincas forestales.\n"
-        "- 3483 Autorización de proyectos o actuaciones materiales en dominio público forestal que no conlleven concesión administrativa.\n"
-        "- 3485 Deslinde y amojonamiento de montes a instancia de parte.\n"
-        "- 3487 Clasificación, deslinde, desafectación y amojonamiento de vías pecuarias.\n"
-        "- 3488 Emisión de certificaciones de colindancia de fincas particulares respecto a montes incluidos en el Catálogo de Utilidad Pública.\n"
-        "- 3489 Autorizaciones en dominio público pecuario sin uso privativo.\n"
-        "- 3490 Emisión de certificación o informe de colindancia de finca particular respecto de vía pecuaria.\n"
-        "- 5883 (INM) Emisión de certificación o informe para inmatriculación o inscripción registral de fincas colindantes con monte incluido en el Catálogo de Montes de Utilidad Pública.\n"
-        "- 7002 Expedición de certificados de no afección a la Red Natura 2000.\n"
-        "- 7186 Ocupación renovable de carácter temporal de vías pecuarias con concesión demanial.\n"
-        "- 7202 Modificación de trazados en vías pecuarias.\n"
-        "- 7222 Concesión para la utilización privativa y aprovechamiento especial del dominio público.\n"
-        "- 7242 Autorización de permutas en montes públicos.\n"
-    )
-    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, procedimientos, border=0, align="J")
-    pdf.ln(2)
+    pdf.set_font("Arial", "", 8)  # Fuente normal
+
+    procedimientos_con_enlace = [
+        ("1609", "Solicitudes, escritos y comunicaciones que no disponen de un procedimiento específico en la Guía de Procedimientos y Servicios.", "https://sede.carm.es/web/pagina?IDCONTENIDO=1609&IDTIPO=240&RASTRO=c$m40288"),
+        ("1802", "Emisión de certificación sobre delimitación vías pecuarias con respecto a fincas particulares para inscripción registral.", https://sede.carm.es/web/pagina?IDCONTENIDO=1802&IDTIPO=240&RASTRO=c$m40288),
+        ("3482", "Emisión de Informe en el ejercicio de los derechos de adquisición preferente (tanteo y retracto) en transmisiones onerosas de fincas forestales.", None),
+        ("3483", "Autorización de proyectos o actuaciones materiales en dominio público forestal que no conlleven concesión administrativa.", https://sede.carm.es/web/pagina?IDCONTENIDO=3483&IDTIPO=240&RASTRO=c$m40288),
+        ("3485", "Deslinde y amojonamiento de montes a instancia de parte.", https://sede.carm.es/web/pagina?IDCONTENIDO=3485&IDTIPO=240&RASTRO=c$m40288),
+        ("3487", "Clasificación, deslinde, desafectación y amojonamiento de vías pecuarias.", https://sede.carm.es/web/pagina?IDCONTENIDO=3487&IDTIPO=240&RASTRO=c$m40293),
+        ("3488", "Emisión de certificaciones de colindancia de fincas particulares respecto a montes incluidos en el Catálogo de Utilidad Pública.", https://sede.carm.es/web/pagina?IDCONTENIDO=3488&IDTIPO=240&RASTRO=c$m40293),
+        ("3489", "Autorizaciones en dominio público pecuario sin uso privativo.", https://sede.carm.es/web/pagina?IDCONTENIDO=3489&IDTIPO=240&RASTRO=c$m40288),
+        ("3490", "Emisión de certificación o informe de colindancia de finca particular respecto de vía pecuaria.", https://sede.carm.es/web/pagina?IDCONTENIDO=3490&IDTIPO=240&RASTRO=c$m40288),
+        ("5883", "(INM) Emisión de certificación o informe para inmatriculación o inscripción registral de fincas colindantes con monte incluido en el Catálogo de Montes de Utilidad Pública.", https://sede.carm.es/web/pagina?IDCONTENIDO=5883&IDTIPO=240&RASTRO=c$m40288),
+        ("482", "Autorizaciones e informes en Espacios Naturales Protegidos y Red Natura 2000 de la Región de Murcia.", https://sede.carm.es/web/pagina?IDCONTENIDO=482&IDTIPO=240&RASTRO=c$m40288),
+        ("7186", "Ocupación renovable de carácter temporal de vías pecuarias con concesión demanial.", None),
+        ("7202", "Modificación de trazados en vías pecuarias.", https://sede.carm.es/web/pagina?IDCONTENIDO=7202&IDTIPO=240&RASTRO=c$m40288),
+        ("7222", "Concesión para la utilización privativa y aprovechamiento especial del dominio público.", None),
+        ("7242", "Autorización de permutas en montes públicos.", https://sede.carm.es/web/pagina?IDCONTENIDO=7242&IDTIPO=240&RASTRO=c$m40288),
+    ]
+
+    for codigo, texto, url in procedimientos_con_enlace:
+        x_start = pdf.get_x()
+        y_start = pdf.get_y()
+    
+        # Escribir código (con enlace si existe)
+        if url:
+            pdf.set_text_color(0, 0, 255)  # Azul
+            pdf.cell(22, 8, f"- {codigo}", 0, 0)
+            pdf.set_text_color(0, 0, 0)   # Negro
+        else:
+            pdf.cell(22, 8, f"- {codigo}", 0, 0)
+    
+        # Escribir texto
+        pdf.multi_cell(pdf.w - 2 * pdf.l_margin - 22, 8, f" {texto}", border=0, align="J")
+    
+        # Añadir hipervínculo (solo si hay URL)
+        if url:
+            pdf.link(x=x_start, y=y_start, w=22, h=8, link=url)
+    
+        pdf.ln(2)  # Espacio entre líneas
 
     # Volver a negrita para el resto del texto
     pdf.set_font("Arial", "B", 10)  # Restaurar negrita
