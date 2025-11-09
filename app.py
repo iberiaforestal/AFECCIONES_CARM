@@ -531,7 +531,7 @@ def generar_pdf(datos, x, y, filename):
         else:
             otras_afecciones.append((key_corregido, valor if valor else "No afecta"))
 
-    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS en "otras afecciones" si NO tienen detecciones
+    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO en "otras afecciones" si NO tienen detecciones
     if not uso_suelo_detectado:
         otras_afecciones.append(("Afección Uso del Suelo", uso_suelo_valor if uso_suelo_valor else "No afecta a ningún uso del suelo protegido"))
     if not esteparias_detectado:
@@ -898,55 +898,37 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(5)  # Espacio final
 
     # === TABLA USO DEL SUELO ===
-    uso_suelo_detectado = list(set(tuple(row) for row in uso_suelo_detectado))
-    if uso_suelo_detectado:
+   if uso_suelo_detectado:
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, "Afección a Planeamiento Municipal:", ln=True)
+        pdf.cell(0, 8, "Afeccion a Planeamiento Urbano (PGOU):", ln=True)
         pdf.ln(2)
-
-        page_width = pdf.w - 2 * pdf.l_margin
-        col_uso = page_width * 0.5
-        col_clas = page_width * 0.5
-        line_height = 6
-
-        # --- CABECERA ---
+        col_w_uso = 30
+        col_w_clas = pdf.w - 2 * pdf.l_margin - col_w_uso
+        row_height = 8
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
-        pdf.cell(col_uso, 10, "Uso Específico", border=1, fill=True)
-        pdf.cell(col_clas, 10, "Clasificación", border=1, fill=True, ln=True)
-
-        # --- FILAS ---
+        pdf.cell(col_w_uso, row_height, "Uso", border=1, fill=True)
+        pdf.cell(col_w_clas, row_height, "Clasificación", border=1, fill=True)
+        pdf.ln()
         pdf.set_font("Arial", "", 10)
-        for uso_especifico, clasificacion in uso_suelo_detectado:
-            uso_especifico = str(uso_especifico)
-            clasificacion = str(clasificacion)
-
-            # Calcular altura necesaria
-            uso_l = len(pdf.multi_cell(col_uso, line_height, uso_especifico, split_only=True))
-            clas_l = len(pdf.multi_cell(col_clas, line_height, clasificacion, split_only=True))
-            row_h = max(10, uso_l * line_height, clas_l * line_height)
-
-            # Salto de página si no cabe
-            if pdf.get_y() + row_h > pdf.h - pdf.b_margin:
-                pdf.add_page()
-
-            x, y = pdf.get_x(), pdf.get_y()
-
-            # Dibujar bordes
-            pdf.rect(x, y, col_uso, row_h)
-            pdf.rect(x + col_uso, y, col_clas, row_h)
-
-            # Escribir texto (centrado verticalmente)
-            pdf.set_xy(x, y + (row_h - uso_l * line_height) / 2)
-            pdf.multi_cell(col_uso, line_height, uso_especifico)
-
-            pdf.set_xy(x + col_uso, y + (row_h - clas_l * line_height) / 2)
-            pdf.multi_cell(col_clas, line_height, clasificacion)
-
-            # Avanzar fila
+        for Uso_Especifico, Clasificacion in uso_suelo_detectado:
+            uso_lines = pdf.multi_cell(col_w_uso, 5, str(Uso_Especifico), split_only=True)
+            clas_lines = pdf.multi_cell(col_w_clas, 5, str(Clasificacion), split_only=True)
+            row_h = max(row_height, len(uso_lines) * 5, len(clas_lines) * 5)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.rect(x, y, col_w_uso, row_h)
+            pdf.rect(x + col_w_uso, y, col_w_clas, row_h)
+            uso_h = len(uso_lines) * 5
+            y_uso = y + (row_h - uso_h) / 2
+            pdf.set_xy(x, y_uso)
+            pdf.multi_cell(col_w_uso, 5, str(Uso_Especifico), align="L")
+            clas_h = len(clas_lines) * 5
+            y_clas = y + (row_h - clas_h) / 2
+            pdf.set_xy(x + col_w_uso, y_clas)
+            pdf.multi_cell(col_w_clas, 5, str(Clasificacion), align="L")
             pdf.set_y(y + row_h)
-
-        pdf.ln(5)  # Espacio final
+        pdf.ln(5)
     
     pdf.add_page()
     # Nueva sección para el texto en cuadro
