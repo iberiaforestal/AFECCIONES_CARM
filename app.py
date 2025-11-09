@@ -19,6 +19,7 @@ import textwrap
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from io import BytesIO
+import shutil
 
 # Sesión segura con reintentos
 session = requests.Session()
@@ -1029,8 +1030,6 @@ if submitted:
                 except Exception as e:
                     st.error(f"Error al generar el PDF: {str(e)}")
                         # === LIMPIEZA DE ARCHIVOS TEMPORALES ===
-                        # (Opcional pero recomendado: evita acumular archivos en el servidor)
-                        import shutil
                             try:
                                 if 'mapa_html' in st.session_state and st.session_state['mapa_html']:
                                     if os.path.exists(st.session_state['mapa_html']):
