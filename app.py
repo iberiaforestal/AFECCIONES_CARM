@@ -580,9 +580,9 @@ def generar_pdf(datos, x, y, filename):
     # === TABLA USO DEL SUELO ===
     if uso_suelo_detectado:
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, "AfecciÓn a Planeamiento Urbano (PGOU):", ln=True)
+        pdf.cell(0, 8, "Afección a Planeamiento Urbano (PGOU):", ln=True)
         pdf.ln(2)
-        col_w_uso = 30
+        col_w_uso = 50
         col_w_clas = pdf.w - 2 * pdf.l_margin - col_w_uso
         row_height = 8
         pdf.set_font("Arial", "B", 11)
