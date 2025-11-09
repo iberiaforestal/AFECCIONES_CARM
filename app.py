@@ -141,38 +141,51 @@ def transformar_coordenadas(x, y):
         return None, None
 
 # Función para consultar si la geometría intersecta con algún polígono del GeoJSON
-@st.cache_data(show_spinner=False)
-def consultar_wfs_seguro(geom, url, nombre_afeccion, campo_nombre=None, campos_mup=None):
-    """
-    Función universal para consultar cualquier WFS.
-    - Para ENP, ZEPA, LIC, VP, TM → usa campo_nombre
-    - Para MUP → usa campos_mup (lista de campos a extraer)
-    """
+# === FUNCIÓN DESCARGA CON CACHÉ ===
+@st.cache_data(show_spinner=False, ttl=3600)  # 1 hora de caché
+def _descargar_geojson(url):
     try:
         response = session.get(url, timeout=30)
         response.raise_for_status()
-        gdf = gpd.read_file(BytesIO(response.content))
+        return BytesIO(response.content)
+    except Exception as e:
+        st.warning(f"Servicio no disponible: {url.split('/')[-1]}")
+        return None
+
+# === FUNCIÓN PRINCIPAL (SIN CACHÉ EN GEOMETRÍA) ===
+def consultar_wfs_seguro(geom, url, nombre_afeccion, campo_nombre=None, campos_mup=None):
+    """
+    Consulta WFS con:
+    - Descarga cacheada (rápida después de la 1ª vez)
+    - Geometría NO cacheada (evita UnhashableParamError)
+    """
+    data = _descargar_geojson(url)
+    if data is None:
+        return f"Indeterminado: {nombre_afeccion} (servicio no disponible)"
+
+    try:
+        gdf = gpd.read_file(data)
         seleccion = gdf[gdf.intersects(geom)]
         
         if seleccion.empty:
             return f"No afecta en ninguna {nombre_afeccion}"
 
-        # --- MODO MUP: extraer campos personalizados ---
+        # --- MODO MUP: campos personalizados ---
         if campos_mup:
             info = []
             for _, row in seleccion.iterrows():
-                valores = [str(row.get(campo, "Desconocido")) for campo in campos_mup]
-                info.append("\n".join([f"{campos_mup[i].split(':')[0]}: {valores[i]}" for i in range(len(campos_mup))]))
+                valores = [str(row.get(c.split(':')[0], "Desconocido")) for c in campos_mup]
+                etiquetas = [c.split(':')[1] if ':' in c else c.split(':')[0] for c in campos_mup]
+                info.append("\n".join(f"{etiquetas[i]}: {valores[i]}" for i in range(len(campos_mup))))
             return f"Dentro de {nombre_afeccion}:\n" + "\n\n".join(info)
 
-        # --- MODO NORMAL: nombres simples ---
+        # --- MODO NORMAL: solo nombres ---
         else:
             nombres = ', '.join(seleccion[campo_nombre].dropna().unique())
             return f"Dentro de {nombre_afeccion}: {nombres}"
 
     except Exception as e:
-        st.warning(f"Servicio {nombre_afeccion} no disponible.")
-        return f"Indeterminado: {nombre_afeccion} (servicio no disponible)"
+        return f"Indeterminado: {nombre_afeccion} (error de datos)"
 
 # Función para crear el mapa con afecciones específicas
 def crear_mapa(lon, lat, afecciones=[], parcela_gdf=None):
