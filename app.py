@@ -761,15 +761,18 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Espacio Natural Protegido (ENP):", ln=True)
         pdf.ln(2)
-        col_w_nombre = 40
-        col_w_figura = pdf.w - 2 * pdf.l_margin - col_w_nombr
-        row_height = 8
+
+        # --- ANCHO TOTAL DISPONIBLE ---
+        page_width = pdf.w - 2 * pdf.l_margin
+        col_widths = [page_width * 0.6, page_width * 0.4]  # 60% | 40%
+        line_height = 8
+
         # --- CABECERA ---
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
-        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
-        pdf.cell(col_w_figura, row_height, "Figura", border=1, fill=True)
-        pdf.ln()
+        pdf.cell(col_widths[0], 10, "Nombre", border=1, fill=True)
+        pdf.cell(col_widths[1], 10, "Figura", border=1, fill=True, ln=True)
+
         # --- FILAS ---
         pdf.set_font("Arial", "", 10)
         for nombre, figura in enp_detectado:
@@ -792,7 +795,7 @@ def generar_pdf(datos, x, y, filename):
             pdf.rect(x, y, col_widths[0], row_height)
             pdf.rect(x + col_widths[0], y, col_widths[1], row_height)
 
-            # Escribir texto centrado verticalmente
+            # Texto centrado verticalmente
             pdf.set_xy(x, y + (row_height - nombre_lines * line_height) / 2)
             pdf.multi_cell(col_widths[0], line_height, nombre)
 
