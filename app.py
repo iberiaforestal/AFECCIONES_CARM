@@ -762,45 +762,46 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 8, "Espacio Natural Protegido (ENP):", ln=True)
         pdf.ln(2)
 
-        col_w_nombre = 100
-        col_w_figura = pdf.w - 2 * pdf.l_margin - col_w_nombre
-        line_height = 6
+        col_widths = [100, 80]  # Nombre, Figura
+        line_height = 7
 
         # Cabecera
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(141, 179, 226)
-        pdf.cell(col_w_nombre, 10, "Nombre", border=1, fill=True)
-        pdf.cell(col_w_figura, 10, "Figura", border=1, fill=True)
-        pdf.ln()
+        pdf.cell(col_widths[0], 10, "Nombre", border=1, fill=True)
+        pdf.cell(col_widths[1], 10, "Figura", border=1, fill=True, ln=True)
 
         pdf.set_font("Arial", "", 10)
         for nombre, figura in enp_detectado:
-            # Calcular líneas necesarias
-            nombre_lines = len(pdf.multi_cell(col_w_nombre, line_height, str(nombre), split_only=True))
-            figura_lines = len(pdf.multi_cell(col_w_figura, line_height, str(figura), split_only=True))
-            row_h = max(10, nombre_lines * line_height, figura_lines * line_height)
+            nombre = str(nombre)
+            figura = str(figura)
 
-            # Verificar espacio en página
-            if pdf.get_y() + row_h > pdf.h - pdf.b_margin:
+            # Calcular altura necesaria
+            nombre_lines = pdf.multi_cell(col_widths[0], line_height, nombre, split_only=True)
+            figura_lines = pdf.multi_cell(col_widths[1], line_height, figura, split_only=True)
+            row_height = max(len(nombre_lines), len(figura_lines)) * line_height
+            row_height = max(row_height, 10)
+
+            # Salto de página si no cabe
+            if pdf.get_y() + row_height > pdf.h - pdf.b_margin:
                 pdf.add_page()
 
-            x = pdf.get_x()
-            y = pdf.get_y()
+            x_start = pdf.get_x()
+            y_start = pdf.get_y()
 
-            # Dibujar bordes
-            pdf.rect(x, y, col_w_nombre, row_h)
-            pdf.rect(x + col_w_nombre, y, col_w_figura, row_h)
+            # Dibujar celdas con bordes
+            pdf.rect(x_start, y_start, col_widths[0], row_height)
+            pdf.rect(x_start + col_widths[0], y_start, col_widths[1], row_height)
 
-            # Centrar verticalmente
-            nombre_h = nombre_lines * line_height
-            pdf.set_xy(x, y + (row_h - nombre_h) / 2)
-            pdf.multi_cell(col_w_nombre, line_height, str(nombre), align="L")
+            # Escribir texto centrado verticalmente
+            pdf.set_xy(x_start, y_start + (row_height - len(nombre_lines) * line_height) / 2)
+            pdf.multi_cell(col_widths[0], line_height, nombre)
 
-            figura_h = figura_lines * line_height
-            pdf.set_xy(x + col_w_nombre, y + (row_h - figura_h) / 2)
-            pdf.multi_cell(col_w_figura, line_height, str(figura), align="L")
+            pdf.set_xy(x_start + col_widths[0], y_start + (row_height - len(figura_lines) * line_height) / 2)
+            pdf.multi_cell(col_widths[1], line_height, figura)
 
-            pdf.set_y(y + row_h)
+            pdf.set_y(y_start + row_height)
+
         pdf.ln(10)
 
     # Nueva sección para el texto en cuadro
