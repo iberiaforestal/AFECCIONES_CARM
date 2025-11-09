@@ -1058,7 +1058,7 @@ if submitted:
             mup_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:MONTES&outputFormat=application/json"
             st.session_state['wfs_urls'] = {
                 'enp': enp_url, 'zepa': zepa_url, 'lic': lic_url,
-                'vp': vp_url, 'tm': tm_url, 'mup': mup_url
+                'vp': vp_url, 'tm': tm_url, 'mup': mup_url, 'esteparias': esteparias_url,
             }
 
             # === 6. CONSULTAR AFECCIONES ===
