@@ -757,6 +757,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(5)
         
     # Procesar tabla para ENP
+    enp_detectado = list(set(tuple(row) for row in enp_detectado))  # ← ELIMINA DUPLICADOS
     if enp_detectado:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Espacio Natural Protegido (ENP):", ln=True)
