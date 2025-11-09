@@ -434,117 +434,74 @@ def generar_pdf(datos, x, y, filename):
     lic_key = "afección LIC"
     enp_key = "afección ENP"
     
-    # Procesar afecciones VP
-    vp_valor = datos.get(vp_key, "").strip()
-    vp_detectado = []
-    if vp_valor and not vp_valor.startswith("No afecta") and not vp_valor.startswith("Error"):
-        try:
-            gdf = gpd.read_file(vp_url)  # Cargar el GeoJSON de Vías Pecuarias (VP.json)
-            seleccion = gdf[gdf.intersects(query_geom)]  # Filtrar geometrías que intersectan
-            if not seleccion.empty:
-                for _, props in seleccion.iterrows():
-                    codigo_vp = props.get("vp_cod", "N/A")  # Código de la vía
-                    nombre = props.get("vp_nb", "N/A")  # Nombre de la vía
-                    municipio = props.get("vp_mun", "N/A")  # Término municipal
-                    situacion_legal = props.get("vp_sit_leg", "N/A")  # Situación legal
-                    ancho_legal = props.get("vp_anch_lg", "N/A")  # Ancho legal
-                    vp_detectado.append((codigo_vp, nombre, municipio, situacion_legal, ancho_legal))
-            vp_valor = ""  # Evitamos poner "No afecta" si hay tabla
-        except Exception as e:
-            st.error(f"Error al procesar VP desde {vp_url}: {e}")
-            vp_valor = "Error al consultar VP"
-    else:
-        vp_valor = "No afecta a ninguna VP" if not vp_detectado else ""
+# === PROCESAR TODAS LAS CAPAS (VP, ZEPA, LIC, ENP) ===
+    def procesar_capa(url, key, valor_inicial, campos, detectado_list):
+        valor = datos.get(key, "").strip()
+        if valor and not valor.startswith("No afecta") and not valor.startswith("Error"):
+            try:
+                data = _descargar_geojson(url)
+                if data is None:
+                    return "Error al consultar"
+                gdf = gpd.read_file(data)
+                seleccion = gdf[gdf.intersects(query_geom)]
+                if not seleccion.empty:
+                    for _, props in seleccion.iterrows():
+                        fila = tuple(props.get(campo, "N/A") for campo in campos)
+                        detectado_list.append(fila)
+                    return ""
+                return valor_inicial
+            except Exception as e:
+                st.error(f"Error al procesar {key}: {e}")
+                return "Error al consultar"
+        return valor_inicial if not detectado_list else ""
 
-    # Procesar afecciones MUP
-    mup_valor = datos.get(mup_key, "").strip()
+    # === VP ===
+    vp_detectado = []
+    vp_valor = procesar_capa(
+        vp_url, "afección VP", "No afecta a ninguna VP",
+        ["vp_cod", "vp_nb", "vp_mun", "vp_sit_leg", "vp_anch_lg"],
+        vp_detectado
+    )
+
+    # === ZEPA ===
+    zepa_detectado = []
+    zepa_valor = procesar_capa(
+        zepa_url, "afección ZEPA", "No afecta a ninguna ZEPA",
+        ["site_code", "site_name"],
+        zepa_detectado
+    )
+
+    # === LIC ===
+    lic_detectado = []
+    lic_valor = procesar_capa(
+        lic_url, "afección LIC", "No afecta a ningún LIC",
+        ["site_code", "site_name"],
+        lic_detectado
+    )
+
+    # === ENP ===
+    enp_detectado = []
+    enp_valor = procesar_capa(
+        enp_url, "afección ENP", "No afecta a ningún ENP",
+        ["nombre", "figura"],
+        enp_detectado
+    )
+
+    # === MUP (ya funciona bien, lo dejamos igual) ===
+    mup_valor = datos.get("afección MUP", "").strip()
     mup_detectado = []
     if mup_valor and not mup_valor.startswith("No afecta") and not mup_valor.startswith("Error"):
         entries = mup_valor.replace("Dentro de MUP:\n", "").split("\n\n")
         for entry in entries:
             lines = entry.split("\n")
             if lines:
-                id_monte = lines[0].replace("ID: ", "").strip() if len(lines) > 0 else "N/A"
-                nombre = lines[1].replace("Nombre: ", "").strip() if len(lines) > 1 else "N/A"
-                municipio = lines[2].replace("Municipio: ", "").strip() if len(lines) > 2 else "N/A"
-                propiedad = lines[3].replace("Propiedad: ", "").strip() if len(lines) > 3 else "N/A"
-                mup_detectado.append((id_monte, nombre, municipio, propiedad))
+                mup_detectado.append((
+                    lines[0].replace("ID: ", "").strip() if len(lines) > 0 else "N/A",
+                    lines[1].replace("Nombre: ", "").strip() if len(lines) > 1 else "N/A",
+                    lines[2].replace("Municipio: ", "").strip() if len(lines) > 2 else "N/A",
+                    lines[3].replace("Propiedad: ", "").strip() if len(lines) > 3 else "N/A"
+                ))
         mup_valor = ""
-
-    # Procesar afecciones ZEPA
-    zepa_key = "afección ZEPA"
-    zepa_valor = datos.get(zepa_key, "").strip()
-    zepa_detectado = []
-    if zepa_valor and not zepa_valor.startswith("No afecta") and not zepa_valor.startswith("Error"):
-        try:
-            gdf = gpd.read_file(zepa_url)
-            seleccion = gdf[gdf.intersects(query_geom)]
-            if not seleccion.empty:
-                for _, props in seleccion.iterrows():
-                    site_code = props.get("site_code", "N/A")
-                    site_name = props.get("site_name", "N/A")
-
-                    # Guardamos tupla con ambos datos
-                    zepa_detectado.append((site_code, site_name))
-
-            zepa_valor = ""
-
-        except Exception as e:
-            st.error(f"Error al procesar ZEPA desde {zepa_url}: {e}")
-            zepa_valor = "Error al consultar ZEPA"
-
-    else:
-        zepa_valor = "No afecta a ninguna ZEPA" if not zepa_detectado else ""
-
-    # Procesar afecciones LIC
-    lic_key = "afección LIC"
-    lic_valor = datos.get(lic_key, "").strip()
-    lic_detectado = []
-    if lic_valor and not lic_valor.startswith("No afecta") and not lic_valor.startswith("Error"):
-        try:
-            gdf = gpd.read_file(lic_url)
-            seleccion = gdf[gdf.intersects(query_geom)]
-            if not seleccion.empty:
-                for _, props in seleccion.iterrows():
-                    site_code = props.get("site_code", "N/A")
-                    site_name = props.get("site_name", "N/A")
-
-                    # Guardamos tupla con ambos datos
-                    lic_detectado.append((site_code, site_name))
-
-            lic_valor = ""
-
-        except Exception as e:
-            st.error(f"Error al procesar LIC desde {lic_url}: {e}")
-            lic_valor = "Error al consultar LIC"
-
-    else:
-        lic_valor = "No afecta a ningun LIC" if not lic_detectado else ""
-
-    # Procesar afecciones ENP
-    enp_key = "afección ENP"
-    enp_valor = datos.get(enp_key, "").strip()
-    enp_detectado = []
-    if enp_valor and not enp_valor.startswith("No afecta") and not enp_valor.startswith("Error"):
-        try:
-            gdf = gpd.read_file(enp_url)
-            seleccion = gdf[gdf.intersects(query_geom)]
-            if not seleccion.empty:
-                for _, props in seleccion.iterrows():
-                    nombre = props.get("nombre", "N/A")
-                    figura = props.get("figura", "N/A")
-
-                    # Guardamos tupla con ambos datos
-                    enp_detectado.append((nombre, figura))
-
-            enp_valor = ""
-
-        except Exception as e:
-            st.error(f"Error al procesar ENP desde {enp_url}: {e}")
-            enp_valor = "Error al consultar ENP"
-
-    else:
-        enp_valor = "No afecta a ningun ENP" if not enp_detectado else ""
 
     # Procesar otras afecciones como texto
     otras_afecciones = []
