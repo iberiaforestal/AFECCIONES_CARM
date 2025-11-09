@@ -763,7 +763,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(2)
 
         col_widths = [100, 80]  # Nombre | Figura
-        line_height = 7
+        line_height = 8
 
         # --- CABECERA ---
         pdf.set_font("Arial", "B", 11)
