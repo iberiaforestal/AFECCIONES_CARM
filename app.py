@@ -819,54 +819,60 @@ def generar_pdf(datos, x, y, filename):
 
         pdf.ln(5)
     # Procesar tabla para ESTEPARIAS
-    esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))  # Elimina duplicados
+   esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))
     if esteparias_detectado:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afecciones a zonas de distribución de aves esteparias:", ln=True)
         pdf.ln(2)
-        # --- ANCHOS DE COLUMNAS ---
+
         col_cuad = 35
         col_esp  = 50
         col_nom  = pdf.w - 2 * pdf.l_margin - col_cuad - col_esp
         line_height = 6
+
         # --- CABECERA ---
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_cuad, 10, "Cuadrícula", border=1, fill=True)
         pdf.cell(col_esp,  10, "Especie",     border=1, fill=True)
         pdf.cell(col_nom,  10, "Nombre común", border=1, fill=True, ln=True)
-        # --- FILAS ---
+
+        # --- FILAS (TODO DENTRO DEL BUCLE) ---
         pdf.set_font("Arial", "", 10)
         for cuad, especie, nombre in esteparias_detectado:
-            # Calcular líneas necesarias
+            # 1. Calcular altura de cada celda
             cuad_l = len(pdf.multi_cell(col_cuad, line_height, str(cuad), split_only=True))
             esp_l  = len(pdf.multi_cell(col_esp,  line_height, str(especie), split_only=True))
             nom_l  = len(pdf.multi_cell(col_nom,  line_height, str(nombre), split_only=True))
             row_h = max(10, cuad_l * line_height, esp_l * line_height, nom_l * line_height)
-        # Salto de página si no cabe
-        if pdf.get_y() + row_h > pdf.h - pdf.b_margin:
-            pdf.add_page()
 
-        x, y = pdf.get_x(), pdf.get_y()
+            # 2. SALTO DE PÁGINA SI NO CABE
+            if pdf.get_y() + row_h > pdf.h - pdf.b_margin:
+                pdf.add_page()
 
-        # Dibujar bordes
-        pdf.rect(x, y, col_cuad, row_h)
-        pdf.rect(x + col_cuad, y, col_esp, row_h)
-        pdf.rect(x + col_cuad + col_esp, y, col_nom, row_h)
+            # 3. Posición actual
+            x, y = pdf.get_x(), pdf.get_y()
 
-        # Escribir texto centrado verticalmente
-        pdf.set_xy(x, y + (row_h - cuad_l * line_height) / 2)
-        pdf.multi_cell(col_cuad, line_height, str(cuad))
+            # 4. Dibujar bordes
+            pdf.rect(x, y, col_cuad, row_h)
+            pdf.rect(x + col_cuad, y, col_esp, row_h)
+            pdf.rect(x + col_cuad + col_esp, y, col_nom, row_h)
 
-        pdf.set_xy(x + col_cuad, y + (row_h - esp_l * line_height) / 2)
-        pdf.multi_cell(col_esp, line_height, str(especie))
+            # 5. Escribir texto (centrado verticalmente)
+            pdf.set_xy(x, y + (row_h - cuad_l * line_height) / 2)
+            pdf.multi_cell(col_cuad, line_height, str(cuad))
 
-        pdf.set_xy(x + col_cuad + col_esp, y + (row_h - nom_l * line_height) / 2)
-        pdf.multi_cell(col_nom, line_height, str(nombre))
+            pdf.set_xy(x + col_cuad, y + (row_h - esp_l * line_height) / 2)
+            pdf.multi_cell(col_esp, line_height, str(especie))
 
-        pdf.set_y(y + row_h)
+            pdf.set_xy(x + col_cuad + col_esp, y + (row_h - nom_l * line_height) / 2)
+            pdf.multi_cell(col_nom, line_height, str(nombre))
 
-    pdf.ln(5)
+            # 6. Avanzar a la siguiente fila
+            pdf.set_y(y + row_h)
+
+        pdf.ln(5)  # Espacio final
+    
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
     pdf.set_font("Arial", "B", 10)
