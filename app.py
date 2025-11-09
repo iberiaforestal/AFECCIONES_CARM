@@ -360,7 +360,6 @@ def generar_pdf(datos, x, y, filename):
     azul_rgb = (141, 179, 226)
 
     campos_orden = [
-        ("Fecha solicitud", datos.get("fecha_solicitud", "").strip()),
         ("Fecha informe", datos.get("fecha_informe", "").strip()),
         ("Nombre", datos.get("nombre", "").strip()),
         ("Apellidos", datos.get("apellidos", "").strip()),
@@ -943,7 +942,6 @@ with st.form("formulario"):
     else:
         st.info(f"Coordenadas obtenidas del centroide de la parcela: X = {x}, Y = {y}")
         
-    fecha_solicitud = st.date_input("Fecha de la solicitud")
     nombre = st.text_input("Nombre")
     apellidos = st.text_input("Apellidos")
     dni = st.text_input("DNI")
@@ -1014,7 +1012,6 @@ if submitted:
 
             # === 7. CREAR DICCIONARIO `datos` ===
             datos = {
-                "fecha_solicitud": fecha_solicitud.strftime('%d/%m/%Y'),
                 "fecha_informe": datetime.today().strftime('%d/%m/%Y'),
                 "nombre": nombre, "apellidos": apellidos, "dni": dni,
                 "dirección": direccion, "teléfono": telefono, "email": email,
