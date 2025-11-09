@@ -692,7 +692,7 @@ def generar_pdf(datos, x, y, filename):
     # Procesar tabla para ZEPA
     if zepa_detectado:
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, "Afección a Zonas de Especial Protección para las Aves (ZEPA):", ln=True)
+        pdf.cell(0, 8, "Afecciones a Zonas de Especial Protección para las Aves (ZEPA):", ln=True)
         pdf.ln(2)
         col_w_code = 30
         col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
@@ -725,7 +725,7 @@ def generar_pdf(datos, x, y, filename):
     # Procesar tabla para LIC
     if lic_detectado:
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, "Afección a Lugar de Importancia Comunitaria (LIC):", ln=True)
+        pdf.cell(0, 8, "Afecciones a Lugares de Importancia Comunitaria (LIC):", ln=True)
         pdf.ln(2)
         col_w_code = 30
         col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
@@ -759,7 +759,7 @@ def generar_pdf(datos, x, y, filename):
     enp_detectado = list(set(tuple(row) for row in enp_detectado))  # ← ELIMINA DUPLICADOS
     if enp_detectado:
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, "Afección a Espacio Natural Protegido (ENP):", ln=True)
+        pdf.cell(0, 8, "Afecciones a Espacios Naturales Protegidos (ENP):", ln=True)
         pdf.ln(2)
 
         # --- ANCHO TOTAL DISPONIBLE ---
