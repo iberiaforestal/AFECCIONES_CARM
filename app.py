@@ -953,6 +953,16 @@ if 'afecciones' not in st.session_state:
     st.session_state['afecciones'] = []
 
 if submitted:
+    # === 1. LIMPIAR ARCHIVOS DE BÚSQUEDAS ANTERIORES ===
+    for key in ['mapa_html', 'pdf_file']:
+        if key in st.session_state and st.session_state[key]:
+            try:
+                if os.path.exists(st.session_state[key]):
+                    os.remove(st.session_state[key])
+            except:
+                pass
+    st.session_state.pop('mapa_html', None)
+    st.session_state.pop('pdf_file', None)
     if not nombre or not apellidos or not dni or x == 0 or y == 0:
         st.warning("Por favor, completa todos los campos obligatorios y asegúrate de que las coordenadas son válidas.")
     else:
@@ -1029,19 +1039,6 @@ if submitted:
                     st.session_state['pdf_file'] = pdf_filename
                 except Exception as e:
                     st.error(f"Error al generar el PDF: {str(e)}")
-            # === LIMPIEZA DE ARCHIVOS TEMPORALES ===
-            try:
-                if 'mapa_html' in st.session_state and st.session_state['mapa_html']:
-                    if os.path.exists(st.session_state['mapa_html']):
-                        os.remove(st.session_state['mapa_html'])
-            except:
-                pass
-            try:
-                if 'pdf_file' in st.session_state and st.session_state['pdf_file']:
-                    if os.path.exists(st.session_state['pdf_file']):
-                        os.remove(st.session_state['pdf_file'])
-            except:
-                pass
 
 if st.session_state['mapa_html'] and st.session_state['pdf_file']:
     try:
