@@ -853,32 +853,29 @@ def generar_pdf(datos, x, y, filename):
     ]
     line_height = 4  # 4mm por línea
     margin = pdf.l_margin
-    x_codigo = margin
-    x_texto = margin + 22
+    codigo_width = 18   # ← ANTES 22 → AHORA 18mm
+    espacio_entre = 2   # ← ESPACIO ENTRE CÓDIGO Y TEXTO: 2mm
 
-    # Guardar Y inicial
     y = pdf.get_y()
 
     for codigo, texto, url in procedimientos_con_enlace:
-        # --- CÓDIGO (EN AZUL SI TIENE ENLACE) ---
+        x_codigo = margin
+        x_texto = margin + codigo_width + espacio_entre
+        # --- CÓDIGO ---
         pdf.set_xy(x_codigo, y)
         if url:
             pdf.set_text_color(0, 0, 255)
-            pdf.cell(22, line_height, f"- {codigo}", border=0)
+            pdf.cell(codigo_width, line_height, f"- {codigo}", border=0)
             pdf.set_text_color(0, 0, 0)
+            # Hipervínculo
+            pdf.link(x_codigo, y, codigo_width, line_height, url)
         else:
-            pdf.cell(22, line_height, f"- {codigo}", border=0)
-
-        # --- TEXTO (EN LA MISMA LÍNEA) ---
+            pdf.cell(codigo_width, line_height, f"- {codigo}", border=0)
+        # --- TEXTO (justo después) ---
         pdf.set_xy(x_texto, y)
-        pdf.multi_cell(pdf.w - 2 * margin - 22, line_height, f" {texto}", border=0, align="J")
-
-        # --- HIPERVÍNCULO ---
-        if url:
-            pdf.link(x_codigo, y, 22, line_height, url)
-
-        # --- AVANZAR A LA SIGUIENTE LÍNEA (SOLO 4mm) ---
-        y += line_height  # NO `ln(1)` → evita doble salto
+        pdf.multi_cell(pdf.w - x_texto - margin, line_height, texto, border=0, align="J")
+        # --- AVANZAR LÍNEA ---
+        y += line_height
 
     # Volver a negrita para el resto del texto
     pdf.set_font("Arial", "B", 10)  # Restaurar negrita
