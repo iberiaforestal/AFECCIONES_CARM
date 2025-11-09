@@ -975,10 +975,16 @@ if submitted:
     st.session_state.pop('mapa_html', None)
     st.session_state.pop('pdf_file', None)
 
-    # === 2. GUARDAR query_geom PARA PDF ===
+    # === 2. DEFINIR query_geom ANTES DE USARLO ===
+    if modo == "Por parcela":
+        query_geom = parcela.geometry.iloc[0]
+    else:
+        query_geom = Point(x, y)
+
+    # === 3. GUARDAR query_geom PARA PDF ===
     st.session_state['query_geom'] = query_geom
 
-    # === 3. GENERAR NUEVO PDF ===
+    # === 4. GENERAR NUEVO PDF ===
     pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
     try:
         generar_pdf(datos, x, y, pdf_filename)
@@ -986,7 +992,7 @@ if submitted:
     except Exception as e:
         st.error(f"Error al generar el PDF: {str(e)}")
 
-    # === 4. LIMPIAR DATOS TEMPORALES (NO ARCHIVOS) ===
+    # === 5. LIMPIAR DATOS TEMPORALES ===
     st.session_state.pop('query_geom', None)
     st.session_state.pop('wfs_urls', None)
     if not nombre or not apellidos or not dni or x == 0 or y == 0:
