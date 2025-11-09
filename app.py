@@ -764,7 +764,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Espacio Natural Protegido (ENP):", ln=True)
         pdf.ln(2)
-        col_w_nombre = 80
+        col_w_nombre = 100
         col_w_figura = pdf.w - 2 * pdf.l_margin - col_w_nombre
         row_height = 8
         pdf.set_font("Arial", "B", 11)
