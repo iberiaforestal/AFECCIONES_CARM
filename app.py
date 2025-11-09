@@ -807,6 +807,7 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_y(y + row_height)
 
         pdf.ln(5)
+        pdf.add_page()
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
     pdf.set_font("Arial", "B", 10)
