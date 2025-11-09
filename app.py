@@ -502,8 +502,6 @@ def generar_pdf(datos, x, y, filename):
         uso_suelo_url,
         "afección uso_suelo",
         "No afecta a ningún uso del suelo protegido",
-        None,  # ← NO campos_mup → usa modo normal
-        None   # ← No detectado_list → no necesitamos tabla aquí (la hacemos manual)
     )
 
     # === MUP (ya funciona bien, lo dejamos igual) ===
