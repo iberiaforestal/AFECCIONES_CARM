@@ -853,7 +853,7 @@ def generar_pdf(datos, x, y, filename):
     ]
     line_height = 4  # 4mm por línea
     margin = pdf.l_margin
-    codigo_width = 18   # ← ANTES 22 → AHORA 18mm
+    codigo_width = 5   # ← ANTES 18 
     espacio_entre = 2   # ← ESPACIO ENTRE CÓDIGO Y TEXTO: 2mm
 
     y = pdf.get_y()
