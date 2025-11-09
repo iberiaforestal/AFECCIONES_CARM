@@ -795,6 +795,7 @@ def generar_pdf(datos, x, y, filename):
             # Salto de página si no cabe
             if pdf.get_y() + row_height > pdf.h - pdf.b_margin:
                 pdf.add_page()
+                
             x = pdf.get_x()
             y = pdf.get_y()
             # Dibujar bordes
@@ -814,6 +815,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afecciones a zonas de distribución de aves esteparias:", ln=True)
         pdf.ln(2)
+        
         col_cuad = 35; col_esp = 50; col_nom = pdf.w - 2*pdf.l_margin - col_cuad - col_esp; line_height = 6
         pdf.set_font("Arial", "B", 11); pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_cuad, 10, "Cuadrícula", border=1, fill=True)
@@ -833,7 +835,7 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_xy(x+col_cuad+col_esp, y + (row_h - nom_l*line_height)/2); pdf.multi_cell(col_nom, line_height, str(nombre))
             pdf.set_y(y + row_h)
     pdf.ln(5)
-         pdf.add_page()
+    pdf.add_page()
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
     pdf.set_font("Arial", "B", 10)
