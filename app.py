@@ -507,7 +507,7 @@ def generar_pdf(datos, x, y, filename):
     for key in afecciones_keys:
         valor = datos.get(key, "").strip()
         # CORREGIR SIEMPRE EL TÍTULO
-        key_corregido = key.replace("tm", "TM").replace("enp", "ENP").replace("lic", "LIC").replace("zepa", "ZEPA").replace("vp", "VP").replace("mup", "MUP")
+        key_corregido = key
     
         if valor and not valor.startswith("Error"):
             otras_afecciones.append((key_corregido, valor))
