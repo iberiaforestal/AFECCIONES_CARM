@@ -18,7 +18,6 @@ from staticmap import StaticMap, CircleMarker
 import textwrap
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from io import BytesIO
 import shutil
 
 # Sesión segura con reintentos
@@ -335,6 +334,18 @@ def generar_pdf(datos, x, y, filename):
             logo_path = tmp_img.name
     except Exception as e:
         st.error(f"Error al descargar el logo: {str(e)}")
+
+    # === RECUPERAR query_geom ===
+    query_geom = st.session_state.get('query_geom')
+    if query_geom is None:
+        query_geom = Point(x, y)
+
+    # === OBTENER URLs DESDE SESSION_STATE ===
+    urls = st.session_state.get('wfs_urls', {})
+    vp_url = urls.get('vp')
+    zepa_url = urls.get('zepa')
+    lic_url = urls.get('lic')
+    enp_url = urls.get('enp')
 
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
@@ -985,6 +996,14 @@ if submitted:
             vp_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:VP_CARM&outputFormat=application/json"
             tm_url = "https://mapas-gis-inter.carm.es/geoserver/MAP_UAD_DIVISION-ADMINISTRATIVA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=MAP_UAD_DIVISION-ADMINISTRATIVA_CARM:recintos_municipales_inspire_carm_etrs89&outputFormat=application/json"
             mup_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:MONTES&outputFormat=application/json"
+            st.session_state['wfs_urls'] = {
+                'enp': enp_url,
+                'zepa': zepa_url,
+                'lic': lic_url,
+                'vp': vp_url,
+                'tm': tm_url,
+                'mup': mup_url
+            }
 
             afeccion_enp = consultar_wfs_seguro(query_geom, enp_url, "ENP", campo_nombre="nombre")
             afeccion_zepa = consultar_wfs_seguro(query_geom, zepa_url, "ZEPA", campo_nombre="site_name")
