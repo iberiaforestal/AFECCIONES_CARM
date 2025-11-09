@@ -630,25 +630,67 @@ def generar_pdf(datos, x, y, filename):
         row_height = 8
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
-        pdf.cell(col_widths[0], row_height, "ID", border=1, fill=True)
-        pdf.cell(col_widths[1], row_height, "Nombre", border=1, fill=True)
-        pdf.cell(col_widths[2], row_height, "Municipio", border=1, fill=True)
-        pdf.cell(col_widths[3], row_height, "Propiedad", border=1, fill=True)
+        
+        # Cabecera
+        pdf.cell(col_widths[0], 8, "ID", border=1, fill=True)
+        pdf.cell(col_widths[1], 8, "Nombre", border=1, fill=True)
+        pdf.cell(col_widths[2], 8, "Municipio", border=1, fill=True)
+        pdf.cell(col_widths[3], 8, "Propiedad", border=1, fill=True)
         pdf.ln()
 
-        # Agregar filas a la tabla
+        # Filas
         pdf.set_font("Arial", "", 10)
         for id_monte, nombre, municipio, propiedad in mup_detectado:
-            pdf.cell(col_widths[0], row_height, id_monte, border=1)
-            pdf.cell(col_widths[1], row_height, nombre, border=1)
-            pdf.cell(col_widths[2], row_height, municipio, border=1)
-            pdf.cell(col_widths[3], row_height, propiedad, border=1)
-            pdf.ln()
-        pdf.ln(10)
-    elif not any(valor != "No afecta" and valor != "No afecta a ninguna VP" and valor != "No afecta a ningún MUP" for _, valor in otras_afecciones):
-        pdf.set_font("Arial", "", 12)
-        pdf.cell(0, 8, "No afecta a ENP, ZEPA, LIC, VP, MUP", ln=True)
-        pdf.ln(10)
+            # Calcular líneas necesarias por columna
+            id_lines = pdf.multi_cell(col_widths[0], line_height, str(id_monte), split_only=True) or [""]
+            nombre_lines = pdf.multi_cell(col_widths[1], line_height, str(nombre), split_only=True) or [""]
+            mun_lines = pdf.multi_cell(col_widths[2], line_height, str(municipio), split_only=True) or [""]
+            prop_lines = pdf.multi_cell(col_widths[3], line_height, str(propiedad), split_only=True) or [""]
+
+            # Altura de fila = máximo de líneas * line_height
+            row_h = max(
+                8,
+                len(id_lines) * line_height,
+                len(nombre_lines) * line_height,
+                len(mun_lines) * line_height,
+                len(prop_lines) * line_height
+            )
+
+            # Guardar posición
+            x = pdf.get_x()
+            y = pdf.get_y()
+
+            # Dibujar bordes de celdas
+            pdf.rect(x, y, col_widths[0], row_h)
+            pdf.rect(x + col_widths[0], y, col_widths[1], row_h)
+            pdf.rect(x + col_widths[0] + col_widths[1], y, col_widths[2], row_h)
+            pdf.rect(x + col_widths[0] + col_widths[1] + col_widths[2], y, col_widths[3], row_h)
+
+            # Escribir contenido centrado verticalmente
+            # ID
+            id_h = len(id_lines) * line_height
+            pdf.set_xy(x, y + (row_h - id_h) / 2)
+            pdf.multi_cell(col_widths[0], line_height, str(id_monte), align="L")
+
+            # Nombre
+            nombre_h = len(nombre_lines) * line_height
+            pdf.set_xy(x + col_widths[0], y + (row_h - nombre_h) / 2)
+            pdf.multi_cell(col_widths[1], line_height, str(nombre), align="L")
+
+            # Municipio
+            mun_h = len(mun_lines) * line_height
+            pdf.set_xy(x + col_widths[0] + col_widths[1], y + (row_h - mun_h) / 2)
+            pdf.multi_cell(col_widths[2], line_height, str(municipio), align="L")
+
+            # Propiedad
+            prop_h = len(prop_lines) * line_height
+            pdf.set_xy(x + col_widths[0] + col_widths[1] + col_widths[2], y + (row_h - prop_h) / 2)
+            pdf.multi_cell(col_widths[3], line_height, str(propiedad), align="L")
+
+            # Mover a siguiente fila
+            pdf.set_y(y + row_h)
+
+        pdf.ln(10)  # Espacio después de la tabla
 
     # Procesar tabla para ZEPA
     if zepa_detectado:
