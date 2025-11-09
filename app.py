@@ -540,30 +540,29 @@ def generar_pdf(datos, x, y, filename):
     if otras_afecciones:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Otras afecciones:", ln=True)
-        pdf.ln(1)  # Espacio mínimo
+        pdf.ln(2)
 
-        line_height = 5.5  # ¡MÁS COMPACTO!
-        label_width = 52   # Ajustado al texto más largo
-        text_width = pdf.w - 2 * pdf.l_margin - label_width - 1  # -1 para pegarlo más
+        line_height = 6
+        label_width = 55
+        text_width = pdf.w - 2 * pdf.l_margin - label_width
 
         for titulo, valor in otras_afecciones:
             if valor:
-                current_y = pdf.get_y()
+                x = pdf.get_x()
+                y = pdf.get_y()
 
-                # === TÍTULO EN NEGRITA (FIJO) ===
+                # Título
+                pdf.set_xy(x, y)
                 pdf.set_font("Arial", "B", 12)
-                pdf.set_xy(pdf.l_margin, current_y)
                 pdf.cell(label_width, line_height, f"{titulo}:", border=0)
 
-                # === VALOR (INMEDIATAMENTE DESPUÉS) ===
-                pdf.set_font("Arial", "", 11)  # Fuente ligeramente más pequeña
-                pdf.set_xy(pdf.l_margin + label_width, current_y)
+                # Valor
+                pdf.set_xy(x + label_width, y)
+                pdf.set_font("Arial", "", 12)
                 pdf.multi_cell(text_width, line_height, valor, border=0)
 
-                # Avanzar solo lo necesario
-                pdf.set_y(current_y + line_height)
-        
-        pdf.ln(1)  # Espacio final mínimo
+                pdf.ln(line_height)  # Avanzar solo lo necesario
+        pdf.ln(2)
 
     # Procesar VP para tabla si hay detecciones
     if vp_detectado:
