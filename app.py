@@ -524,7 +524,7 @@ def generar_pdf(datos, x, y, filename):
 
     # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS en "otras afecciones" si NO tienen detecciones
     if not esteparias_detectado:
-        otras_afecciones.append(("Afección ESTEPARIAS", esteparias_valor if esteparias_valor else "No se encuentra en zona de distribución de aves esteparias"))
+        otras_afecciones.append(("Afección Esteparias", esteparias_valor if esteparias_valor else "No se encuentra en zona de distribución de aves esteparias"))
     if not enp_detectado:
         otras_afecciones.append(("Afección ENP", enp_valor if enp_valor else "No se encuentra en ningún ENP"))
     if not lic_detectado:
