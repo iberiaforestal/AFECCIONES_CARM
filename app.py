@@ -1127,6 +1127,7 @@ if submitted:
                 'enp': enp_url, 'zepa': zepa_url, 'lic': lic_url,
                 'vp': vp_url, 'tm': tm_url, 'mup': mup_url, 
                 'esteparias': esteparias_url,
+                'uso_suelo': uso_suelo_url
             }
 
             # === 6. CONSULTAR AFECCIONES ===
