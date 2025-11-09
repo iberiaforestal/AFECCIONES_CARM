@@ -466,7 +466,7 @@ def generar_pdf(datos, x, y, filename):
     # === ZEPA ===
     zepa_detectado = []
     zepa_valor = procesar_capa(
-        zepa_url, "afección ZEPA", "No afecta a ninguna Zona de especial protección para las aves",
+        zepa_url, "afección ZEPA", "No afecta a ninguna Zona de especial protección las aves",
         ["site_code", "site_name"],
         zepa_detectado
     )
