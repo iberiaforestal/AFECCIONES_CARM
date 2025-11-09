@@ -347,8 +347,8 @@ def generar_pdf(datos, x, y, filename):
     lic_url = urls.get('lic')
     enp_url = urls.get('enp')
     esteparias_url = urls.get('esteparias')
-    uso_suelo_url = urls.get('uso suelo')
-
+    uso_suelo_url = urls.get('uso_suelo')
+    
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
     pdf.set_margins(left=10, top=10, right=10)
