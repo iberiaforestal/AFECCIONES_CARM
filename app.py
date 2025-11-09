@@ -506,10 +506,13 @@ def generar_pdf(datos, x, y, filename):
     otras_afecciones = []
     for key in afecciones_keys:
         valor = datos.get(key, "").strip()
+        # CORREGIR SIEMPRE EL TÍTULO
+        key_corregido = key.replace("tm", "TM").replace("enp", "ENP").replace("lic", "LIC").replace("zepa", "ZEPA").replace("vp", "VP").replace("mup", "MUP")
+    
         if valor and not valor.startswith("Error"):
-            otras_afecciones.append((key.capitalize(), valor))
+            otras_afecciones.append((key_corregido, valor))
         else:
-            otras_afecciones.append((key.capitalize(), valor if valor else "No afecta"))
+            otras_afecciones.append((key_corregido, valor if valor else "No afecta"))
 
     # Solo incluir MUP, VP, ZEPA, LIC, ENP en "otras afecciones" si NO tienen detecciones
     if not enp_detectado:
