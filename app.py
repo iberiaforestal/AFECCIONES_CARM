@@ -142,14 +142,19 @@ def transformar_coordenadas(x, y):
 
 # Función para consultar si la geometría intersecta con algún polígono del GeoJSON
 # === FUNCIÓN DESCARGA CON CACHÉ ===
-@st.cache_data(show_spinner=False, ttl=3600)  # 1 hora de caché
+@st.cache_data(show_spinner=False, ttl=604800)  # 7 días
 def _descargar_geojson(url):
     try:
         response = session.get(url, timeout=30)
         response.raise_for_status()
         return BytesIO(response.content)
     except Exception as e:
-        st.warning(f"Servicio no disponible: {url.split('/')[-1]}")
+        if not hasattr(st, "_wfs_warnings"):
+            st._wfs_warnings = set()
+        warning_key = url.split('/')[-1]
+        if warning_key not in st._wfs_warnings:
+            st.warning(f"Servicio no disponible: {warning_key}")
+            st._wfs_warnings.add(warning_key)
         return None
 
 # === FUNCIÓN PRINCIPAL (SIN CACHÉ EN GEOMETRÍA) ===
@@ -1023,6 +1028,21 @@ if submitted:
                     st.session_state['pdf_file'] = pdf_filename
                 except Exception as e:
                     st.error(f"Error al generar el PDF: {str(e)}")
+                        # === LIMPIEZA DE ARCHIVOS TEMPORALES ===
+                        # (Opcional pero recomendado: evita acumular archivos en el servidor)
+                        import shutil
+                            try:
+                                if 'mapa_html' in st.session_state and st.session_state['mapa_html']:
+                                    if os.path.exists(st.session_state['mapa_html']):
+                                        os.remove(st.session_state['mapa_html'])
+                            except:
+                                pass
+                            try:
+                                if 'pdf_file' in st.session_state and st.session_state['pdf_file']:
+                                    if os.path.exists(st.session_state['pdf_file']):
+                                        os.remove(st.session_state['pdf_file'])
+                            except:
+                                pass
 
 if st.session_state['mapa_html'] and st.session_state['pdf_file']:
     try:
