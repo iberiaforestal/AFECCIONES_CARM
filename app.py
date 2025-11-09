@@ -1029,19 +1029,19 @@ if submitted:
                     st.session_state['pdf_file'] = pdf_filename
                 except Exception as e:
                     st.error(f"Error al generar el PDF: {str(e)}")
-                        # === LIMPIEZA DE ARCHIVOS TEMPORALES ===
-                            try:
-                                if 'mapa_html' in st.session_state and st.session_state['mapa_html']:
-                                    if os.path.exists(st.session_state['mapa_html']):
-                                        os.remove(st.session_state['mapa_html'])
-                            except:
-                                pass
-                            try:
-                                if 'pdf_file' in st.session_state and st.session_state['pdf_file']:
-                                    if os.path.exists(st.session_state['pdf_file']):
-                                        os.remove(st.session_state['pdf_file'])
-                            except:
-                                pass
+            # === LIMPIEZA DE ARCHIVOS TEMPORALES ===
+            try:
+                if 'mapa_html' in st.session_state and st.session_state['mapa_html']:
+                    if os.path.exists(st.session_state['mapa_html']):
+                        os.remove(st.session_state['mapa_html'])
+            except:
+                pass
+            try:
+                if 'pdf_file' in st.session_state and st.session_state['pdf_file']:
+                    if os.path.exists(st.session_state['pdf_file']):
+                        os.remove(st.session_state['pdf_file'])
+            except:
+                pass
 
 if st.session_state['mapa_html'] and st.session_state['pdf_file']:
     try:
