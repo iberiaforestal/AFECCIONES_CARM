@@ -506,8 +506,7 @@ def generar_pdf(datos, x, y, filename):
     otras_afecciones = []
     for key in afecciones_keys:
         valor = datos.get(key, "").strip()
-        # CORREGIR SIEMPRE EL TÍTULO
-        key_corregido = key
+        key_corregido = key  # ← SIN .replace()
     
         if valor and not valor.startswith("Error"):
             otras_afecciones.append((key_corregido, valor))
@@ -1021,7 +1020,7 @@ if submitted:
                 "objeto de la solicitud": objeto,
                 "afección MUP": afeccion_mup, "afección VP": afeccion_vp,
                 "afección ENP": afeccion_enp, "afección ZEPA": afeccion_zepa,
-                "afección LIC": afeccion_lic, "afección TM": afeccion_tm,
+                "afección LIC": afeccion_lic, "Afección TM": afeccion_tm,
                 "coordenadas_x": x, "coordenadas_y": y,
                 "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
