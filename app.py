@@ -434,7 +434,9 @@ def generar_pdf(datos, x, y, filename):
     zepa_key = "afección ZEPA"
     lic_key = "afección LIC"
     enp_key = "afección ENP"
-    
+    esteparias_key = "afección ESTEPARIAS"
+    uso_suelo_key = "Afección PLANEAMIENTO"
+        
 # === PROCESAR TODAS LAS CAPAS (VP, ZEPA, LIC, ENP) ===
     def procesar_capa(url, key, valor_inicial, campos, detectado_list):
         valor = datos.get(key, "").strip()
