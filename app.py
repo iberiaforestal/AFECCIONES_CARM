@@ -761,13 +761,12 @@ def generar_pdf(datos, x, y, filename):
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Espacio Natural Protegido (ENP):", ln=True)
         pdf.ln(2)
-
-        col_widths = [100, 80]  # Nombre | Figura
-        line_height = 8
-
+        col_w_nombre = 40
+        col_w_figura = pdf.w - 2 * pdf.l_margin - col_w_nombr
+        row_height = 8
         # --- CABECERA ---
         pdf.set_font("Arial", "B", 11)
-        pdf.set_fill_color(141, 179, 226)
+        pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_widths[0], 10, "Nombre", border=1, fill=True)
         pdf.cell(col_widths[1], 10, "Figura", border=1, fill=True, ln=True)
 
