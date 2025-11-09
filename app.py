@@ -182,12 +182,12 @@ def consultar_wfs_seguro(geom, url, nombre_afeccion, campo_nombre=None, campos_m
                 valores = [str(row.get(c.split(':')[0], "Desconocido")) for c in campos_mup]
                 etiquetas = [c.split(':')[1] if ':' in c else c.split(':')[0] for c in campos_mup]
                 info.append("\n".join(f"{etiquetas[i]}: {valores[i]}" for i in range(len(campos_mup))))
-            return f"Afecta a {nombre_afeccion}:\n" + "\n\n".join(info)
+            return f"Dentro de {nombre_afeccion}:\n" + "\n\n".join(info)
 
         # --- MODO NORMAL: solo nombres ---
         else:
             nombres = ', '.join(seleccion[campo_nombre].dropna().unique())
-            return f"Afecta a {nombre_afeccion}: {nombres}"
+            return f"Dentro de {nombre_afeccion}: {nombres}"
 
     except Exception as e:
         return f"Indeterminado: {nombre_afeccion} (error de datos)"
