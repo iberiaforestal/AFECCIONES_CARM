@@ -851,28 +851,34 @@ def generar_pdf(datos, x, y, filename):
         ("7222", "Concesión para la utilización privativa y aprovechamiento especial del dominio público.", None),
         ("7242", "Autorización de permutas en montes públicos.", "https://sede.carm.es/web/pagina?IDCONTENIDO=7242&IDTIPO=240&RASTRO=c$m40288"),
     ]
-    line_height = 4  # 4mm por línea
+    line_height = 4  # Altura de línea: 4mm
+    margin = pdf.l_margin
+
+    # Guardar posición inicial
+    start_y = pdf.get_y()
+
     for i, (codigo, texto, url) in enumerate(procedimientos_con_enlace):
-        x_start = pdf.get_x()
-        y_start = pdf.get_y()
-    
-        # Escribir código (con enlace si existe)
+        y = start_y + i * (line_height + 1)  # 4mm línea + 1mm espacio
+
+        # --- CÓDIGO (EN AZUL SI TIENE ENLACE) ---
+        pdf.set_y(y)
         if url:
-            pdf.set_text_color(0, 0, 255)  # Azul
+            pdf.set_text_color(0, 0, 255)
             pdf.cell(22, line_height, f"- {codigo}", border=0)
-            pdf.set_text_color(0, 0, 0)   # Negro
+            pdf.set_text_color(0, 0, 0)
         else:
             pdf.cell(22, line_height, f"- {codigo}", border=0)
-    
-        # Escribir texto
-        pdf.set_xy(x_start + 22, y_start)
-        pdf.multi_cell(pdf.w - 2 * pdf.l_margin - 22, line_height, f" {texto}", border=0, align="J")
-    
-        # Añadir hipervínculo (solo si hay URL)
+
+        # --- TEXTO (EN LA MISMA LÍNEA, SIN SALTO) ---
+        pdf.set_xy(margin + 22, y)
+        pdf.multi_cell(pdf.w - 2 * margin - 22, line_height, f" {texto}", border=0, align="J")
+
+        # --- HIPERVÍNCULO (SOLO EN CÓDIGO) ---
         if url:
-            pdf.link(x=x_start, y=y_start, w=22, h=line_height, link=url)
-        if i < len(procedimientos_con_enlace) - 1:
-            pdf.ln(1)  # Espacio entre líneas
+            pdf.link(margin, y, 22, line_height, url)
+
+    # Ajustar cursor final
+    pdf.set_y(start_y + len(procedimientos_con_enlace) * (line_height + 1))
 
     # Volver a negrita para el resto del texto
     pdf.set_font("Arial", "B", 10)  # Restaurar negrita
