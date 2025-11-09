@@ -173,7 +173,7 @@ def consultar_wfs_seguro(geom, url, nombre_afeccion, campo_nombre=None, campos_m
         seleccion = gdf[gdf.intersects(geom)]
         
         if seleccion.empty:
-            return f"No afecta en ninguna {nombre_afeccion}"
+            return f"No afecta en ningún {nombre_afeccion}"
 
         # --- MODO MUP: campos personalizados ---
         if campos_mup:
