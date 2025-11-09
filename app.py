@@ -790,7 +790,7 @@ def generar_pdf(datos, x, y, filename):
 
         # --- ANCHO TOTAL DISPONIBLE ---
         page_width = pdf.w - 2 * pdf.l_margin
-        col_widths = [page_width * 0.6, page_width * 0.4]  # 60% | 40%
+        col_widths = [page_width * 0.4, page_width * 0.6]  # 40% | 60%
         line_height = 8
 
         # --- CABECERA ---
