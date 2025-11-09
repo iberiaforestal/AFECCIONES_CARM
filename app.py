@@ -457,7 +457,7 @@ def generar_pdf(datos, x, y, filename):
     # === VP ===
     vp_detectado = []
     vp_valor = procesar_capa(
-        vp_url, "afección VP", "No afecta a ninguna VP",
+        vp_url, "afección VP", "No afecta a ninguna Vía Pecuaria",
         ["vp_cod", "vp_nb", "vp_mun", "vp_sit_leg", "vp_anch_lg"],
         vp_detectado
     )
@@ -465,7 +465,7 @@ def generar_pdf(datos, x, y, filename):
     # === ZEPA ===
     zepa_detectado = []
     zepa_valor = procesar_capa(
-        zepa_url, "afección ZEPA", "No afecta a ninguna ZEPA",
+        zepa_url, "afección ZEPA", "No afecta a ninguna Zona de especial protección para las aves",
         ["site_code", "site_name"],
         zepa_detectado
     )
@@ -473,7 +473,7 @@ def generar_pdf(datos, x, y, filename):
     # === LIC ===
     lic_detectado = []
     lic_valor = procesar_capa(
-        lic_url, "afección LIC", "No afecta a ningún LIC",
+        lic_url, "afección LIC", "No afecta a ningún Lugar de Interés Comunitario",
         ["site_code", "site_name"],
         lic_detectado
     )
@@ -481,7 +481,7 @@ def generar_pdf(datos, x, y, filename):
     # === ENP ===
     enp_detectado = []
     enp_valor = procesar_capa(
-        enp_url, "afección ENP", "No afecta a ningún ENP",
+        enp_url, "afección ENP", "No afecta a ningún Espacio Natural Protegido",
         ["nombre", "figura"],
         enp_detectado
     )
