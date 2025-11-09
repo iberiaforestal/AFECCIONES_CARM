@@ -898,7 +898,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(5)  # Espacio final
 
     # === TABLA USO DEL SUELO ===
-   if uso_suelo_detectado:
+    if uso_suelo_detectado:
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 8, "Afeccion a Planeamiento Urbano (PGOU):", ln=True)
         pdf.ln(2)
