@@ -975,42 +975,23 @@ if submitted:
     st.session_state.pop('mapa_html', None)
     st.session_state.pop('pdf_file', None)
 
-    # === 2. DEFINIR query_geom ANTES DE USARLO ===
-    if modo == "Por parcela":
-        query_geom = parcela.geometry.iloc[0]
-    else:
-        query_geom = Point(x, y)
-
-    # === 3. GUARDAR query_geom PARA PDF ===
-    st.session_state['query_geom'] = query_geom
-
-    # === 4. GENERAR NUEVO PDF ===
-    pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
-    try:
-        generar_pdf(datos, x, y, pdf_filename)
-        st.session_state['pdf_file'] = pdf_filename
-    except Exception as e:
-        st.error(f"Error al generar el PDF: {str(e)}")
-
-    # === 5. LIMPIAR DATOS TEMPORALES ===
-    st.session_state.pop('query_geom', None)
-    st.session_state.pop('wfs_urls', None)
+    # === 2. VALIDAR CAMPOS OBLIGATORIOS ===
     if not nombre or not apellidos or not dni or x == 0 or y == 0:
         st.warning("Por favor, completa todos los campos obligatorios y asegúrate de que las coordenadas son válidas.")
     else:
+        # === 3. TRANSFORMAR COORDENADAS ===
         lon, lat = transformar_coordenadas(x, y)
         if lon is None or lat is None:
             st.error("No se pudo generar el informe debido a coordenadas inválidas.")
         else:
+            # === 4. DEFINIR query_geom (UNA VEZ) ===
             if modo == "Por parcela":
                 query_geom = parcela.geometry.iloc[0]
             else:
                 query_geom = Point(x, y)
 
-            st.write(f"Municipio seleccionado: {municipio_sel}")
-            st.write(f"Polígono seleccionado: {masa_sel}")
-            st.write(f"Parcela seleccionada: {parcela_sel}")
-
+            # === 5. GUARDAR query_geom Y URLs EN SESSION_STATE ===
+            st.session_state['query_geom'] = query_geom
             enp_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ENP&outputFormat=application/json"
             zepa_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ZEPA&outputFormat=application/json"
             lic_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:LIC-ZEC&outputFormat=application/json"
@@ -1018,14 +999,11 @@ if submitted:
             tm_url = "https://mapas-gis-inter.carm.es/geoserver/MAP_UAD_DIVISION-ADMINISTRATIVA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=MAP_UAD_DIVISION-ADMINISTRATIVA_CARM:recintos_municipales_inspire_carm_etrs89&outputFormat=application/json"
             mup_url = "https://mapas-gis-inter.carm.es/geoserver/PFO_ZOR_DMVP_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=PFO_ZOR_DMVP_CARM:MONTES&outputFormat=application/json"
             st.session_state['wfs_urls'] = {
-                'enp': enp_url,
-                'zepa': zepa_url,
-                'lic': lic_url,
-                'vp': vp_url,
-                'tm': tm_url,
-                'mup': mup_url
+                'enp': enp_url, 'zepa': zepa_url, 'lic': lic_url,
+                'vp': vp_url, 'tm': tm_url, 'mup': mup_url
             }
 
+            # === 6. CONSULTAR AFECCIONES ===
             afeccion_enp = consultar_wfs_seguro(query_geom, enp_url, "ENP", campo_nombre="nombre")
             afeccion_zepa = consultar_wfs_seguro(query_geom, zepa_url, "ZEPA", campo_nombre="site_name")
             afeccion_lic = consultar_wfs_seguro(query_geom, lic_url, "LIC", campo_nombre="site_name")
@@ -1035,51 +1013,49 @@ if submitted:
                 query_geom, mup_url, "MUP",
                 campos_mup=["id_monte:ID", "nombremont:Nombre", "municipio:Municipio", "propiedad:Propiedad"]
             )
-
             afecciones = [afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
-            
+
+            # === 7. CREAR DICCIONARIO `datos` ===
             datos = {
                 "fecha_solicitud": fecha_solicitud.strftime('%d/%m/%Y'),
                 "fecha_informe": datetime.today().strftime('%d/%m/%Y'),
-                "nombre": nombre,
-                "apellidos": apellidos,
-                "dni": dni,
-                "dirección": direccion,
-                "teléfono": telefono,
-                "email": email,
+                "nombre": nombre, "apellidos": apellidos, "dni": dni,
+                "dirección": direccion, "teléfono": telefono, "email": email,
                 "objeto de la solicitud": objeto,
-                "afección MUP": afeccion_mup,
-                "afección VP": afeccion_vp,
-                "afección ENP": afeccion_enp,
-                "afección ZEPA": afeccion_zepa,
-                "afección LIC": afeccion_lic,
-                "afección TM": afeccion_tm,
-                "coordenadas_x": x,
-                "coordenadas_y": y,
-                "municipio": municipio_sel,
-                "polígono": masa_sel,
-                "parcela": parcela_sel
+                "afección MUP": afeccion_mup, "afección VP": afeccion_vp,
+                "afección ENP": afeccion_enp, "afección ZEPA": afeccion_zepa,
+                "afección LIC": afeccion_lic, "afección TM": afeccion_tm,
+                "coordenadas_x": x, "coordenadas_y": y,
+                "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
-            
-            mapa_html, afecciones = crear_mapa(lon, lat, afecciones, parcela_gdf=parcela)
+
+            # === 8. MOSTRAR RESULTADOS EN PANTALLA ===
+            st.write(f"Municipio seleccionado: {municipio_sel}")
+            st.write(f"Polígono seleccionado: {masa_sel}")
+            st.write(f"Parcela seleccionada: {parcela_sel}")
+
+            # === 9. GENERAR MAPA ===
+            mapa_html, afecciones_lista = crear_mapa(lon, lat, afecciones, parcela_gdf=parcela)
             if mapa_html:
                 st.session_state['mapa_html'] = mapa_html
-                st.session_state['afecciones'] = afecciones
-
+                st.session_state['afecciones'] = afecciones_lista
                 st.subheader("Resultado de las afecciones")
-                for afeccion in afecciones:
+                for afeccion in afecciones_lista:
                     st.write(f"• {afeccion}")
-
                 with open(mapa_html, 'r') as f:
                     html(f.read(), height=500)
 
-                pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
-                try:
-                    generar_pdf(datos, x, y, pdf_filename)
-                    st.session_state['pdf_file'] = pdf_filename
-                except Exception as e:
-                    st.error(f"Error al generar el PDF: {str(e)}")
+            # === 10. GENERAR PDF (AL FINAL, CUANDO `datos` EXISTE) ===
+            pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
+            try:
+                generar_pdf(datos, x, y, pdf_filename)
+                st.session_state['pdf_file'] = pdf_filename
+            except Exception as e:
+                st.error(f"Error al generar el PDF: {str(e)}")
 
+            # === 11. LIMPIAR DATOS TEMPORALES ===
+            st.session_state.pop('query_geom', None)
+            st.session_state.pop('wfs_urls', None)
 if st.session_state['mapa_html'] and st.session_state['pdf_file']:
     try:
         with open(st.session_state['pdf_file'], "rb") as f:
