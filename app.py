@@ -360,7 +360,7 @@ def generar_pdf(datos, x, y, filename):
     pdf.set_margins(left=10, top=10, right=10)
     pdf.add_page()
 
-    pdf.set_font("Arial", "B", size=12)
+    pdf.set_font("Arial", "B", size=14)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(0, 10, "Informe preliminar de Afecciones Forestales", ln=True, align="C")
     pdf.ln(5)
