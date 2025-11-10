@@ -664,11 +664,11 @@ def generar_pdf(datos, x, y, filename):
     # === TABLA USO DEL SUELO ===
     if uso_suelo_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afección a Planeamiento Urbano (PGOU):", ln=True)
+        pdf.cell(0, 4, "Afección a Planeamiento Urbano (PGOU):", ln=True)
         pdf.ln(2)
         col_w_uso = 50
         col_w_clas = pdf.w - 2 * pdf.l_margin - col_w_uso
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_uso, row_height, "Uso", border=1, fill=True)
@@ -676,33 +676,33 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for Uso_Especifico, Clasificacion in uso_suelo_detectado:
-            uso_lines = pdf.multi_cell(col_w_uso, 5, str(Uso_Especifico), split_only=True)
-            clas_lines = pdf.multi_cell(col_w_clas, 5, str(Clasificacion), split_only=True)
-            row_h = max(row_height, len(uso_lines) * 5, len(clas_lines) * 5)
+            uso_lines = pdf.multi_cell(col_w_uso, 4, str(Uso_Especifico), split_only=True)
+            clas_lines = pdf.multi_cell(col_w_clas, 4, str(Clasificacion), split_only=True)
+            row_h = max(row_height, len(uso_lines) * 4, len(clas_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_uso, row_h)
             pdf.rect(x + col_w_uso, y, col_w_clas, row_h)
-            uso_h = len(uso_lines) * 5
+            uso_h = len(uso_lines) * 4
             y_uso = y + (row_h - uso_h) / 2
             pdf.set_xy(x, y_uso)
-            pdf.multi_cell(col_w_uso, 5, str(Uso_Especifico), align="L")
-            clas_h = len(clas_lines) * 5
+            pdf.multi_cell(col_w_uso, 4, str(Uso_Especifico), align="L")
+            clas_h = len(clas_lines) * 4
             y_clas = y + (row_h - clas_h) / 2
             pdf.set_xy(x + col_w_uso, y_clas)
-            pdf.multi_cell(col_w_clas, 5, str(Clasificacion), align="L")
+            pdf.multi_cell(col_w_clas, 4, str(Clasificacion), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
         
     # Procesar VP para tabla si hay detecciones
     if vp_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afecciones a Vías Pecuarias (VP):", ln=True)
+        pdf.cell(0, 4, "Afecciones a Vías Pecuarias (VP):", ln=True)
         pdf.ln(2)
 
         # Configurar la tabla para VP
         col_widths = [30, 50, 40, 40, 30]  # Anchos: Código, Nombre, Municipio, Situación Legal, Ancho Legal
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_widths[0], row_height, "Código", border=1, fill=True)
@@ -717,7 +717,7 @@ def generar_pdf(datos, x, y, filename):
 
         for codigo_vp, nombre, municipio, situacion_legal, ancho_legal in vp_detectado:
 
-            line_height = 5  # altura base de una línea
+            line_height = 4  # altura base de una línea
 
             # Obtener altura necesaria para columnas multilínea
             nombre_lines = pdf.multi_cell(col_widths[1], line_height, str(nombre), split_only=True)
@@ -774,21 +774,21 @@ def generar_pdf(datos, x, y, filename):
     # Procesar MUP para tabla si hay detecciones
     if mup_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afecciones a Montes (MUP):", ln=True)
+        pdf.cell(0, 4, "Afecciones a Montes (MUP):", ln=True)
         pdf.ln(2)
 
         # Configurar la tabla para MUP
-        line_height = 5
+        line_height = 4
         col_widths = [30, 80, 40, 40]
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         
         # Cabecera
-        pdf.cell(col_widths[0], 8, "ID", border=1, fill=True)
-        pdf.cell(col_widths[1], 8, "Nombre", border=1, fill=True)
-        pdf.cell(col_widths[2], 8, "Municipio", border=1, fill=True)
-        pdf.cell(col_widths[3], 8, "Propiedad", border=1, fill=True)
+        pdf.cell(col_widths[0], 4, "ID", border=1, fill=True)
+        pdf.cell(col_widths[1], 4, "Nombre", border=1, fill=True)
+        pdf.cell(col_widths[2], 4, "Municipio", border=1, fill=True)
+        pdf.cell(col_widths[3], 4, "Propiedad", border=1, fill=True)
         pdf.ln()
 
         # Filas
@@ -802,7 +802,7 @@ def generar_pdf(datos, x, y, filename):
 
             # Altura de fila = máximo de líneas * line_height
             row_h = max(
-                8,
+                4,
                 len(id_lines) * line_height,
                 len(nombre_lines) * line_height,
                 len(mun_lines) * line_height,
@@ -848,11 +848,11 @@ def generar_pdf(datos, x, y, filename):
     # Procesar tabla para ZEPA
     if zepa_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afecciones a Zonas de Especial Protección para las Aves (ZEPA):", ln=True)
+        pdf.cell(0, 4, "Afecciones a Zonas de Especial Protección para las Aves (ZEPA):", ln=True)
         pdf.ln(2)
         col_w_code = 30
         col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_code, row_height, "Código", border=1, fill=True)
@@ -881,11 +881,11 @@ def generar_pdf(datos, x, y, filename):
     # Procesar tabla para LIC
     if lic_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afecciones a Lugares de Importancia Comunitaria (LIC):", ln=True)
+        pdf.cell(0, 4, "Afecciones a Lugares de Importancia Comunitaria (LIC):", ln=True)
         pdf.ln(2)
         col_w_code = 30
         col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_code, row_height, "Código", border=1, fill=True)
@@ -893,21 +893,21 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for site_code, site_name in lic_detectado:
-            code_lines = pdf.multi_cell(col_w_code, 5, str(site_code), split_only=True)
-            name_lines = pdf.multi_cell(col_w_name, 5, str(site_name), split_only=True)
-            row_h = max(row_height, len(code_lines) * 5, len(name_lines) * 5)
+            code_lines = pdf.multi_cell(col_w_code, 4, str(site_code), split_only=True)
+            name_lines = pdf.multi_cell(col_w_name, 4, str(site_name), split_only=True)
+            row_h = max(row_height, len(code_lines) * 4, len(name_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_code, row_h)
             pdf.rect(x + col_w_code, y, col_w_name, row_h)
-            code_h = len(code_lines) * 5
+            code_h = len(code_lines) * 4
             y_code = y + (row_h - code_h) / 2
             pdf.set_xy(x, y_code)
-            pdf.multi_cell(col_w_code, 5, str(site_code), align="L")
-            name_h = len(name_lines) * 5
+            pdf.multi_cell(col_w_code, 4, str(site_code), align="L")
+            name_h = len(name_lines) * 4
             y_name = y + (row_h - name_h) / 2
             pdf.set_xy(x + col_w_code, y_name)
-            pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
+            pdf.multi_cell(col_w_name, 4, str(site_name), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
         
@@ -918,13 +918,13 @@ def generar_pdf(datos, x, y, filename):
             pdf.add_page()
             pdf.ln(15)
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afecciones a Espacios Naturales Protegidos (ENP):", ln=True)
+        pdf.cell(0, 4, "Afecciones a Espacios Naturales Protegidos (ENP):", ln=True)
         pdf.ln(2)
 
         # --- ANCHO TOTAL DISPONIBLE ---
         page_width = pdf.w - 2 * pdf.l_margin
         col_widths = [page_width * 0.45, page_width * 0.55]  # 45% | 55%
-        line_height = 8
+        line_height = 4
 
         # --- CABECERA ---
         pdf.set_font("Arial", "B", 10)
@@ -941,7 +941,7 @@ def generar_pdf(datos, x, y, filename):
             # Calcular líneas necesarias
             nombre_lines = len(pdf.multi_cell(col_widths[0], line_height, nombre, split_only=True))
             figura_lines = len(pdf.multi_cell(col_widths[1], line_height, figura, split_only=True))
-            row_height = max(10, nombre_lines * line_height, figura_lines * line_height)
+            row_height = max(4, nombre_lines * line_height, figura_lines * line_height)
 
             # Salto de página si no cabe
             if pdf.get_y() + row_height > pdf.h - pdf.b_margin:
@@ -969,20 +969,20 @@ def generar_pdf(datos, x, y, filename):
     esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))
     if esteparias_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afecciones a zonas de distribución de aves esteparias:", ln=True)
+        pdf.cell(0, 4, "Afecciones a zonas de distribución de aves esteparias:", ln=True)
         pdf.ln(2)
 
         col_cuad = 35
         col_esp  = 50
         col_nom  = pdf.w - 2 * pdf.l_margin - col_cuad - col_esp
-        line_height = 6
+        line_height = 4
 
         # --- CABECERA ---
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
-        pdf.cell(col_cuad, 10, "Cuadrícula", border=1, fill=True)
-        pdf.cell(col_esp,  10, "Especie",     border=1, fill=True)
-        pdf.cell(col_nom,  10, "Nombre común", border=1, fill=True, ln=True)
+        pdf.cell(col_cuad, 4, "Cuadrícula", border=1, fill=True)
+        pdf.cell(col_esp,  4, "Especie",     border=1, fill=True)
+        pdf.cell(col_nom,  4, "Nombre común", border=1, fill=True, ln=True)
 
         # --- FILAS (TODO DENTRO DEL BUCLE) ---
         pdf.set_font("Arial", "", 10)
@@ -991,7 +991,7 @@ def generar_pdf(datos, x, y, filename):
             cuad_l = len(pdf.multi_cell(col_cuad, line_height, str(cuad), split_only=True))
             esp_l  = len(pdf.multi_cell(col_esp,  line_height, str(especie), split_only=True))
             nom_l  = len(pdf.multi_cell(col_nom,  line_height, str(nombre), split_only=True))
-            row_h = max(10, cuad_l * line_height, esp_l * line_height, nom_l * line_height)
+            row_h = max(4, cuad_l * line_height, esp_l * line_height, nom_l * line_height)
 
             # 2. SALTO DE PÁGINA SI NO CABE
             if pdf.get_y() + row_h > pdf.h - pdf.b_margin:
@@ -1023,11 +1023,11 @@ def generar_pdf(datos, x, y, filename):
     # === TABLA TORTUGA ===
     if tortuga_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afección a Plan de Recuperación tortuga mora:", ln=True)
+        pdf.cell(0, 4, "Afección a Plan de Recuperación tortuga mora:", ln=True)
         pdf.ln(2)
         col_w_cat_id = 50
         col_w_cat_desc = pdf.w - 2 * pdf.l_margin - col_w_cat_id
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_cat_id, row_height, "Cat_id", border=1, fill=True)
@@ -1035,32 +1035,32 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for cat_id, cat_desc in tortuga_detectado:
-            cat_id_lines = pdf.multi_cell(col_w_cat_id, 5, str(cat_id), split_only=True)
-            cat_desc_lines = pdf.multi_cell(col_w_cat_desc, 5, str(cat_desc), split_only=True)
-            row_h = max(row_height, len(cat_id_lines) * 5, len(cat_desc_lines) * 5)
+            cat_id_lines = pdf.multi_cell(col_w_cat_id, 4, str(cat_id), split_only=True)
+            cat_desc_lines = pdf.multi_cell(col_w_cat_desc, 4, str(cat_desc), split_only=True)
+            row_h = max(row_height, len(cat_id_lines) * 4, len(cat_desc_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_cat_id, row_h)
             pdf.rect(x + col_w_cat_id, y, col_w_cat_desc, row_h)
-            cat_id_h = len(cat_id_lines) * 5
+            cat_id_h = len(cat_id_lines) * 4
             y_cat_id = y + (row_h - cat_id_h) / 2
             pdf.set_xy(x, y_cat_id)
-            pdf.multi_cell(col_w_cat_id, 5, str(cat_id), align="L")
-            cat_desc_h = len(cat_desc_lines) * 5
+            pdf.multi_cell(col_w_cat_id, 4, str(cat_id), align="L")
+            cat_desc_h = len(cat_desc_lines) * 4
             y_cat_desc = y + (row_h - cat_desc_h) / 2
             pdf.set_xy(x + col_w_cat_id, y_cat_desc)
-            pdf.multi_cell(col_w_cat_desc, 5, str(cat_desc), align="L")
+            pdf.multi_cell(col_w_cat_desc, 4, str(cat_desc), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
         
     # === TABLA PERDICERA ===
     if perdicera_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afección a Plan de Recuperación águila perdicera:", ln=True)
+        pdf.cell(0, 4, "Afección a Plan de Recuperación águila perdicera:", ln=True)
         pdf.ln(2)
         col_w_zona = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_zona
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_zona, row_height, "Zona", border=1, fill=True)
@@ -1068,32 +1068,32 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for zona, nombre in perdicera_detectado:
-            zona_lines = pdf.multi_cell(col_w_zona, 5, str(zona), split_only=True)
-            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
-            row_h = max(row_height, len(zona_lines) * 5, len(nombre_lines) * 5)
+            zona_lines = pdf.multi_cell(col_w_zona, 4, str(zona), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 4, str(nombre), split_only=True)
+            row_h = max(row_height, len(zona_lines) * 4, len(nombre_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_zona, row_h)
             pdf.rect(x + col_w_zona, y, col_w_nombre, row_h)
-            zona_h = len(zona_lines) * 5
+            zona_h = len(zona_lines) * 4
             y_zona = y + (row_h - zona_h) / 2
             pdf.set_xy(x, y_zona)
-            pdf.multi_cell(col_w_zona, 5, str(zona), align="L")
-            nombre_h = len(nombre_lines) * 5
+            pdf.multi_cell(col_w_zona, 4, str(zona), align="L")
+            nombre_h = len(nombre_lines) * 4
             y_nombre = y + (row_h - nombre_h) / 2
             pdf.set_xy(x + col_w_zona, y_nombre)
-            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.multi_cell(col_w_nombre, 4, str(nombre), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
 
     # === TABLA NUTRIA ===
     if nutria_detectado:
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afección a Plan de Recuperación nutria:", ln=True)
+        pdf.cell(0, 4, "Afección a Plan de Recuperación nutria:", ln=True)
         pdf.ln(2)
         col_w_tipo_de_ar = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo_de_ar
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_tipo_de_ar, row_height, "Área", border=1, fill=True)
@@ -1101,21 +1101,21 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for tipo_de_ar, nombre in nutria_detectado:
-            tipo_de_ar_lines = pdf.multi_cell(col_w_tipo_de_ar, 5, str(tipo_de_ar), split_only=True)
-            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
-            row_h = max(row_height, len(tipo_de_ar_lines) * 5, len(nombre_lines) * 5)
+            tipo_de_ar_lines = pdf.multi_cell(col_w_tipo_de_ar, 4, str(tipo_de_ar), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 4, str(nombre), split_only=True)
+            row_h = max(row_height, len(tipo_de_ar_lines) * 4, len(nombre_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_tipo_de_ar, row_h)
             pdf.rect(x + col_w_tipo_de_ar, y, col_w_nombre, row_h)
-            tipo_de_ar_h = len(tipo_de_ar_lines) * 5
+            tipo_de_ar_h = len(tipo_de_ar_lines) * 4
             y_tipo_de_ar = y + (row_h - tipo_de_ar_h) / 2
             pdf.set_xy(x, y_tipo_de_ar)
-            pdf.multi_cell(col_w_tipo_de_ar, 5, str(tipo_de_ar), align="L")
-            nombre_h = len(nombre_lines) * 5
+            pdf.multi_cell(col_w_tipo_de_ar, 4, str(tipo_de_ar), align="L")
+            nombre_h = len(nombre_lines) * 4
             y_nombre = y + (row_h - nombre_h) / 2
             pdf.set_xy(x + col_w_tipo_de_ar, y_nombre)
-            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.multi_cell(col_w_nombre, 4, str(nombre), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
 
@@ -1126,7 +1126,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(2)
         col_w_clasificac = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_clasificac, row_height, "Área", border=1, fill=True)
@@ -1134,21 +1134,21 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for clasificac, nombre in fartet_detectado:
-            clasificac_lines = pdf.multi_cell(col_w_clasificac, 5, str(clasificac), split_only=True)
-            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
-            row_h = max(row_height, len(clasificac_lines) * 5, len(nombre_lines) * 5)
+            clasificac_lines = pdf.multi_cell(col_w_clasificac, 4, str(clasificac), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 4, str(nombre), split_only=True)
+            row_h = max(row_height, len(clasificac_lines) * 4, len(nombre_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_clasificac, row_h)
             pdf.rect(x + col_w_clasificac, y, col_w_nombre, row_h)
-            clasificac_h = len(clasificac_lines) * 5
+            clasificac_h = len(clasificac_lines) * 4
             y_clasificac = y + (row_h - clasificac_h) / 2
             pdf.set_xy(x, y_clasificac)
-            pdf.multi_cell(col_w_clasificac, 5, str(clasificac), align="L")
-            nombre_h = len(nombre_lines) * 5
+            pdf.multi_cell(col_w_clasificac, 4, str(clasificac), align="L")
+            nombre_h = len(nombre_lines) * 4
             y_nombre = y + (row_h - nombre_h) / 2
             pdf.set_xy(x + col_w_clasificac, y_nombre)
-            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.multi_cell(col_w_nombre, 4, str(nombre), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
 
@@ -1159,7 +1159,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(2)
         col_w_clasificac = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_clasificac, row_height, "Área", border=1, fill=True)
@@ -1167,21 +1167,21 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for clasificac, nombre in malvasia_detectado:
-            clasificac_lines = pdf.multi_cell(col_w_clasificac, 5, str(clasificac), split_only=True)
-            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
-            row_h = max(row_height, len(clasificac_lines) * 5, len(nombre_lines) * 5)
+            clasificac_lines = pdf.multi_cell(col_w_clasificac, 4, str(clasificac), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 4, str(nombre), split_only=True)
+            row_h = max(row_height, len(clasificac_lines) * 4, len(nombre_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_clasificac, row_h)
             pdf.rect(x + col_w_clasificac, y, col_w_nombre, row_h)
-            clasificac_h = len(clasificac_lines) * 5
+            clasificac_h = len(clasificac_lines) * 4
             y_clasificac = y + (row_h - clasificac_h) / 2
             pdf.set_xy(x, y_clasificac)
-            pdf.multi_cell(col_w_clasificac, 5, str(clasificac), align="L")
-            nombre_h = len(nombre_lines) * 5
+            pdf.multi_cell(col_w_clasificac, 4, str(clasificac), align="L")
+            nombre_h = len(nombre_lines) * 4
             y_nombre = y + (row_h - nombre_h) / 2
             pdf.set_xy(x + col_w_clasificac, y_nombre)
-            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.multi_cell(col_w_nombre, 4, str(nombre), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
 
@@ -1192,7 +1192,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(2)
         col_w_tipo = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_tipo, row_height, "Área", border=1, fill=True)
@@ -1200,21 +1200,21 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for tipo, nombre in garbancillo_detectado:
-            tipo_lines = pdf.multi_cell(col_w_tipo, 5, str(tipo), split_only=True)
-            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
-            row_h = max(row_height, len(tipo_lines) * 5, len(nombre_lines) * 5)
+            tipo_lines = pdf.multi_cell(col_w_tipo, 4, str(tipo), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 4, str(nombre), split_only=True)
+            row_h = max(row_height, len(tipo_lines) * 4, len(nombre_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_tipo, row_h)
             pdf.rect(x + col_w_tipo, y, col_w_nombre, row_h)
-            tipo_h = len(tipo_lines) * 5
+            tipo_h = len(tipo_lines) * 4
             y_tipo = y + (row_h - tipo_h) / 2
             pdf.set_xy(x, y_tipo)
-            pdf.multi_cell(col_w_tipo, 5, str(tipo), align="L")
-            nombre_h = len(nombre_lines) * 5
+            pdf.multi_cell(col_w_tipo, 4, str(tipo), align="L")
+            nombre_h = len(nombre_lines) * 4
             y_nombre = y + (row_h - nombre_h) / 2
             pdf.set_xy(x + col_w_tipo, y_nombre)
-            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.multi_cell(col_w_nombre, 4, str(nombre), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
         
@@ -1225,7 +1225,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(2)
         col_w_tipo = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo
-        row_height = 8
+        row_height = 4
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_tipo, row_height, "Área", border=1, fill=True)
@@ -1233,21 +1233,21 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln()
         pdf.set_font("Arial", "", 10)
         for tipo, nombre in flora_detectado:
-            tipo_lines = pdf.multi_cell(col_w_tipo, 5, str(tipo), split_only=True)
-            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
-            row_h = max(row_height, len(tipo_lines) * 5, len(nombre_lines) * 5)
+            tipo_lines = pdf.multi_cell(col_w_tipo, 4, str(tipo), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 4, str(nombre), split_only=True)
+            row_h = max(row_height, len(tipo_lines) * 4, len(nombre_lines) * 4)
             x = pdf.get_x()
             y = pdf.get_y()
             pdf.rect(x, y, col_w_tipo, row_h)
             pdf.rect(x + col_w_tipo, y, col_w_nombre, row_h)
-            tipo_h = len(tipo_lines) * 5
+            tipo_h = len(tipo_lines) * 4
             y_tipo = y + (row_h - tipo_h) / 2
             pdf.set_xy(x, y_tipo)
-            pdf.multi_cell(col_w_tipo, 5, str(tipo), align="L")
-            nombre_h = len(nombre_lines) * 5
+            pdf.multi_cell(col_w_tipo, 4, str(tipo), align="L")
+            nombre_h = len(nombre_lines) * 4
             y_nombre = y + (row_h - nombre_h) / 2
             pdf.set_xy(x + col_w_tipo, y_nombre)
-            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.multi_cell(col_w_nombre, 4, str(nombre), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)        
     
