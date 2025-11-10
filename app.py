@@ -403,9 +403,9 @@ def generar_pdf(datos, x, y, filename):
 
     objeto = datos.get("objeto de la solicitud", "").strip()
     pdf.ln(2)
-    pdf.set_font("Arial", "B", 12)
+    pdf.set_font("Arial", "B", 11)
     pdf.cell(0, 7, "Objeto de la solicitud:", ln=True)
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font("Arial", "", 11)
     wrapped_objeto = textwrap.wrap(objeto if objeto else "No especificado", width=60)
     for line in wrapped_objeto:
         pdf.cell(0, 7, line, ln=1)
@@ -415,20 +415,20 @@ def generar_pdf(datos, x, y, filename):
         valor = datos.get(campo, "").strip()
         campo_orden(pdf, campo.capitalize(), valor if valor else "No disponible")
 
-    pdf.set_font("Arial", "B", 12)
+    pdf.set_font("Arial", "B", 11)
     pdf.cell(0, 10, f"Coordenadas ETRS89: X = {x}, Y = {y}", ln=True)
 
     imagen_mapa_path = generar_imagen_estatica_mapa(x, y)
     if imagen_mapa_path and os.path.exists(imagen_mapa_path):
         epw = pdf.w - 2 * pdf.l_margin
         pdf.ln(5)
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 7, "Mapa de localización:", ln=True, align="C")
         image_width = epw * 0.5
         x_centered = pdf.l_margin + (epw - image_width) / 2  # Calcular posición x para centrar
         pdf.image(imagen_mapa_path, x=x_centered, w=image_width)
     else:
-        pdf.set_font("Arial", "", 12)
+        pdf.set_font("Arial", "", 11)
         pdf.cell(0, 7, "No se pudo generar el mapa de localización.", ln=True)
 
     pdf.add_page()
@@ -662,7 +662,7 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA USO DEL SUELO ===
     if uso_suelo_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afección a Planeamiento Urbano (PGOU):", ln=True)
         pdf.ln(2)
         col_w_uso = 50
@@ -695,14 +695,14 @@ def generar_pdf(datos, x, y, filename):
         
     # Procesar VP para tabla si hay detecciones
     if vp_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afecciones a Vías Pecuarias (VP):", ln=True)
         pdf.ln(2)
 
         # Configurar la tabla para VP
         col_widths = [30, 50, 40, 40, 30]  # Anchos: Código, Nombre, Municipio, Situación Legal, Ancho Legal
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_widths[0], row_height, "Código", border=1, fill=True)
         pdf.cell(col_widths[1], row_height, "Nombre", border=1, fill=True)
@@ -772,7 +772,7 @@ def generar_pdf(datos, x, y, filename):
 
     # Procesar MUP para tabla si hay detecciones
     if mup_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afecciones a Montes (MUP):", ln=True)
         pdf.ln(2)
 
@@ -780,7 +780,7 @@ def generar_pdf(datos, x, y, filename):
         line_height = 5
         col_widths = [30, 80, 40, 40]
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         
         # Cabecera
@@ -846,13 +846,13 @@ def generar_pdf(datos, x, y, filename):
 
     # Procesar tabla para ZEPA
     if zepa_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afecciones a Zonas de Especial Protección para las Aves (ZEPA):", ln=True)
         pdf.ln(2)
         col_w_code = 30
         col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_code, row_height, "Código", border=1, fill=True)
         pdf.cell(col_w_name, row_height, "Nombre", border=1, fill=True)
@@ -879,13 +879,13 @@ def generar_pdf(datos, x, y, filename):
 
     # Procesar tabla para LIC
     if lic_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afecciones a Lugares de Importancia Comunitaria (LIC):", ln=True)
         pdf.ln(2)
         col_w_code = 30
         col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_code, row_height, "Código", border=1, fill=True)
         pdf.cell(col_w_name, row_height, "Nombre", border=1, fill=True)
@@ -913,7 +913,7 @@ def generar_pdf(datos, x, y, filename):
     # Procesar tabla para ENP
     enp_detectado = list(set(tuple(row) for row in enp_detectado))  # ← ELIMINA DUPLICADOS
     if enp_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afecciones a Espacios Naturales Protegidos (ENP):", ln=True)
         pdf.ln(2)
 
@@ -923,7 +923,7 @@ def generar_pdf(datos, x, y, filename):
         line_height = 8
 
         # --- CABECERA ---
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_widths[0], 10, "Nombre", border=1, fill=True)
         pdf.cell(col_widths[1], 10, "Figura", border=1, fill=True, ln=True)
@@ -964,7 +964,7 @@ def generar_pdf(datos, x, y, filename):
     # Procesar tabla para ESTEPARIAS
     esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))
     if esteparias_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afecciones a zonas de distribución de aves esteparias:", ln=True)
         pdf.ln(2)
 
@@ -974,7 +974,7 @@ def generar_pdf(datos, x, y, filename):
         line_height = 6
 
         # --- CABECERA ---
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_cuad, 10, "Cuadrícula", border=1, fill=True)
         pdf.cell(col_esp,  10, "Especie",     border=1, fill=True)
@@ -1018,13 +1018,13 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA TORTUGA ===
     if tortuga_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afección a Plan de Recuperación tortuga mora:", ln=True)
         pdf.ln(2)
         col_w_cat_id = 50
         col_w_cat_desc = pdf.w - 2 * pdf.l_margin - col_w_cat_id
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_cat_id, row_height, "Cat_id", border=1, fill=True)
         pdf.cell(col_w_cat_desc, row_height, "Clasificación", border=1, fill=True)
@@ -1051,13 +1051,13 @@ def generar_pdf(datos, x, y, filename):
         
     # === TABLA PERDICERA ===
     if perdicera_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afección a Plan de Recuperación águila perdicera:", ln=True)
         pdf.ln(2)
         col_w_zona = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_zona
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_zona, row_height, "Zona", border=1, fill=True)
         pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
@@ -1084,13 +1084,13 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA NUTRIA ===
     if nutria_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afección a Plan de Recuperación nutria:", ln=True)
         pdf.ln(2)
         col_w_tipo_de_ar = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo_de_ar
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_tipo_de_ar, row_height, "Área", border=1, fill=True)
         pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
@@ -1117,13 +1117,13 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA FARTET ===
     if fartet_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afección a Plan de Recuperación fartet:", ln=True)
         pdf.ln(2)
         col_w_clasificac = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_clasificac, row_height, "Área", border=1, fill=True)
         pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
@@ -1150,13 +1150,13 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA MALVASIA ===
     if malvasia_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afección a Plan de Recuperación malvasia:", ln=True)
         pdf.ln(2)
         col_w_clasificac = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_clasificac, row_height, "Área", border=1, fill=True)
         pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
@@ -1183,13 +1183,13 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA GARBANCILLO ===
     if garbancillo_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afección a Plan de Recuperación garbancillo:", ln=True)
         pdf.ln(2)
         col_w_tipo = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_tipo, row_height, "Área", border=1, fill=True)
         pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
@@ -1216,13 +1216,13 @@ def generar_pdf(datos, x, y, filename):
         
     # === TABLA FLORA ===
     if flora_detectado:
-        pdf.set_font("Arial", "B", 12)
+        pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 8, "Afección a Plan de Recuperación flora:", ln=True)
         pdf.ln(2)
         col_w_tipo = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo
         row_height = 8
-        pdf.set_font("Arial", "B", 11)
+        pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
         pdf.cell(col_w_tipo, row_height, "Área", border=1, fill=True)
         pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
