@@ -301,7 +301,7 @@ class CustomPDF(FPDF):
     def header(self):
         if self.logo_path and os.path.exists(self.logo_path):
             page_width = self.w - 2 * self.l_margin
-            logo_width = page_width * 0.3
+            logo_width = page_width * 0.2
             self.image(self.logo_path, x=self.l_margin, y=10, w=logo_width)
             logo_height = logo_width * 0.2
             self.set_y(10 + logo_height + 2)
