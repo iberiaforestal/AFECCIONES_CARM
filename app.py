@@ -1276,7 +1276,7 @@ def generar_pdf(datos, x, y, filename):
     "En caso de ser detectadas afecciones a Dominio público forestal o pecuario, así como a Espacios Naturales Protegidos o RN2000, debe solicitar informe oficial a la D. G. de Patrimonio Natural y Acción Climática, a través de los procedimientos establecidos en sede electrónica:\n"
     )
     # Añadir el texto inicial en negrita
-    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, texto_resto, border=0, align="J")
+    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 5, texto_resto, border=0, align="J")
     pdf.ln(2)
 
     # Procedimientos sin negrita
