@@ -1334,7 +1334,7 @@ def generar_pdf(datos, x, y, filename):
     gap = 10
     line_h = 4
 
-    # === PREPARAR TEXTO IZQUIERDA Y DERECHA ===
+    # === COLUMNA IZQUIERDA ===
     izquierda = (
         "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
         "2.- De acuerdo con lo establecido en el articulo 22.1 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculacion o inscripcion de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un termino municipal en el que existan montes demaniales requerira el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del organo forestal de la comunidad autonoma.\n\n"
@@ -1372,29 +1372,35 @@ def generar_pdf(datos, x, y, filename):
         "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
     )
 
-    # === ESCRIBIR EN 2 COLUMNAS SIN MONTAR ===
+    # === ESCRIBIR EN 2 COLUMNAS (SIN ln=1) ===
     start_y = pdf.get_y()
 
-    # Columna IZQUIERDA
+    # --- COLUMNA IZQUIERDA ---
     pdf.set_xy(pdf.l_margin, start_y)
     for line in izquierda.split('\n'):
         if line.strip():
             pdf.set_font("Arial", "B" if line[0].isdigit() else "", 10)
-            pdf.multi_cell(col_width, line_h, line, align="J", ln=1)
+            pdf.multi_cell(col_width, line_h, line, align="J")
+            pdf.ln(line_h)  # Avanza manualmente
         else:
             pdf.ln(line_h)
 
-    # Columna DERECHA
+    izq_end_y = pdf.get_y()
+
+    # --- COLUMNA DERECHA ---
     pdf.set_xy(pdf.l_margin + col_width + gap, start_y)
     for line in derecha.split('\n'):
         if line.strip():
             pdf.set_font("Arial", "B" if line.startswith(("7.-", "8.-", "9.-")) else "", 10)
-            pdf.multi_cell(col_width, line_h, line, align="J", ln=1)
+            pdf.multi_cell(col_width, line_h, line, align="J")
+            pdf.ln(line_h)  # Avanza manualmente
         else:
             pdf.ln(line_h)
 
+    der_end_y = pdf.get_y()
+
     # === PIE ===
-    final_y = max(pdf.get_y(), start_y + 100)  # Ajusta si es necesario
+    final_y = max(izq_end_y, der_end_y)
     pdf.set_y(final_y + 10)
     pdf.set_font("Arial", "", 10)
     pdf.multi_cell(0, line_h,
@@ -1404,7 +1410,7 @@ def generar_pdf(datos, x, y, filename):
         "E-mail: info@iberiaforestal.es",
         align="J"
     )
-    
+
     pdf.output(filename)
     return filename
 
