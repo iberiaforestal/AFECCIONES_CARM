@@ -1326,20 +1326,24 @@ def generar_pdf(datos, x, y, filename):
 
     
     # === REEMPLAZO FINAL: CONDICIONADO EN 2 COLUMNAS (SIN MONTAR LETRAS) ===
-    pdf.add_page()  # Nueva página para CONDICIONADO
+    pdf.add
 
-    # Título CONDICIONADO
-    pdf.set_fill_color(141, 179, 226)  # Azul suave
+    _page()  # Nueva página
+
+    # Título CONDICIONADO (negrita, centrado, sin fondo)
     pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 12, "CONDICIONADO", ln=True, align="C", fill=True)
+    pdf.cell(0, 12, "CONDICIONADO", ln=True, align="C")
     pdf.ln(8)
 
-    # Configuración
+    # Configuración de columnas
     col_width = (pdf.w - 2 * pdf.l_margin - 10) / 2
     gap = 10
     line_h = 5
+    start_y = pdf.get_y()
 
     # === COLUMNA IZQUIERDA (1-6) ===
+    pdf.set_xy(pdf.l_margin, start_y)
+    pdf.set_font("Arial", "", 10)  # SIN NEGRITA
     izquierda = (
         "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
         "2.- De acuerdo con lo establecido en el articulo 22.1 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculacion o inscripcion de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un termino municipal en el que existan montes demaniales requerira el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del organo forestal de la comunidad autonoma.\n\n"
@@ -1350,7 +1354,18 @@ def generar_pdf(datos, x, y, filename):
         "6.- En suelo no urbanizable se prestara especial atencion a la Disposicion adicional segunda de la Ley 3/2020, de 27 de julio, de recuperacion y proteccion del Mar Menor, solicitando para posibles cambios de uso lo establecido en el articulo 8 de la Ley 8/2014, de 21 de noviembre, de Medidas Tributarias, de Simplificacion Administrativa y en materia de Funcion Publica."
     )
 
+    for line in izquierda.split('\n'):
+        if line.strip():
+            pdf.multi_cell(col_width, line_h, line, align="J")
+            pdf.ln(line_h)
+        else:
+            pdf.ln(line_h)
+
+    izq_end_y = pdf.get_y()
+
     # === COLUMNA DERECHA (7-9) ===
+    pdf.set_xy(pdf.l_margin + col_width + gap, start_y)
+    pdf.set_font("Arial", "", 10)  # SIN NEGRITA
     derecha = (
         "7.- Los Planes de Gestion de la Red Natura 2000 aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
         "- Decreto n. 13/2017, de 1 de marzo - Declaracion de las ZEC \"Minas de la Celia\" y \"Cueva de las Yeseras\" y aprobacion de su Plan de Gestion.\n"
@@ -1378,24 +1393,6 @@ def generar_pdf(datos, x, y, filename):
         "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
     )
 
-    # === ESCRIBIR 2 COLUMNAS (SIN NEGRITA) ===
-    start_y = pdf.get_y()
-
-    # Columna IZQUIERDA
-    pdf.set_xy(pdf.l_margin, start_y)
-    pdf.set_font("Arial", "", 10)  # SIN NEGRITA
-    for line in izquierda.split('\n'):
-        if line.strip():
-            pdf.multi_cell(col_width, line_h, line, align="J")
-            pdf.ln(line_h)
-        else:
-            pdf.ln(line_h)
-
-    izq_end_y = pdf.get_y()
-
-    # Columna DERECHA
-    pdf.set_xy(pdf.l_margin + col_width + gap, start_y)
-    pdf.set_font("Arial", "", 10)  # SIN NEGRITA
     for line in derecha.split('\n'):
         if line.strip():
             pdf.multi_cell(col_width, line_h, line, align="J")
@@ -1403,10 +1400,8 @@ def generar_pdf(datos, x, y, filename):
         else:
             pdf.ln(line_h)
 
-    der_end_y = pdf.get_y()
-
-    # === PIE DE CONDICIONADO ===
-    final_y = max(izq_end_y, der_end_y)
+    # === PIE ===
+    final_y = max(izq_end_y, pdf.get_y())
     pdf.set_y(final_y + 10)
     pdf.set_font("Arial", "", 10)
     pdf.multi_cell(0, line_h,
@@ -1416,7 +1411,6 @@ def generar_pdf(datos, x, y, filename):
         "E-mail: info@iberiaforestal.es",
         align="J"
     )
-
     pdf.output(filename)
     return filename
 
