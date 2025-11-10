@@ -354,6 +354,7 @@ def generar_pdf(datos, x, y, filename):
     fartet_url = urls.get('fartet')
     malvasia_url = urls.get('malvasia')
     garbancillo_url = urls.get('garbancillo')
+    flora_url = urls.get('flora')
     
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
@@ -448,6 +449,7 @@ def generar_pdf(datos, x, y, filename):
     fartet_key = "Afección PLAN RECUPERACION FARTET"
     malvasia_key = "Afección PLAN RECUPERACION MALVASIA"
     garbancillo_key = "Afección PLAN RECUPERACION GARBANCILLO"
+    flora_key = "Afección PLAN RECUPERACION FLORA"
         
 # === PROCESAR TODAS LAS CAPAS (VP, ZEPA, LIC, ENP) ===
     def procesar_capa(url, key, valor_inicial, campos, detectado_list):
@@ -564,7 +566,15 @@ def generar_pdf(datos, x, y, filename):
         garbancillo_url, "afección garbancillo", "No afecta al Plan de Recuperación del garbancillo",
         ["tipo", "nombre"],
         garbancillo_detectado
-    ) 
+    )
+
+    # === FLORA ===
+    flora_detectado = []
+    flora_valor = procesar_capa(
+        flora_url, "afección flora", "No afecta al Plan de Recuperación de flora",
+        ["tipo", "nombre"],
+        flora_detectado
+    )
 
     # === MUP (ya funciona bien, lo dejamos igual) ===
     mup_valor = datos.get("afección MUP", "").strip()
@@ -593,7 +603,9 @@ def generar_pdf(datos, x, y, filename):
         else:
             otras_afecciones.append((key_corregido, valor if valor else "No afecta"))
 
-    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO, TORTUGA, PERDICERA, NUTRIA, FARTET, MALVASIA, GARBANCILLO en "otras afecciones" si NO tienen detecciones
+    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO, TORTUGA, PERDICERA, NUTRIA, FARTET, MALVASIA, GARBANCILLO, FLORA en "otras afecciones" si NO tienen detecciones
+    if not flora_detectado:
+        otras_afecciones.append(("Afección a flora", flora_valor if flora_valor else "No afecta a Plan de Recuperación de flora"))
     if not garbancillo_detectado:
         otras_afecciones.append(("Afección a garbancillo", garbancillo_valor if garbancillo_valor else "No afecta a Plan de Recuperación del garbancillo"))
     if not malvasia_detectado:
@@ -1201,7 +1213,40 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_xy(x + col_w_tipo, y_nombre)
             pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
             pdf.set_y(y + row_h)
-        pdf.ln(5) 
+        pdf.ln(5)
+        
+    # === TABLA FLORA ===
+    if flora_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Afección a Plan de Recuperación flora:", ln=True)
+        pdf.ln(2)
+        col_w_tipo = 50
+        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo
+        row_height = 8
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_w_tipo, row_height, "Área", border=1, fill=True)
+        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
+        pdf.ln()
+        pdf.set_font("Arial", "", 10)
+        for tipo, nombre in flora_detectado:
+            tipo_lines = pdf.multi_cell(col_w_tipo, 5, str(tipo), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
+            row_h = max(row_height, len(tipo_lines) * 5, len(nombre_lines) * 5)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.rect(x, y, col_w_tipo, row_h)
+            pdf.rect(x + col_w_tipo, y, col_w_nombre, row_h)
+            tipo_h = len(tipo_lines) * 5
+            y_tipo = y + (row_h - tipo_h) / 2
+            pdf.set_xy(x, y_tipo)
+            pdf.multi_cell(col_w_tipo, 5, str(tipo), align="L")
+            nombre_h = len(nombre_lines) * 5
+            y_nombre = y + (row_h - nombre_h) / 2
+            pdf.set_xy(x + col_w_tipo, y_nombre)
+            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.set_y(y + row_h)
+        pdf.ln(5)        
     
     pdf.add_page()
     
@@ -1387,6 +1432,7 @@ if submitted:
 
             # === 5. GUARDAR query_geom Y URLs EN SESSION_STATE ===
             st.session_state['query_geom'] = query_geom
+            flora_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:planes_recuperacion_flora2014&outputFormat=application/json"
             garbancillo_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_garbancillo&outputFormat=application/json"
             malvasia_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_malvasia&outputFormat=application/json"
             fartet_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_fartet&outputFormat=application/json"
@@ -1411,10 +1457,12 @@ if submitted:
                 'nutria': nutria_url,
                 'fartet': fartet_url,
                 'malvasia': malvasia_url,
-                'garbancillo': garbancillo_url
+                'garbancillo': garbancillo_url,
+                'flora': flora_url
             }
 
             # === 6. CONSULTAR AFECCIONES ===
+            afeccion_flora = consultar_wfs_seguro(query_geom, flora_url, "FLORA", campo_nombre="tipo")
             afeccion_garbancillo = consultar_wfs_seguro(query_geom, garbancillo_url, "GARBANCILLO", campo_nombre="tipo")
             afeccion_malvasia = consultar_wfs_seguro(query_geom, malvasia_url, "MALVASIA", campo_nombre="clasificac")
             afeccion_fartet = consultar_wfs_seguro(query_geom, fartet_url, "FARTET", campo_nombre="clasificac")
@@ -1432,7 +1480,7 @@ if submitted:
                 query_geom, mup_url, "MUP",
                 campos_mup=["id_monte:ID", "nombremont:Nombre", "municipio:Municipio", "propiedad:Propiedad"]
             )
-            afecciones = [afeccion_garbancillo, afeccion_malvasia, afeccion_fartet, afeccion_nutria, afeccion_perdicera, afeccion_tortuga, afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
+            afecciones = [afeccion_flora, afeccion_garbancillo, afeccion_malvasia, afeccion_fartet, afeccion_nutria, afeccion_perdicera, afeccion_tortuga, afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
 
             # === 7. CREAR DICCIONARIO `datos` ===
             datos = {
@@ -1451,6 +1499,7 @@ if submitted:
                 "afección fartet": afeccion_fartet,
                 "afección malvasia": afeccion_malvasia,
                 "afección garbancillo": afeccion_garbancillo,
+                "afección flora": afeccion_flora,
                 "coordenadas_x": x, "coordenadas_y": y,
                 "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
