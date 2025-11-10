@@ -1331,7 +1331,7 @@ def generar_pdf(datos, x, y, filename):
     # Título CONDICIONADO
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 12, "CONDICIONADO", ln=True, align="C")
-    pdf.ln(15)
+    pdf.ln(8)
 
     # Todo el texto en una sola columna, justificado
     pdf.set_font("Arial", "", 9)
