@@ -1325,16 +1325,16 @@ def generar_pdf(datos, x, y, filename):
         y += line_height
 
     
-    # Volver a negrita para el resto del texto
-    # === REEMPLAZO FINAL: CONDICIONADO EN 2 COLUMNAS (COMO EN TU WORD) ===
+    # === REEMPLAZO FINAL: CONDICIONADO EN 2 COLUMNAS (SIN MONTAR LETRAS) ===
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "CONDICIONADO", ln=True, align="C")
     pdf.ln(5)
 
     col_width = (pdf.w - 2 * pdf.l_margin - 10) / 2
     gap = 10
+    line_h = 4
 
-    # === COLUMNA IZQUIERDA (1-6) ===
+    # === PREPARAR TEXTO IZQUIERDA Y DERECHA ===
     izquierda = (
         "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
         "2.- De acuerdo con lo establecido en el articulo 22.1 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculacion o inscripcion de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un termino municipal en el que existan montes demaniales requerira el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del organo forestal de la comunidad autonoma.\n\n"
@@ -1345,7 +1345,6 @@ def generar_pdf(datos, x, y, filename):
         "6.- En suelo no urbanizable se prestara especial atencion a la Disposicion adicional segunda de la Ley 3/2020, de 27 de julio, de recuperacion y proteccion del Mar Menor, solicitando para posibles cambios de uso lo establecido en el articulo 8 de la Ley 8/2014, de 21 de noviembre, de Medidas Tributarias, de Simplificacion Administrativa y en materia de Funcion Publica."
     )
 
-    # === COLUMNA DERECHA (7-9) - SIN —, SIN “, SIN • ===
     derecha = (
         "7.- Los Planes de Gestion de la Red Natura 2000 aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
         "- Decreto n. 13/2017, de 1 de marzo - Declaracion de las ZEC \"Minas de la Celia\" y \"Cueva de las Yeseras\" y aprobacion de su Plan de Gestion.\n"
@@ -1361,7 +1360,7 @@ def generar_pdf(datos, x, y, filename):
         "- Parque Regional Calblanque, Monte de las Cenizas y Pena del Aguila - Decreto 45/1995, de 26 de mayo de 1995 (BORM n 152, de 03/07/1995).\n"
         "- Parque Regional Sierra Espuna (incluido el Paisaje Protegido Barrancos de Gebas) - Decreto 13/1995, de 31 de marzo de 1995 (aprobacion del PORN; BORM n 85, de 11/04/1995).\n"
         "- Humedal del Ajauque y Rambla Salada - Orden (1998) (fase inicial).\n"
-        "- Saladares del Guadalentin - Orden (29/12/1998) (fase inicial).\n"
+        "- Saladares del Guadalentin - Orden (29/
         "- Sierra de Salinas - Orden (03/07/2002) (fase inicial).\n"
         "- Carrascoy y El Valle - Orden (18/05/2005) (fase inicial - ademas, existe en 2025 proyecto de Plan / Plan de Gestion/ZEC en informacion publica).\n"
         "- Sierra de la Muela, Cabo Tinoso y Roldan - Orden (15/03/2006) (fase inicial).\n\n"
@@ -1373,42 +1372,39 @@ def generar_pdf(datos, x, y, filename):
         "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
     )
 
-    # === ESCRIBIR EN 2 COLUMNAS ===
-    lines_izq = izquierda.split('\n')
-    lines_der = derecha.split('\n')
-    max_lines = max(len(lines_izq), len(lines_der))
+    # === ESCRIBIR EN 2 COLUMNAS SIN MONTAR ===
     start_y = pdf.get_y()
+
+    # Columna IZQUIERDA
     pdf.set_xy(pdf.l_margin, start_y)
+    for line in izquierda.split('\n'):
+        if line.strip():
+            pdf.set_font("Arial", "B" if line[0].isdigit() else "", 10)
+            pdf.multi_cell(col_width, line_h, line, align="J", ln=1)
+        else:
+            pdf.ln(line_h)
 
-    for i in range(max_lines):
-        y = start_y + (i * 4)
-
-        # IZQUIERDA
-        if i < len(lines_izq):
-            line = lines_izq[i]
-            pdf.set_xy(pdf.l_margin, y)
-            pdf.set_font("Arial", "B" if line.startswith(tuple(f"{n}.-" for n in range(1,7))) else "", 10)
-            pdf.multi_cell(col_width, 4, line, border=0, align="J")
-
-        # DERECHA
-        if i < len(lines_der):
-            line = lines_der[i]
-            pdf.set_xy(pdf.l_margin + col_width + gap, y)
+    # Columna DERECHA
+    pdf.set_xy(pdf.l_margin + col_width + gap, start_y)
+    for line in derecha.split('\n'):
+        if line.strip():
             pdf.set_font("Arial", "B" if line.startswith(("7.-", "8.-", "9.-")) else "", 10)
-            pdf.multi_cell(col_width, 4, line, border=0, align="J")
+            pdf.multi_cell(col_width, line_h, line, align="J", ln=1)
+        else:
+            pdf.ln(line_h)
 
     # === PIE ===
-    pdf.set_y(start_y + max_lines * 4 + 8)
+    final_y = max(pdf.get_y(), start_y + 100)  # Ajusta si es necesario
+    pdf.set_y(final_y + 10)
     pdf.set_font("Arial", "", 10)
-    pdf.multi_cell(0, 4, 
+    pdf.multi_cell(0, line_h,
         "La normativa de referencia esta actualizada a fecha de uno de enero de dos mil veintiseis, y sera revisada trimestralmente.\n\n"
         "Para mas informacion:\n"
         "Telefono: +34 638616155\n"
-        "E-mail:", 
+        "E-mail: info@iberiaforestal.es",
         align="J"
     )
-
-    pdf.set_text_color(0, 0, 0)  # Restaurar color negro para el resto del documento
+    
     pdf.output(filename)
     return filename
 
