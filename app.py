@@ -1297,7 +1297,7 @@ if submitted:
 
             # === 5. GUARDAR query_geom Y URLs EN SESSION_STATE ===
             st.session_state['query_geom'] = query_geom
-            fartet_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_FAUNA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_FAUNA_CARM:fartet&outputFormat=application/json"
+            fartet_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_fartet&outputFormat=application/json"
             nutria_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_nutria&outputFormat=application/json"
             perdicera_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_perdicera&outputFormat=application/json"
             tortuga_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_DES_BIOTA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_DES_BIOTA_CARM:tortuga_distribucion_2001&outputFormat=application/json"
