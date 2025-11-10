@@ -1325,46 +1325,26 @@ def generar_pdf(datos, x, y, filename):
         y += line_height
 
     
-    # === REEMPLAZO FINAL: CONDICIONADO EN 2 COLUMNAS (SIN MONTAR LETRAS) ===
+    # === CONDICIONADO:===
     pdf.add_page()  # Nueva página
 
-    # Título CONDICIONADO (negrita, centrado, sin fondo)
-    pdf.set_font("Arial", "B", 14)
+    # Título CONDICIONADO
+    pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 12, "CONDICIONADO", ln=True, align="C")
     pdf.ln(8)
 
-    # Configuración de columnas
-    col_width = (pdf.w - 2 * pdf.l_margin - 10) / 2
-    gap = 10
+    # Todo el texto en una sola columna, justificado
+    pdf.set_font("Arial", "", 9)
     line_h = 5
-    start_y = pdf.get_y()
 
-    # === COLUMNA IZQUIERDA (1-6) ===
-    pdf.set_xy(pdf.l_margin, start_y)
-    pdf.set_font("Arial", "", 10)  # SIN NEGRITA
-    izquierda = (
+    condicionado_texto = (
         "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
         "2.- De acuerdo con lo establecido en el articulo 22.1 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculacion o inscripcion de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un termino municipal en el que existan montes demaniales requerira el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del organo forestal de la comunidad autonoma.\n\n"
         "3.- De acuerdo con lo establecido en el articulo 25.5 de la ley 43/2003 de 21 de noviembre de Montes, para posibilitar el ejercicio del derecho de adquisicion preferente a traves de la accion de tanteo, el transmitente debera notificar fehacientemente a la Administracion publica titular de ese derecho los datos relativos al precio y caracteristicas de la transmision proyectada, la cual dispondra de un plazo de tres meses, a partir de dicha notificacion, para ejercitar dicho derecho, mediante el abono o consignacion de su importe en las referidas condiciones.\n\n"
         "4.- En relacion al Dominio Publico Pecuario, salvaguardando lo que pudiera resultar de los futuros deslindes, en la parcela objeto este informe, cualquier construccion, plantacion, vallado, obras, instalaciones, etc., no deberian realizarse dentro del area delimitada como Dominio Publico Pecuario provisional para evitar invadir este.\n"
         "En todo caso, no podra interrumpirse el transito por el Dominio Publico Pecuario, dejando siempre el paso adecuado para el transito ganadero y otros usos legalmente establecidos en la Ley 3/1995, de 23 de marzo, de Vias Pecuarias.\n\n"
         "5.- El Planeamiento se regira por la Ley 13/2015, de 30 de marzo, de ordenacion territorial y urbanistica de la Region de Murcia, y por el PGOU del termino municipal. El Regimen del suelo no urbanizable se recoge en el articulo 5 de la citada Ley. Se indica que en casos de suelo no urbanizables.\n\n"
-        "6.- En suelo no urbanizable se prestara especial atencion a la Disposicion adicional segunda de la Ley 3/2020, de 27 de julio, de recuperacion y proteccion del Mar Menor, solicitando para posibles cambios de uso lo establecido en el articulo 8 de la Ley 8/2014, de 21 de noviembre, de Medidas Tributarias, de Simplificacion Administrativa y en materia de Funcion Publica."
-    )
-
-    for line in izquierda.split('\n'):
-        if line.strip():
-            pdf.multi_cell(col_width, line_h, line, align="J")
-            pdf.ln(line_h)
-        else:
-            pdf.ln(line_h)
-
-    izq_end_y = pdf.get_y()
-
-    # === COLUMNA DERECHA (7-9) ===
-    pdf.set_xy(pdf.l_margin + col_width + gap, start_y)
-    pdf.set_font("Arial", "", 10)  # SIN NEGRITA
-    derecha = (
+        "6.- En suelo no urbanizable se prestara especial atencion a la Disposicion adicional segunda de la Ley 3/2020, de 27 de julio, de recuperacion y proteccion del Mar Menor, solicitando para posibles cambios de uso lo establecido en el articulo 8 de la Ley 8/2014, de 21 de noviembre, de Medidas Tributarias, de Simplificacion Administrativa y en materia de Funcion Publica.\n\n"
         "7.- Los Planes de Gestion de la Red Natura 2000 aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
         "- Decreto n. 13/2017, de 1 de marzo - Declaracion de las ZEC \"Minas de la Celia\" y \"Cueva de las Yeseras\" y aprobacion de su Plan de Gestion.\n"
         "- Decreto n. 259/2019, de 10 de octubre - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los Espacios Protegidos del Mar Menor y la Franja Litoral Mediterranea.\n"
@@ -1391,16 +1371,15 @@ def generar_pdf(datos, x, y, filename):
         "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
     )
 
-    for line in derecha.split('\n'):
+    # Escribir línea por línea, justificado
+    for line in condicionado_texto.split('\n'):
         if line.strip():
-            pdf.multi_cell(col_width, line_h, line, align="J")
-            pdf.ln(line_h)
+            pdf.multi_cell(0, line_h, line, align="J")
         else:
             pdf.ln(line_h)
 
     # === PIE ===
-    final_y = max(izq_end_y, pdf.get_y())
-    pdf.set_y(final_y + 10)
+    pdf.ln(10)
     pdf.set_font("Arial", "", 10)
     pdf.multi_cell(0, line_h,
         "La normativa de referencia esta actualizada a fecha de uno de enero de dos mil veintiseis, y sera revisada trimestralmente.\n\n"
@@ -1409,6 +1388,7 @@ def generar_pdf(datos, x, y, filename):
         "E-mail: info@iberiaforestal.es",
         align="J"
     )
+
     pdf.output(filename)
     return filename
 
