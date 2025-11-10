@@ -512,7 +512,7 @@ def generar_pdf(datos, x, y, filename):
     tortuga_detectado = []
     tortuga_valor = procesar_capa(
         tortuga_url, "afección tortuga", "No afecta al Plan de Recuperación de la tortuga mora",
-        ["Uso_Especifico", "Clasificacion"],
+        ["cat_id", "cat_desc"],
         tortuga_detectado
     )
 
