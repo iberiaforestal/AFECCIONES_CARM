@@ -1360,7 +1360,7 @@ def generar_pdf(datos, x, y, filename):
         "- Parque Regional Calblanque, Monte de las Cenizas y Pena del Aguila - Decreto 45/1995, de 26 de mayo de 1995 (BORM n 152, de 03/07/1995).\n"
         "- Parque Regional Sierra Espuna (incluido el Paisaje Protegido Barrancos de Gebas) - Decreto 13/1995, de 31 de marzo de 1995 (aprobacion del PORN; BORM n 85, de 11/04/1995).\n"
         "- Humedal del Ajauque y Rambla Salada - Orden (1998) (fase inicial).\n"
-        "- Saladares del Guadalentin - Orden (29/
+        "- Saladares del Guadalentin - Orden (29/12/1998) (fase inicial).\n"
         "- Sierra de Salinas - Orden (03/07/2002) (fase inicial).\n"
         "- Carrascoy y El Valle - Orden (18/05/2005) (fase inicial - ademas, existe en 2025 proyecto de Plan / Plan de Gestion/ZEC en informacion publica).\n"
         "- Sierra de la Muela, Cabo Tinoso y Roldan - Orden (15/03/2006) (fase inicial).\n\n"
