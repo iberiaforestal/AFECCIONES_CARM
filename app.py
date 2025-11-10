@@ -1259,14 +1259,14 @@ def generar_pdf(datos, x, y, filename):
     pdf.set_text_color(255, 0, 0)
     pdf.set_draw_color(0, 0, 0) # Borde negro  
     pdf.set_line_width(0.5)
-    pdf.set_fill_color(200, 200, 200) # Fondo gris
+    pdf.set_fill_color(251, 228, 213) # Fondo gris
     
     # Parte 1: Texto en rojo y negrita dentro de un cuadro con fondo gris
     pdf.set_text_color(255, 0, 0)  # Color rojo
     texto_rojo = (
         "Este borrador preliminar de afecciones no tiene el valor de una certificación oficial y por tanto carece de validez legal y solo sirve como información general con carácter orientativo."
     )
-    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 8, texto_rojo, border=1, align="J", fill=True)  # Con borde, fondo gris y texto justificado
+    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 5, texto_rojo, border=1, align="J", fill=True)  # Con borde, fondo gris y texto justificado
     pdf.ln(2)
 
     # Parte 2: Texto en negrita (sin rojo) para el resto del documento
