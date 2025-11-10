@@ -348,6 +348,7 @@ def generar_pdf(datos, x, y, filename):
     enp_url = urls.get('enp')
     esteparias_url = urls.get('esteparias')
     uso_suelo_url = urls.get('uso_suelo')
+    tortuga_url = urls.get('tortuga')
     
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
@@ -436,6 +437,7 @@ def generar_pdf(datos, x, y, filename):
     enp_key = "afección ENP"
     esteparias_key = "afección ESTEPARIAS"
     uso_suelo_key = "Afección PLANEAMIENTO"
+    tortuga_key = "Afección PLAN RECUPERACION TORTUGA MORA"
         
 # === PROCESAR TODAS LAS CAPAS (VP, ZEPA, LIC, ENP) ===
     def procesar_capa(url, key, valor_inicial, campos, detectado_list):
@@ -505,6 +507,14 @@ def generar_pdf(datos, x, y, filename):
         ["Uso_Especifico", "Clasificacion"],
         uso_suelo_detectado
     )
+    
+    # === TORTUGA MORA ===
+    tortuga_detectado = []
+    tortuga_valor = procesar_capa(
+        tortuga_url, "afección tortuga", "No afecta al Plan de Recuperación de la tortuga mora",
+        ["Uso_Especifico", "Clasificacion"],
+        tortuga_detectado
+    )
 
     # === MUP (ya funciona bien, lo dejamos igual) ===
     mup_valor = datos.get("afección MUP", "").strip()
@@ -533,7 +543,9 @@ def generar_pdf(datos, x, y, filename):
         else:
             otras_afecciones.append((key_corregido, valor if valor else "No afecta"))
 
-    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO en "otras afecciones" si NO tienen detecciones
+    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO, TORTUGA en "otras afecciones" si NO tienen detecciones
+    if not tortuga_detectado:
+        otras_afecciones.append(("Afección Plan de Recuperación tortuga mora", tortuga_valor if tortuga_valor else "No afecta a Plan de Recuperación tortuga mora"))
     if not uso_suelo_detectado:
         otras_afecciones.append(("Afección Uso del Suelo", uso_suelo_valor if uso_suelo_valor else "No afecta a ningún uso del suelo protegido"))
     if not esteparias_detectado:
@@ -609,6 +621,7 @@ def generar_pdf(datos, x, y, filename):
             pdf.multi_cell(col_w_clas, 5, str(Clasificacion), align="L")
             pdf.set_y(y + row_h)
         pdf.ln(5)
+        
     # Procesar VP para tabla si hay detecciones
     if vp_detectado:
         pdf.set_font("Arial", "B", 12)
@@ -876,6 +889,7 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_y(y + row_height)
 
         pdf.ln(5)
+        
     # Procesar tabla para ESTEPARIAS
     esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))
     if esteparias_detectado:
@@ -930,8 +944,42 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_y(y + row_h)
 
         pdf.ln(5)  # Espacio final
+
+    # === TABLA TORTUGA ===
+    if tortuga_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Afección a Plan de Recuperación tortuga mora:", ln=True)
+        pdf.ln(2)
+        col_w_cat_id = 50
+        col_w_cat_desc = pdf.w - 2 * pdf.l_margin - col_w_cat_id
+        row_height = 8
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_w_cat_id, row_height, "Cat_id", border=1, fill=True)
+        pdf.cell(col_w_cat_desc, row_height, "Clasificación", border=1, fill=True)
+        pdf.ln()
+        pdf.set_font("Arial", "", 10)
+        for cat_id, cat_desc in tortuga_detectado:
+            cat_id_lines = pdf.multi_cell(col_w_cat_id, 5, str(cat_id), split_only=True)
+            cat_desc_lines = pdf.multi_cell(col_w_cat_desc, 5, str(cat_desc), split_only=True)
+            row_h = max(row_height, len(cat_id_lines) * 5, len(cat_desc_lines) * 5)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.rect(x, y, col_w_cat_id, row_h)
+            pdf.rect(x + col_w_cat_id, y, col_w_cat_desc, row_h)
+            cat_id_h = len(cat_id_lines) * 5
+            y_cat_id = y + (row_h - cat_id_h) / 2
+            pdf.set_xy(x, y_cat_id)
+            pdf.multi_cell(col_w_cat_id, 5, str(cat_id), align="L")
+            cat_desc_h = len(cat_desc_lines) * 5
+            y_cat_desc = y + (row_h - cat_desc_h) / 2
+            pdf.set_xy(x + col_w_cat_id, y_cat_desc)
+            pdf.multi_cell(col_w_cat_desc, 5, str(cat_desc), align="L")
+            pdf.set_y(y + row_h)
+        pdf.ln(5)    
   
     pdf.add_page()
+    
     # Nueva sección para el texto en cuadro
     pdf.ln(10)
     pdf.set_font("Arial", "B", 10)
@@ -1114,6 +1162,7 @@ if submitted:
 
             # === 5. GUARDAR query_geom Y URLs EN SESSION_STATE ===
             st.session_state['query_geom'] = query_geom
+            tortuga_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_DES_BIOTA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_DES_BIOTA_CARM:tortuga_distribucion_2001&outputFormat=application/json"
             uso_suelo_url = "https://mapas-gis-inter.carm.es/geoserver/SIT_USU_PLA_URB_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIT_USU_PLA_URB_CARM:plu_ze_37_mun_uso_suelo&outputFormat=application/json"
             esteparias_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_DES_BIOTA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_DES_BIOTA_CARM:esteparias_ceea_2019_10x10&outputFormat=application/json"
             enp_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_LUP_SITES_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_LUP_SITES_CARM:ENP&outputFormat=application/json"
@@ -1126,10 +1175,12 @@ if submitted:
                 'enp': enp_url, 'zepa': zepa_url, 'lic': lic_url,
                 'vp': vp_url, 'tm': tm_url, 'mup': mup_url, 
                 'esteparias': esteparias_url,
-                'uso_suelo': uso_suelo_url
+                'uso_suelo': uso_suelo_url,
+                'tortuga': tortuga_url
             }
 
             # === 6. CONSULTAR AFECCIONES ===
+            afeccion_tortuga = consultar_wfs_seguro(query_geom, tortuga_url, "TORTUGA MORA", campo_nombre="cat_desc")
             afeccion_uso_suelo = consultar_wfs_seguro(query_geom, uso_suelo_url, "PLANEAMIENTO", campo_nombre="Clasificacion")
             afeccion_esteparias = consultar_wfs_seguro(query_geom, esteparias_url, "ESTEPARIAS", campo_nombre="nombre")
             afeccion_enp = consultar_wfs_seguro(query_geom, enp_url, "ENP", campo_nombre="nombre")
@@ -1141,7 +1192,7 @@ if submitted:
                 query_geom, mup_url, "MUP",
                 campos_mup=["id_monte:ID", "nombremont:Nombre", "municipio:Municipio", "propiedad:Propiedad"]
             )
-            afecciones = [afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
+            afecciones = [afeccion_tortuga, afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
 
             # === 7. CREAR DICCIONARIO `datos` ===
             datos = {
@@ -1154,6 +1205,7 @@ if submitted:
                 "afección LIC": afeccion_lic, "Afección TM": afeccion_tm,
                 "afección esteparias": afeccion_esteparias,
                 "afección uso_suelo": afeccion_uso_suelo,
+                "afección tortuga": afeccion_tortuga,
                 "coordenadas_x": x, "coordenadas_y": y,
                 "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
