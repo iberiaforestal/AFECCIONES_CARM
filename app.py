@@ -294,7 +294,7 @@ def generar_imagen_estatica_mapa(x, y, zoom=16, size=(800, 600)):
 
 # Clase personalizada para el PDF con encabezado y pie de página
 class CustomPDF(FPDF):
-    def __init__(self, logo_path):
+    def __init__(self, logo_path): 
         super().__init__()
         self.logo_path = logo_path
 
