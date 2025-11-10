@@ -545,7 +545,7 @@ def generar_pdf(datos, x, y, filename):
 
     # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO, TORTUGA en "otras afecciones" si NO tienen detecciones
     if not tortuga_detectado:
-        otras_afecciones.append(("Afección Plan de Recuperación tortuga mora", tortuga_valor if tortuga_valor else "No afecta a Plan de Recuperación tortuga mora"))
+        otras_afecciones.append(("Afección a tortuga mora", tortuga_valor if tortuga_valor else "No afecta a Plan de Recuperación tortuga mora"))
     if not uso_suelo_detectado:
         otras_afecciones.append(("Afección Uso del Suelo", uso_suelo_valor if uso_suelo_valor else "No afecta a ningún uso del suelo protegido"))
     if not esteparias_detectado:
