@@ -351,6 +351,7 @@ def generar_pdf(datos, x, y, filename):
     tortuga_url = urls.get('tortuga')
     perdicera_url = urls.get('perdicera')
     nutria_url = urls.get('nutria')
+    fartet_url = urls.get('fartet')
     
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
@@ -442,6 +443,7 @@ def generar_pdf(datos, x, y, filename):
     tortuga_key = "Afección PLAN RECUPERACION TORTUGA MORA"
     perdicera_key = "Afección PLAN RECUPERACION ÁGUILA PERDICERA"
     nutria_key = "Afección PLAN RECUPERACION NUTRIA"
+    fartet_key = "Afección PLAN RECUPERACION FARTET"
         
 # === PROCESAR TODAS LAS CAPAS (VP, ZEPA, LIC, ENP) ===
     def procesar_capa(url, key, valor_inicial, campos, detectado_list):
@@ -536,6 +538,14 @@ def generar_pdf(datos, x, y, filename):
         nutria_detectado
     )    
 
+    # === FARTET ===
+    fartet_detectado = []
+    fartet_valor = procesar_capa(
+        fartet_url, "afección fartet", "No afecta al Plan de Recuperación del fartet",
+        ["clasificac", "nombre"],
+        fartet_detectado
+    )   
+
     # === MUP (ya funciona bien, lo dejamos igual) ===
     mup_valor = datos.get("afección MUP", "").strip()
     mup_detectado = []
@@ -563,7 +573,9 @@ def generar_pdf(datos, x, y, filename):
         else:
             otras_afecciones.append((key_corregido, valor if valor else "No afecta"))
 
-    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO, TORTUGA, PERDICERA, NUTRIA en "otras afecciones" si NO tienen detecciones
+    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO, TORTUGA, PERDICERA, NUTRIA, FARTET en "otras afecciones" si NO tienen detecciones
+    if not fartet_detectado:
+        otras_afecciones.append(("Afección a fartet", fartet_valor if fartet_valor else "No afecta a Plan de Recuperación del fartet"))
     if not nutria_detectado:
         otras_afecciones.append(("Afección a nutria", nutria_valor if nutria_valor else "No afecta a Plan de Recuperación de la nutria"))
     if not perdicera_detectado:
@@ -1066,7 +1078,40 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_xy(x + col_w_tipo_de_ar, y_nombre)
             pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
             pdf.set_y(y + row_h)
-        pdf.ln(5)       
+        pdf.ln(5)
+
+    # === TABLA FARTET ===
+    if fartet_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Afección a Plan de Recuperación fartet:", ln=True)
+        pdf.ln(2)
+        col_w_clasificac = 50
+        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
+        row_height = 8
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_w_clasificac, row_height, "Área", border=1, fill=True)
+        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
+        pdf.ln()
+        pdf.set_font("Arial", "", 10)
+        for clasificac, nombre in fartet_detectado:
+            clasificac_lines = pdf.multi_cell(col_w_clasificac, 5, str(clasificac), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
+            row_h = max(row_height, len(clasificac_lines) * 5, len(nombre_lines) * 5)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.rect(x, y, col_w_clasificac, row_h)
+            pdf.rect(x + col_w_clasificac, y, col_w_nombre, row_h)
+            clasificac_h = len(clasificac_lines) * 5
+            y_clasificac = y + (row_h - clasificac_h) / 2
+            pdf.set_xy(x, y_clasificac)
+            pdf.multi_cell(col_w_clasificac, 5, str(clasificac), align="L")
+            nombre_h = len(nombre_lines) * 5
+            y_nombre = y + (row_h - nombre_h) / 2
+            pdf.set_xy(x + col_w_clasificac, y_nombre)
+            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.set_y(y + row_h)
+        pdf.ln(5)
     
     pdf.add_page()
     
@@ -1252,6 +1297,7 @@ if submitted:
 
             # === 5. GUARDAR query_geom Y URLs EN SESSION_STATE ===
             st.session_state['query_geom'] = query_geom
+            fartet_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_FAUNA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_FAUNA_CARM:fartet&outputFormat=application/json"
             nutria_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_nutria&outputFormat=application/json"
             perdicera_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_perdicera&outputFormat=application/json"
             tortuga_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_DES_BIOTA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_DES_BIOTA_CARM:tortuga_distribucion_2001&outputFormat=application/json"
@@ -1270,10 +1316,12 @@ if submitted:
                 'uso_suelo': uso_suelo_url,
                 'tortuga': tortuga_url,
                 'perdicera': perdicera_url,
-                'nutria': nutria_url
+                'nutria': nutria_url,
+                'fartet': fartet_url
             }
 
             # === 6. CONSULTAR AFECCIONES ===
+            afeccion_fartet = consultar_wfs_seguro(query_geom, fartet_url, "FARTET", campo_nombre="clasificac")
             afeccion_nutria = consultar_wfs_seguro(query_geom, nutria_url, "NUTRIA", campo_nombre="tipo_de_ar")
             afeccion_perdicera = consultar_wfs_seguro(query_geom, perdicera_url, "ÁGUILA PERDICERA", campo_nombre="zona")
             afeccion_tortuga = consultar_wfs_seguro(query_geom, tortuga_url, "TORTUGA MORA", campo_nombre="cat_desc")
@@ -1288,7 +1336,7 @@ if submitted:
                 query_geom, mup_url, "MUP",
                 campos_mup=["id_monte:ID", "nombremont:Nombre", "municipio:Municipio", "propiedad:Propiedad"]
             )
-            afecciones = [afeccion_nutria, afeccion_perdicera, afeccion_tortuga, afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
+            afecciones = [afeccion_fartet, afeccion_nutria, afeccion_perdicera, afeccion_tortuga, afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
 
             # === 7. CREAR DICCIONARIO `datos` ===
             datos = {
@@ -1304,6 +1352,7 @@ if submitted:
                 "afección tortuga": afeccion_tortuga,
                 "afección perdicera": afeccion_perdicera,
                 "afección nutria": afeccion_nutria,
+                "afección fartet": afeccion_fartet,
                 "coordenadas_x": x, "coordenadas_y": y,
                 "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
