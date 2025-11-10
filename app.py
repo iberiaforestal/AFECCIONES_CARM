@@ -432,6 +432,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 7, "No se pudo generar el mapa de localización.", ln=True)
 
     pdf.add_page()
+    pdf.ln(5)
     seccion_titulo("3. Afecciones detectadas")
 
     afecciones_keys = ["Afección TM"]
