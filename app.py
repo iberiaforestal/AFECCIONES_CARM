@@ -301,7 +301,7 @@ class CustomPDF(FPDF):
     def header(self):
         if self.logo_path and os.path.exists(self.logo_path):
             page_width = self.w - 2 * self.l_margin
-            logo_width = page_width * 0.5
+            logo_width = page_width * 0.3
             self.image(self.logo_path, x=self.l_margin, y=10, w=logo_width)
             logo_height = logo_width * 0.2
             self.set_y(10 + logo_height + 2)
@@ -1336,8 +1336,8 @@ def generar_pdf(datos, x, y, filename):
     return filename
 
 # Interfaz de Streamlit
-st.image("https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg", use_container_width=True)
-st.title("Informe preliminar de Afecciones Forestales")
+st.image("https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg", use_container_width=False, width=300)
+st.title("Informe preliminar de Afecciones al medio")
 
 modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
 
