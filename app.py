@@ -350,6 +350,7 @@ def generar_pdf(datos, x, y, filename):
     uso_suelo_url = urls.get('uso_suelo')
     tortuga_url = urls.get('tortuga')
     perdicera_url = urls.get('perdicera')
+    nutria_url = urls.get('nutria')
     
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
@@ -440,6 +441,7 @@ def generar_pdf(datos, x, y, filename):
     uso_suelo_key = "Afección PLANEAMIENTO"
     tortuga_key = "Afección PLAN RECUPERACION TORTUGA MORA"
     perdicera_key = "Afección PLAN RECUPERACION ÁGUILA PERDICERA"
+    nutria_key = "Afección PLAN RECUPERACION NUTRIA"
         
 # === PROCESAR TODAS LAS CAPAS (VP, ZEPA, LIC, ENP) ===
     def procesar_capa(url, key, valor_inicial, campos, detectado_list):
@@ -526,6 +528,14 @@ def generar_pdf(datos, x, y, filename):
         perdicera_detectado
     )
 
+    # === NUTRIA ===
+    nutria_detectado = []
+    nutria_valor = procesar_capa(
+        nutria_url, "afección nutria", "No afecta al Plan de Recuperación de la nutria",
+        ["tipo_de_ar", "nombre"],
+        nutria_detectado
+    )    
+
     # === MUP (ya funciona bien, lo dejamos igual) ===
     mup_valor = datos.get("afección MUP", "").strip()
     mup_detectado = []
@@ -553,7 +563,9 @@ def generar_pdf(datos, x, y, filename):
         else:
             otras_afecciones.append((key_corregido, valor if valor else "No afecta"))
 
-    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO, TORTUGA, PERDICERA en "otras afecciones" si NO tienen detecciones
+    # Solo incluir MUP, VP, ZEPA, LIC, ENP, ESTEPARIAS, PLANEAMIENTO, TORTUGA, PERDICERA, NUTRIA en "otras afecciones" si NO tienen detecciones
+    if not nutria_detectado:
+        otras_afecciones.append(("Afección a nutria", nutria_valor if nutria_valor else "No afecta a Plan de Recuperación de la nutria"))
     if not perdicera_detectado:
         otras_afecciones.append(("Afección a águila perdicera", perdicera_valor if perdicera_valor else "No afecta a Plan de Recuperación águila perdicera"))
     if not tortuga_detectado:
@@ -988,7 +1000,8 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_xy(x + col_w_cat_id, y_cat_desc)
             pdf.multi_cell(col_w_cat_desc, 5, str(cat_desc), align="L")
             pdf.set_y(y + row_h)
-        pdf.ln(5)    
+        pdf.ln(5)
+        
     # === TABLA PERDICERA ===
     if perdicera_detectado:
         pdf.set_font("Arial", "B", 12)
@@ -1020,7 +1033,40 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_xy(x + col_w_zona, y_nombre)
             pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
             pdf.set_y(y + row_h)
-        pdf.ln(5)    
+        pdf.ln(5)
+
+    # === TABLA NUTRIA ===
+    if nutria_detectado:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "Afección a Plan de Recuperación nutria:", ln=True)
+        pdf.ln(2)
+        col_w_tipo_de_ar = 50
+        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo_de_ar
+        row_height = 8
+        pdf.set_font("Arial", "B", 11)
+        pdf.set_fill_color(*azul_rgb)
+        pdf.cell(col_w_tipo_de_ar, row_height, "Área", border=1, fill=True)
+        pdf.cell(col_w_nombre, row_height, "Nombre", border=1, fill=True)
+        pdf.ln()
+        pdf.set_font("Arial", "", 10)
+        for tipo_de_ar, nombre in nutria_detectado:
+            tipo_de_ar_lines = pdf.multi_cell(col_w_tipo_de_ar, 5, str(tipo_de_ar), split_only=True)
+            nombre_lines = pdf.multi_cell(col_w_nombre, 5, str(nombre), split_only=True)
+            row_h = max(row_height, len(tipo_de_ar_lines) * 5, len(nombre_lines) * 5)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.rect(x, y, col_w_tipo_de_ar, row_h)
+            pdf.rect(x + col_w_tipo_de_ar, y, col_w_nombre, row_h)
+            tipo_de_ar_h = len(tipo_de_ar_lines) * 5
+            y_tipo_de_ar = y + (row_h - tipo_de_ar_h) / 2
+            pdf.set_xy(x, y_tipo_de_ar)
+            pdf.multi_cell(col_w_tipo_de_ar, 5, str(tipo_de_ar), align="L")
+            nombre_h = len(nombre_lines) * 5
+            y_nombre = y + (row_h - nombre_h) / 2
+            pdf.set_xy(x + col_w_tipo_de_ar, y_nombre)
+            pdf.multi_cell(col_w_nombre, 5, str(nombre), align="L")
+            pdf.set_y(y + row_h)
+        pdf.ln(5)       
     
     pdf.add_page()
     
@@ -1206,6 +1252,7 @@ if submitted:
 
             # === 5. GUARDAR query_geom Y URLs EN SESSION_STATE ===
             st.session_state['query_geom'] = query_geom
+            nutria_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_nutria&outputFormat=application/json"
             perdicera_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_ZOR_PLANIGEST_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_ZOR_PLANIGEST_CARM:plan_recuperacion_perdicera&outputFormat=application/json"
             tortuga_url = "https://mapas-gis-inter.carm.es/geoserver/SIG_DES_BIOTA_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIG_DES_BIOTA_CARM:tortuga_distribucion_2001&outputFormat=application/json"
             uso_suelo_url = "https://mapas-gis-inter.carm.es/geoserver/SIT_USU_PLA_URB_CARM/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=SIT_USU_PLA_URB_CARM:plu_ze_37_mun_uso_suelo&outputFormat=application/json"
@@ -1222,10 +1269,12 @@ if submitted:
                 'esteparias': esteparias_url,
                 'uso_suelo': uso_suelo_url,
                 'tortuga': tortuga_url,
-                'perdicera': perdicera_url
+                'perdicera': perdicera_url,
+                'nutria': nutria_url
             }
 
             # === 6. CONSULTAR AFECCIONES ===
+            afeccion_nutria = consultar_wfs_seguro(query_geom, nutria_url, "NUTRIA", campo_nombre="tipo_de_ar")
             afeccion_perdicera = consultar_wfs_seguro(query_geom, perdicera_url, "ÁGUILA PERDICERA", campo_nombre="zona")
             afeccion_tortuga = consultar_wfs_seguro(query_geom, tortuga_url, "TORTUGA MORA", campo_nombre="cat_desc")
             afeccion_uso_suelo = consultar_wfs_seguro(query_geom, uso_suelo_url, "PLANEAMIENTO", campo_nombre="Clasificacion")
@@ -1239,7 +1288,7 @@ if submitted:
                 query_geom, mup_url, "MUP",
                 campos_mup=["id_monte:ID", "nombremont:Nombre", "municipio:Municipio", "propiedad:Propiedad"]
             )
-            afecciones = [afeccion_perdicera, afeccion_tortuga, afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
+            afecciones = [afeccion_nutria, afeccion_perdicera, afeccion_tortuga, afeccion_uso_suelo, afeccion_esteparias, afeccion_enp, afeccion_zepa, afeccion_lic, afeccion_vp, afeccion_tm, afeccion_mup]
 
             # === 7. CREAR DICCIONARIO `datos` ===
             datos = {
@@ -1254,6 +1303,7 @@ if submitted:
                 "afección uso_suelo": afeccion_uso_suelo,
                 "afección tortuga": afeccion_tortuga,
                 "afección perdicera": afeccion_perdicera,
+                "afección nutria": afeccion_nutria,
                 "coordenadas_x": x, "coordenadas_y": y,
                 "municipio": municipio_sel, "polígono": masa_sel, "parcela": parcela_sel
             }
