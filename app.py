@@ -1326,9 +1326,7 @@ def generar_pdf(datos, x, y, filename):
 
     
     # === REEMPLAZO FINAL: CONDICIONADO EN 2 COLUMNAS (SIN MONTAR LETRAS) ===
-    pdf.add
-
-    _page()  # Nueva página
+    pdf.add_page()  # Nueva página
 
     # Título CONDICIONADO (negrita, centrado, sin fondo)
     pdf.set_font("Arial", "B", 14)
