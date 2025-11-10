@@ -521,7 +521,7 @@ def generar_pdf(datos, x, y, filename):
     # === AGUILA PERDICERA ===
     perdicera_detectado = []
     perdicera_valor = procesar_capa(
-        perdicera_url, "afección perdicera", "No afecta al Plan de Recuperación del agulia perdicera",
+        perdicera_url, "afección perdicera", "No afecta al Plan de Recuperación del águila perdicera",
         ["zona", "nombre"],
         perdicera_detectado
     )
