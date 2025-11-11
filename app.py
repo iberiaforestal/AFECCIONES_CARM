@@ -302,39 +302,26 @@ class CustomPDF(FPDF):
     def header(self):
         if self.logo_path and os.path.exists(self.logo_path):
             page_width = self.w - 2 * self.l_margin
-            logo_height = 25  # Altura fija del logo
+            logo_height = 20  # Logo más pequeño en páginas 2+
 
             try:
                 img = Image.open(self.logo_path)
                 img_width, img_height = img.size
                 ratio = img_width / img_height
 
-                # Escalar para llenar todo el ancho
-                new_width = page_width
+                # Escalar al 80% del ancho (discreto)
+                new_width = page_width * 0.8
                 new_height = new_width / ratio
-
-                # Limitar altura si es muy alto
                 if new_height > logo_height:
                     new_height = logo_height
                     new_width = new_height * ratio
 
-                # Centrar horizontalmente
                 x = self.l_margin + (page_width - new_width) / 2
-                self.image(self.logo_path, x=x, y=8, w=new_width, h=new_height)
-                self.set_y(8 + new_height + 5)
-
-                # TÍTULO DEBAJO DEL LOGO
-                self.set_font("Arial", "B", 14)
-                self.set_text_color(0, 0, 0)
-                self.cell(0, 10, "Informe preliminar de Afecciones Forestales", ln=True, align="C")
-                self.ln(3)
+                self.image(self.logo_path, x=x, y=6, w=new_width, h=new_height)
+                self.set_y(6 + new_height + 3)
             except Exception as e:
                 st.error(f"Error al procesar logo: {e}")
-                self.set_y(30)
-        else:
-            self.set_font("Arial", "B", 14)
-            self.cell(0, 10, "Informe preliminar de Afecciones Forestales", ln=True, align="C")
-            self.ln(5)
+                self.set_y(15)
 
     def footer(self):
         if self.page_no() > 0:
@@ -385,8 +372,14 @@ def generar_pdf(datos, x, y, filename):
     
     # Crear instancia de la clase personalizada
     pdf = CustomPDF(logo_path)
-    pdf.set_margins(left=10, top=10, right=10)
+    pdf.set_margins(left=15, top=15, right=15)
     pdf.add_page()
+
+    # TÍTULO GRANDE SOLO EN LA PRIMERA PÁGINA
+    pdf.set_font("Arial", "B", 16)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 12, "Informe preliminar de Afecciones Forestales", ln=True, align="C")
+    pdf.ln(10)
 
     azul_rgb = (141, 179, 226)
 
