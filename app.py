@@ -1384,7 +1384,6 @@ def generar_pdf(datos, x, y, filename):
     pdf.multi_cell(0, line_h,
         "La normativa de referencia esta actualizada a fecha de uno de enero de dos mil veintiseis, y sera revisada trimestralmente.\n\n"
         "Para mas informacion:\n"
-        "Telefono: +34 638616155\n"
         "E-mail: info@iberiaforestal.es",
         align="J"
     )
