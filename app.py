@@ -907,7 +907,7 @@ def generar_pdf(datos, x, y, filename):
             name_h = len(name_lines) * 5
             y_name = y + (row_h - name_h) / 2
             pdf.set_xy(x + col_w_code, y_name)
-            pdf.multi_cell(col_w_name, 5, str(site_name), align="L")
+            pdf.multi_cell(col_w_name, 5, str(site_name), align="L") 
             pdf.set_y(y + row_h)
         pdf.ln(5)
         
