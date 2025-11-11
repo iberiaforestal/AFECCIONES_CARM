@@ -353,13 +353,13 @@ def generar_pdf(datos, x, y, filename):
         st.error(f"Error al descargar el logo: {str(e)}")
 
     if not logo_path:
-    local_logo = "logos.jpg"
-    if os.path.exists(local_logo):
-        logo_path = local_logo
-        st.info("Usando logo local (logos.jpg)")
-    else:
-        st.error("Logo no disponible. Añade 'logos.jpg' en la raíz del proyecto.")
-        logo_path = None  # PDF sin logo
+        local_logo = "logos.jpg"
+        if os.path.exists(local_logo):
+            logo_path = local_logo
+            st.info("Usando logo local (logos.jpg)")
+        else:
+            st.error("Logo no disponible. Añade 'logos.jpg' en la raíz del proyecto.")
+            logo_path = None  # PDF sin logo
 
     # === RECUPERAR query_geom ===
     query_geom = st.session_state.get('query_geom')
