@@ -327,7 +327,7 @@ class CustomPDF(FPDF):
 
     def footer(self):
         self.set_y(-15)
-        self.set_draw_color(0, 0, 255)  # Línea azul
+        self.set_draw_color(0, 0, 255)
         self.set_line_width(0.5)
         page_width = self.w - 2 * self.l_margin
         self.line(self.l_margin, self.get_y(), self.l_margin + page_width, self.get_y())
@@ -339,26 +339,16 @@ class CustomPDF(FPDF):
 
 # Función para generar el PDF con los datos de la solicitud
 def generar_pdf(datos, x, y, filename):
-    # Descargar y guardar el logo en un archivo temporal
-    logo_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg"
-    logo_path = None
-    try:
-        response = requests.get(logo_url, timeout=15)
-        response.raise_for_status()
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_img:
-            tmp_img.write(response.content)
-            logo_path = tmp_img.name
-    except Exception as e:
-        st.error(f"Error al descargar el logo: {str(e)}")
+logo_path = "logos.jpg"
 
-    if not logo_path:
-        local_logo = "logos.jpg"
-        if os.path.exists(local_logo):
-            logo_path = local_logo
-            st.info("Usando logo local (logos.jpg)")
-        else:
-            st.error("Logo no disponible. Añade 'logos.jpg' en la raíz del proyecto.")
-            logo_path = None  # PDF sin logo
+if not os.path.exists(logo_path):
+    st.error("FALTA EL ARCHIVO: 'logos.jpg' en la raíz del proyecto.")
+    st.markdown(
+        "Descárgalo aquí: [logos.jpg](https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg)"
+    )
+    logo_path = None
+else:
+    st.success("Logo local cargado correctamente")
 
     # === RECUPERAR query_geom ===
     query_geom = st.session_state.get('query_geom')
