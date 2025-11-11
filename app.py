@@ -1423,12 +1423,6 @@ st.image(
     "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg",
     width=250
 )
-st.markdown(
-    "<h1 style='text-align: center; margin-top: -15px; color: #1e3a8a;'>"
-    "Informe básico de Afecciones al medio"
-    "</h1>",
-    unsafe_allow_html=True
-)
 st.title("Informe basico de Afecciones al medio")
 
 modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
