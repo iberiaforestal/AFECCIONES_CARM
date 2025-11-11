@@ -301,29 +301,30 @@ class CustomPDF(FPDF):
 
 def header(self):
     if self.logo_path and os.path.exists(self.logo_path):
-        # Ancho disponible para el logo (toda la cabecera)
         page_width = self.w - 2 * self.l_margin
-        logo_max_width = page_width * 0.7  # 70% del ancho útil
-        logo_max_height = 25  # Altura máxima en mm
+        logo_max_width = page_width * 0.7
+        logo_max_height = 25
 
-        # Calcular dimensiones manteniendo proporción
-        from PIL import Image
         try:
             img = Image.open(self.logo_path)
             img_width, img_height = img.size
             ratio = img_width / img_height
             new_width = min(logo_max_width, logo_max_height * ratio)
             new_height = new_width / ratio
-        except:
-            new_width = logo_max_width
-            new_height = 20
+        except Exception as e:
+            st.error(f"Error al leer imagen: {e}")
+            new_width, new_height = logo_max_width, 20
 
-        # Centrar horizontalmente
         x = self.l_margin + (page_width - new_width) / 2
         self.image(self.logo_path, x=x, y=8, w=new_width)
-        self.set_y(8 + new_height + 5)  # Espacio después del logo
+        self.set_y(8 + new_height + 5)
     else:
-        self.set_y(10)
+        # Debug: mostrar que no hay logo
+        self.set_font("Arial", "I", 8)
+        self.set_text_color(150, 150, 150)
+        self.cell(0, 10, "Logo no disponible", ln=True, align="C")
+        self.set_text_color(0, 0, 0)
+        self.set_y(15)
 
     def footer(self):
         self.set_y(-15)
@@ -343,13 +344,22 @@ def generar_pdf(datos, x, y, filename):
     logo_url = "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg"
     logo_path = None
     try:
-        response = requests.get(logo_url, timeout=10)
+        response = requests.get(logo_url, timeout=15)
         response.raise_for_status()
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_img:
             tmp_img.write(response.content)
             logo_path = tmp_img.name
     except Exception as e:
         st.error(f"Error al descargar el logo: {str(e)}")
+
+    if not logo_path:
+    local_logo = "logos.jpg"
+    if os.path.exists(local_logo):
+        logo_path = local_logo
+        st.info("Usando logo local (logos.jpg)")
+    else:
+        st.error("Logo no disponible. Añade 'logos.jpg' en la raíz del proyecto.")
+        logo_path = None  # PDF sin logo
 
     # === RECUPERAR query_geom ===
     query_geom = st.session_state.get('query_geom')
@@ -1411,10 +1421,14 @@ def generar_pdf(datos, x, y, filename):
 # Interfaz de Streamlit
 st.image(
     "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg",
-    width=250,  # Tamaño fijo y razonable
-    use_container_width=False
+    width=250
 )
-st.markdown("<h1 style='text-align: center; margin-top: -20px;'>Informe básico de Afecciones al medio</h1>", unsafe_allow_html=True)
+st.markdown(
+    "<h1 style='text-align: center; margin-top: -15px; color: #1e3a8a;'>"
+    "Informe básico de Afecciones al medio"
+    "</h1>",
+    unsafe_allow_html=True
+)
 st.title("Informe basico de Afecciones al medio")
 
 modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
