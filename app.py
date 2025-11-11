@@ -302,40 +302,52 @@ class CustomPDF(FPDF):
     def header(self):
         if self.logo_path and os.path.exists(self.logo_path):
             page_width = self.w - 2 * self.l_margin
-            logo_max_width = page_width * 0.7
-            logo_max_height = 25
+            logo_height = 25  # Altura fija del logo
 
             try:
                 img = Image.open(self.logo_path)
                 img_width, img_height = img.size
                 ratio = img_width / img_height
-                new_width = min(logo_max_width, logo_max_height * ratio)
-                new_height = new_width / ratio
-            except Exception as e:
-                st.error(f"Error al leer imagen: {e}")
-                new_width, new_height = logo_max_width, 20
 
-            x = self.l_margin + (page_width - new_width) / 2
-            self.image(self.logo_path, x=x, y=8, w=new_width)
-            self.set_y(8 + new_height + 5)
+                # Escalar para llenar todo el ancho
+                new_width = page_width
+                new_height = new_width / ratio
+
+                # Limitar altura si es muy alto
+                if new_height > logo_height:
+                    new_height = logo_height
+                    new_width = new_height * ratio
+
+                # Centrar horizontalmente
+                x = self.l_margin + (page_width - new_width) / 2
+                self.image(self.logo_path, x=x, y=8, w=new_width, h=new_height)
+                self.set_y(8 + new_height + 5)
+
+                # TÍTULO DEBAJO DEL LOGO
+                self.set_font("Arial", "B", 14)
+                self.set_text_color(0, 0, 0)
+                self.cell(0, 10, "Informe preliminar de Afecciones Forestales", ln=True, align="C")
+                self.ln(3)
+            except Exception as e:
+                st.error(f"Error al procesar logo: {e}")
+                self.set_y(30)
         else:
-            self.set_font("Arial", "I", 8)
-            self.set_text_color(150, 150, 150)
-            self.cell(0, 10, "Logo no disponible", ln=True, align="C")
-            self.set_text_color(0, 0, 0)
-            self.set_y(15)
+            self.set_font("Arial", "B", 14)
+            self.cell(0, 10, "Informe preliminar de Afecciones Forestales", ln=True, align="C")
+            self.ln(5)
 
     def footer(self):
-        self.set_y(-15)
-        self.set_draw_color(0, 0, 255)
-        self.set_line_width(0.5)
-        page_width = self.w - 2 * self.l_margin
-        self.line(self.l_margin, self.get_y(), self.l_margin + page_width, self.get_y())
-        self.set_y(-15)
-        self.set_font("Arial", "", 10)
-        self.set_text_color(0, 0, 0)
-        page_number = f"Página {self.page_no()}"
-        self.cell(0, 10, page_number, 0, 0, 'R')
+        if self.page_no() > 0:
+            self.set_y(-15)
+            self.set_draw_color(0, 0, 255)
+            self.set_line_width(0.5)
+            page_width = self.w - 2 * self.l_margin
+            self.line(self.l_margin, self.get_y(), self.l_margin + page_width, self.get_y())
+            
+            self.set_y(-15)
+            self.set_font("Arial", "", 9)
+            self.set_text_color(0, 0, 0)
+            self.cell(0, 10, f"Página {self.page_no()}", align="R")
 
 # Función para generar el PDF con los datos de la solicitud
 def generar_pdf(datos, x, y, filename):
