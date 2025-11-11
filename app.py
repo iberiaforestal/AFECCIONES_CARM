@@ -19,6 +19,7 @@ import textwrap
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import shutil
+from PIL import Image
 
 # Sesión segura con reintentos
 session = requests.Session()
@@ -298,15 +299,31 @@ class CustomPDF(FPDF):
         super().__init__()
         self.logo_path = logo_path
 
-    def header(self):
-        if self.logo_path and os.path.exists(self.logo_path):
-            page_width = self.w - 2 * self.l_margin
-            logo_width = page_width * 0.2
-            self.image(self.logo_path, x=self.l_margin, y=10, w=logo_width)
-            logo_height = logo_width * 0.2
-            self.set_y(10 + logo_height + 2)
-        else:
-            self.set_y(10)
+def header(self):
+    if self.logo_path and os.path.exists(self.logo_path):
+        # Ancho disponible para el logo (toda la cabecera)
+        page_width = self.w - 2 * self.l_margin
+        logo_max_width = page_width * 0.7  # 70% del ancho útil
+        logo_max_height = 25  # Altura máxima en mm
+
+        # Calcular dimensiones manteniendo proporción
+        from PIL import Image
+        try:
+            img = Image.open(self.logo_path)
+            img_width, img_height = img.size
+            ratio = img_width / img_height
+            new_width = min(logo_max_width, logo_max_height * ratio)
+            new_height = new_width / ratio
+        except:
+            new_width = logo_max_width
+            new_height = 20
+
+        # Centrar horizontalmente
+        x = self.l_margin + (page_width - new_width) / 2
+        self.image(self.logo_path, x=x, y=8, w=new_width)
+        self.set_y(8 + new_height + 5)  # Espacio después del logo
+    else:
+        self.set_y(10)
 
     def footer(self):
         self.set_y(-15)
@@ -1392,7 +1409,12 @@ def generar_pdf(datos, x, y, filename):
     return filename
 
 # Interfaz de Streamlit
-st.image("https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg", use_container_width=False, width=300)
+st.image(
+    "https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg",
+    width=250,  # Tamaño fijo y razonable
+    use_container_width=False
+)
+st.markdown("<h1 style='text-align: center; margin-top: -20px;'>Informe básico de Afecciones al medio</h1>", unsafe_allow_html=True)
 st.title("Informe basico de Afecciones al medio")
 
 modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
