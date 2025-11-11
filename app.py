@@ -339,16 +339,16 @@ class CustomPDF(FPDF):
 
 # Función para generar el PDF con los datos de la solicitud
 def generar_pdf(datos, x, y, filename):
-logo_path = "logos.jpg"
+    logo_path = "logos.jpg"
 
-if not os.path.exists(logo_path):
-    st.error("FALTA EL ARCHIVO: 'logos.jpg' en la raíz del proyecto.")
-    st.markdown(
-        "Descárgalo aquí: [logos.jpg](https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg)"
-    )
-    logo_path = None
-else:
-    st.success("Logo local cargado correctamente")
+    if not os.path.exists(logo_path):
+        st.error("FALTA EL ARCHIVO: 'logos.jpg' en la raíz del proyecto.")
+        st.markdown(
+            "Descárgalo aquí: [logos.jpg](https://raw.githubusercontent.com/iberiaforestal/AFECCIONES_CARM/main/logos.jpg)"
+        )
+        logo_path = None
+    else:
+        st.success("Logo local cargado correctamente")
 
     # === RECUPERAR query_geom ===
     query_geom = st.session_state.get('query_geom')
