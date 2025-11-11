@@ -295,36 +295,35 @@ def generar_imagen_estatica_mapa(x, y, zoom=16, size=(800, 600)):
 
 # Clase personalizada para el PDF con encabezado y pie de página
 class CustomPDF(FPDF):
-    def __init__(self, logo_path): 
+    def __init__(self, logo_path):
         super().__init__()
         self.logo_path = logo_path
 
-def header(self):
-    if self.logo_path and os.path.exists(self.logo_path):
-        page_width = self.w - 2 * self.l_margin
-        logo_max_width = page_width * 0.7
-        logo_max_height = 25
+    def header(self):
+        if self.logo_path and os.path.exists(self.logo_path):
+            page_width = self.w - 2 * self.l_margin
+            logo_max_width = page_width * 0.7
+            logo_max_height = 25
 
-        try:
-            img = Image.open(self.logo_path)
-            img_width, img_height = img.size
-            ratio = img_width / img_height
-            new_width = min(logo_max_width, logo_max_height * ratio)
-            new_height = new_width / ratio
-        except Exception as e:
-            st.error(f"Error al leer imagen: {e}")
-            new_width, new_height = logo_max_width, 20
+            try:
+                img = Image.open(self.logo_path)
+                img_width, img_height = img.size
+                ratio = img_width / img_height
+                new_width = min(logo_max_width, logo_max_height * ratio)
+                new_height = new_width / ratio
+            except Exception as e:
+                st.error(f"Error al leer imagen: {e}")
+                new_width, new_height = logo_max_width, 20
 
-        x = self.l_margin + (page_width - new_width) / 2
-        self.image(self.logo_path, x=x, y=8, w=new_width)
-        self.set_y(8 + new_height + 5)
-    else:
-        # Debug: mostrar que no hay logo
-        self.set_font("Arial", "I", 8)
-        self.set_text_color(150, 150, 150)
-        self.cell(0, 10, "Logo no disponible", ln=True, align="C")
-        self.set_text_color(0, 0, 0)
-        self.set_y(15)
+            x = self.l_margin + (page_width - new_width) / 2
+            self.image(self.logo_path, x=x, y=8, w=new_width)
+            self.set_y(8 + new_height + 5)
+        else:
+            self.set_font("Arial", "I", 8)
+            self.set_text_color(150, 150, 150)
+            self.cell(0, 10, "Logo no disponible", ln=True, align="C")
+            self.set_text_color(0, 0, 0)
+            self.set_y(15)
 
     def footer(self):
         self.set_y(-15)
