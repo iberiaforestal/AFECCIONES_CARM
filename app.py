@@ -1471,22 +1471,22 @@ def generar_pdf(datos, x, y, filename):
     col1 = '\n\n'.join(parrafos[:mitad])
     col2 = '\n\n'.join(parrafos[mitad:])
 
-    # --- ESCRIBIR COLUMNA 1 ---
+    # --- GUARDAR POSICIÓN INICIAL ---
+    y_inicio = pdf.get_y()
     pdf.set_x(margen_lateral)
-    altura_col1 = 0
+
+    # --- ESCRIBIR COLUMNA 1 ---
     for line in col1.split('\n'):
         if line.strip():
-            h = pdf.get_string_width(line) / ancho_columna * line_h * 1.2  # estimación
             pdf.multi_cell(ancho_columna, line_h, line, align="J")
-            altura_col1 += h if h > line_h else line_h
         else:
             pdf.ln(line_h)
-            altura_col1 += line_h
+
+    # --- GUARDAR ALTURA FINAL DE COLUMNA 1 ---
+    y_final_col1 = pdf.get_y()
 
     # --- ESCRIBIR COLUMNA 2 (misma altura que la 1) ---
-    y_inicio = pdf.get_y() - altura_col1  # volver al inicio
     pdf.set_xy(margen_lateral + ancho_columna + 5, y_inicio)
-
     for line in col2.split('\n'):
         if line.strip():
             pdf.multi_cell(ancho_columna, line_h, line, align="J")
