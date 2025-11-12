@@ -1392,11 +1392,7 @@ def generar_pdf(datos, x, y, filename):
         ("7242", "Autorización de permutas en montes públicos.", "https://sede.carm.es/web/pagina?IDCONTENIDO=7242&IDTIPO=240&RASTRO=c$m40288"),
     ]
 
-    # --- NUEVA SECCIÓN COMPLETA: BLOQUE UNIFICADO CON CONTROL DE PÁGINA ---
-    pdf.ln(2)
-
-    # === CONFIGURACIÓN ===
-    pdf.set_font("Arial", "", 8)
+    # === CÁLCULO DE ALTURA DEL BLOQUE DE PROCEDIMIENTOS (sin duplicar nada) ===
     line_height = 4
     margin = pdf.l_margin
     codigo_width = 9
@@ -1405,74 +1401,42 @@ def generar_pdf(datos, x, y, filename):
     x_texto = margin + codigo_width + espacio_entre
     ancho_texto = pdf.w - x_texto - margin
 
-    # === CÁLCULO DE ALTURA TOTAL DEL BLOQUE (texto + procedimientos) ===
-    altura_bloque = 0
-
-    # 1. Cuadro rojo (ya dibujado, pero medimos su altura)
+    # Medir altura del cuadro rojo y texto resto (ya dibujados)
     lineas_rojo = len(pdf.multi_cell(pdf.w - 2*margin, 5, texto_rojo, border=0, align="J", split_only=True))
-    altura_cuadro = max(1, lineas_rojo) * 5 + 2  # +2 por pdf.ln(2)
+    altura_cuadro = max(1, lineas_rojo) * 5 + 2  # + ln(2)
 
-    # 2. Texto en negrita
     lineas_resto = len(pdf.multi_cell(pdf.w - 2*margin, 5, texto_resto, border=0, align="J", split_only=True))
-    altura_resto = max(1, lineas_resto) * 5 + 2  # +2 por pdf.ln(2)
+    altura_resto = max(1, lineas_resto) * 5 + 2  # + ln(2)
 
-    # 3. Procedimientos
+    # Medir altura de procedimientos
+    altura_procedimientos = 0
     for codigo, texto, url in procedimientos_con_enlace:
-        lineas_texto = len(pdf.multi_cell(ancho_texto, line_height, texto, border=0, align="J", split_only=True))
-        altura_linea = max(1, lineas_texto) * line_height
-        altura_bloque += altura_linea
+        lineas = len(pdf.multi_cell(ancho_texto, line_height, texto, border=0, align="J", split_only=True))
+        altura_procedimientos += max(1, lineas) * line_height
 
-    # Espacios adicionales
-    espacio_inicial = 10  # pdf.ln(10) al inicio
-    espacio_entre_partes = 4  # 2 + 2
+    # Espacios totales
+    espacio_inicial = 10  # pdf.ln(10)
+    espacio_entre = 4     # 2 + 2
     espacio_final = 5
+    altura_total = espacio_inicial + altura_cuadro + espacio_entre + altura_resto + altura_procedimientos + espacio_final
 
-    altura_total = (
-        espacio_inicial +
-        altura_cuadro +
-        espacio_entre_partes +
-        altura_resto +
-        altura_bloque +
-        espacio_final
-    )
-
-    # === COMPROBAR SI CABE TODO EL BLOQUE ===
+    # === SI NO CABE TODO → NUEVA PÁGINA ===
     if not hay_espacio_suficiente(pdf, altura_total):
         pdf.add_page()
 
-    # === AHORA DIBUJAR TODO EL BLOQUE (sin cortes) ===
-    pdf.ln(10)  # Espacio inicial
-
-    # --- 1. CUADRO ROJO ---
-    pdf.set_font("Arial", "B", 10)
-    pdf.set_text_color(255, 0, 0)
-    pdf.set_draw_color(0, 0, 0)
-    pdf.set_line_width(0.5)
-    pdf.set_fill_color(251, 228, 213)
-    pdf.multi_cell(pdf.w - 2*margin, 5, texto_rojo, border=1, align="J", fill=True)
-    pdf.ln(2)
-
-    # --- 2. TEXTO EN NEGRITA ---
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font("Arial", "B", 8)
-    pdf.multi_cell(pdf.w - 2*margin, 5, texto_resto, border=0, align="J")
-    pdf.ln(2)
-
-    # --- 3. PROCEDIMIENTOS ---
+    # === DIBUJAR PROCEDIMIENTOS (sin volver a dibujar cuadro ni texto_resto) ===
     pdf.set_font("Arial", "", 8)
     y = pdf.get_y()
 
     for codigo, texto, url in procedimientos_con_enlace:
-        # Calcular altura de esta entrada
-        lineas_texto = len(pdf.multi_cell(ancho_texto, line_height, texto, border=0, align="J", split_only=True))
-        altura_linea = max(1, lineas_texto) * line_height
+        lineas = len(pdf.multi_cell(ancho_texto, line_height, texto, border=0, align="J", split_only=True))
+        altura_linea = max(1, lineas) * line_height
 
-        # Si no cabe esta entrada → nueva página
         if pdf.get_y() + altura_linea > pdf.h - pdf.b_margin:
             pdf.add_page()
             y = pdf.get_y()
 
-        # --- CÓDIGO ---
+        # CÓDIGO
         pdf.set_xy(x_codigo, y)
         if url:
             pdf.set_text_color(0, 0, 255)
@@ -1482,7 +1446,7 @@ def generar_pdf(datos, x, y, filename):
         else:
             pdf.cell(codigo_width, line_height, f"- {codigo}", border=0)
 
-        # --- TEXTO ---
+        # TEXTO
         pdf.set_xy(x_texto, y)
         pdf.multi_cell(ancho_texto, line_height, texto, border=0, align="J")
 
