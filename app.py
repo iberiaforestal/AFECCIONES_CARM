@@ -1392,39 +1392,58 @@ def generar_pdf(datos, x, y, filename):
         ("7242", "Autorización de permutas en montes públicos.", "https://sede.carm.es/web/pagina?IDCONTENIDO=7242&IDTIPO=240&RASTRO=c$m40288"),
     ]
 
-    # === CÁLCULO DE ALTURA DEL BLOQUE DE PROCEDIMIENTOS (sin duplicar nada) ===
-    line_height = 4
+# === 1. CALCULAR ALTURA TOTAL ANTES DE DIBUJAR NADA ===
     margin = pdf.l_margin
+    line_height = 4
     codigo_width = 9
     espacio_entre = 2
     x_codigo = margin
     x_texto = margin + codigo_width + espacio_entre
     ancho_texto = pdf.w - x_texto - margin
 
-    # Medir altura del cuadro rojo y texto resto (ya dibujados)
+    # Medir cuadro rojo
     lineas_rojo = len(pdf.multi_cell(pdf.w - 2*margin, 5, texto_rojo, border=0, align="J", split_only=True))
     altura_cuadro = max(1, lineas_rojo) * 5 + 2  # + ln(2)
 
+    # Medir texto en negrita
     lineas_resto = len(pdf.multi_cell(pdf.w - 2*margin, 5, texto_resto, border=0, align="J", split_only=True))
     altura_resto = max(1, lineas_resto) * 5 + 2  # + ln(2)
 
-    # Medir altura de procedimientos
+    # Medir procedimientos
     altura_procedimientos = 0
     for codigo, texto, url in procedimientos_con_enlace:
         lineas = len(pdf.multi_cell(ancho_texto, line_height, texto, border=0, align="J", split_only=True))
         altura_procedimientos += max(1, lineas) * line_height
 
-    # Espacios totales
-    espacio_inicial = 10  # pdf.ln(10)
-    espacio_entre = 4     # 2 + 2
+    # Espacios
+    espacio_inicial = 10
+    espacio_entre = 4
     espacio_final = 5
     altura_total = espacio_inicial + altura_cuadro + espacio_entre + altura_resto + altura_procedimientos + espacio_final
 
-    # === SI NO CABE TODO → NUEVA PÁGINA ===
+    # === 2. SI NO CABE TODO → NUEVA PÁGINA ===
     if not hay_espacio_suficiente(pdf, altura_total):
         pdf.add_page()
 
-    # === DIBUJAR PROCEDIMIENTOS (sin volver a dibujar cuadro ni texto_resto) ===
+    # === 3. AHORA SÍ: DIBUJAR TODO JUNTO (sin cortes) ===
+    pdf.ln(10)  # Espacio inicial
+
+    # --- CUADRO ROJO (completo) ---
+    pdf.set_font("Arial", "B", 10)
+    pdf.set_text_color(255, 0, 0)
+    pdf.set_draw_color(0, 0, 0)
+    pdf.set_line_width(0.5)
+    pdf.set_fill_color(251, 228, 213)
+    pdf.multi_cell(pdf.w - 2*margin, 5, texto_rojo, border=1, align="J", fill=True)
+    pdf.ln(2)
+
+    # --- TEXTO EN NEGRITA ---
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Arial", "B", 8)
+    pdf.multi_cell(pdf.w - 2*margin, 5, texto_resto, border=0, align="J")
+    pdf.ln(2)
+
+    # --- PROCEDIMIENTOS ---
     pdf.set_font("Arial", "", 8)
     y = pdf.get_y()
 
@@ -1436,7 +1455,6 @@ def generar_pdf(datos, x, y, filename):
             pdf.add_page()
             y = pdf.get_y()
 
-        # CÓDIGO
         pdf.set_xy(x_codigo, y)
         if url:
             pdf.set_text_color(0, 0, 255)
@@ -1446,10 +1464,8 @@ def generar_pdf(datos, x, y, filename):
         else:
             pdf.cell(codigo_width, line_height, f"- {codigo}", border=0)
 
-        # TEXTO
         pdf.set_xy(x_texto, y)
         pdf.multi_cell(ancho_texto, line_height, texto, border=0, align="J")
-
         y += altura_linea
 
     pdf.ln(espacio_final)
