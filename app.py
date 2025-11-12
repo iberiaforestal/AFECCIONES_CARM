@@ -1420,15 +1420,16 @@ def generar_pdf(datos, x, y, filename):
     
     # === CONDICIONADO:===
     pdf.add_page()  # Nueva página
-
-    # Título CONDICIONADO
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 12, "CONDICIONADO", ln=True, align="C")
     pdf.ln(8)
 
-    # Todo el texto en una sola columna, justificado
+    # Configuración de columnas
+    margen_lateral = 15
+    ancho_total = pdf.w - 2 * margen_lateral
+    ancho_columna = (ancho_total - 5) / 2  # 5mm separación
+    line_h = 4.5
     pdf.set_font("Arial", "", 9)
-    line_h = 5
 
     condicionado_texto = (
         "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
@@ -1464,12 +1465,36 @@ def generar_pdf(datos, x, y, filename):
             "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
     )
 
-    # Escribir línea por línea, justificado
-    for line in condicionado_texto.split('\n'):
+    # --- DIVIDIR EN 2 COLUMNAS ---
+    parrafos = [p.strip() for p in condicionado_texto.split('\n\n') if p.strip()]
+    mitad = len(parrafos) // 2
+    col1 = '\n\n'.join(parrafos[:mitad])
+    col2 = '\n\n'.join(parrafos[mitad:])
+
+    # --- ESCRIBIR COLUMNA 1 ---
+    pdf.set_x(margen_lateral)
+    altura_col1 = 0
+    for line in col1.split('\n'):
         if line.strip():
-            pdf.multi_cell(0, line_h, line, align="J")
+            h = pdf.get_string_width(line) / ancho_columna * line_h * 1.2  # estimación
+            pdf.multi_cell(ancho_columna, line_h, line, align="J")
+            altura_col1 += h if h > line_h else line_h
         else:
             pdf.ln(line_h)
+            altura_col1 += line_h
+
+    # --- ESCRIBIR COLUMNA 2 (misma altura que la 1) ---
+    y_inicio = pdf.get_y() - altura_col1  # volver al inicio
+    pdf.set_xy(margen_lateral + ancho_columna + 5, y_inicio)
+
+    for line in col2.split('\n'):
+        if line.strip():
+            pdf.multi_cell(ancho_columna, line_h, line, align="J")
+        else:
+            pdf.ln(line_h)
+
+# Ajustar altura final
+pdf.set_y(max(pdf.get_y(), y_inicio + altura_col1 + 10))
 
     # === PIE ===
     pdf.ln(10)
