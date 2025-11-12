@@ -1493,8 +1493,8 @@ def generar_pdf(datos, x, y, filename):
         else:
             pdf.ln(line_h)
 
-# Ajustar altura final
-pdf.set_y(max(pdf.get_y(), y_inicio + altura_col1 + 10))
+    # Ajustar altura final
+    pdf.set_y(max(pdf.get_y(), y_inicio + altura_col1 + 10))
 
     # === PIE ===
     pdf.ln(10)
