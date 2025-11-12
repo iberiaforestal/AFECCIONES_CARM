@@ -301,27 +301,50 @@ class CustomPDF(FPDF):
 
     def header(self):
         if self.logo_path and os.path.exists(self.logo_path):
-            page_width = self.w - 2 * self.l_margin
-            logo_height = 20  # Logo más pequeño en páginas 2+
-
             try:
+                # --- 1. ANCHO DISPONIBLE EN PÁGINA ---
+                page_width = self.w - 2 * self.l_margin  # Ancho útil
+
+                # --- 2. ALTURA MÁXIMA DEL LOGO ---
+                max_logo_height = 18  # Ajusta si quieres más/menos espacio
+
+                # --- 3. CARGAR IMAGEN Y CALCULAR PROPORCIÓN ---
+                from PIL import Image
                 img = Image.open(self.logo_path)
                 img_width, img_height = img.size
-                ratio = img_width / img_height
+                ratio = img_width / img_height  # Proporción original
 
-                # Escalar al 80% del ancho (discreto)
-                new_width = page_width * 0.8
-                new_height = new_width / ratio
-                if new_height > logo_height:
-                    new_height = logo_height
-                    new_width = new_height * ratio
+                # --- 4. CALCULAR TAMAÑO AJUSTADO ---
+                # Opción A: Escalar por ancho (80% del ancho disponible)
+                target_width = page_width * 0.8
+                target_height = target_width / ratio
 
-                x = self.l_margin + (page_width - new_width) / 2
-                self.image(self.logo_path, x=x, y=6, w=new_width, h=new_height)
-                self.set_y(6 + new_height + 3)
+                # Si excede la altura máxima → escalar por altura
+                if target_height > max_logo_height:
+                    target_height = max_logo_height
+                    target_width = target_height * ratio
+
+                # --- 5. CENTRAR HORIZONTALMENTE ---
+                x = self.l_margin + (page_width - target_width) / 2
+                y = 8  # Distancia desde arriba
+
+                # --- 6. DIBUJAR LOGO ---
+                self.image(
+                    self.logo_path,
+                    x=x,
+                    y=y,
+                    w=target_width,
+                    h=target_height
+                )
+
+                # --- 7. DEJAR ESPACIO PARA EL CONTENIDO ---
+                self.set_y(y + target_height + 5)  # 5mm de margen inferior
+
             except Exception as e:
-                st.error(f"Error al procesar logo: {e}")
-                self.set_y(15)
+                st.warning(f"Error al cargar logo en cabecera: {e}")
+                self.set_y(15)  # Fallback
+    else:
+        self.set_y(15)  # Sin logo → espacio estándar
 
     def footer(self):
         if self.page_no() > 0:
