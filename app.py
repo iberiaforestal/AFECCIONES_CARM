@@ -1347,31 +1347,6 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(5)        
           
     # Nueva sección para el texto en cuadro
-    pdf.ln(10)
-    pdf.set_font("Arial", "B", 10)
-    pdf.set_text_color(255, 0, 0)
-    pdf.set_draw_color(0, 0, 0) # Borde negro  
-    pdf.set_line_width(0.5)
-    pdf.set_fill_color(251, 228, 213) # Fondo gris
-    
-    # Parte 1: Texto en rojo y negrita dentro de un cuadro con fondo gris
-    pdf.set_text_color(255, 0, 0)  # Color rojo
-    texto_rojo = (
-        "Este borrador preliminar de afecciones no tiene el valor de una certificación oficial y por tanto carece de validez legal y solo sirve como información general con carácter orientativo."
-    )
-    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 5, texto_rojo, border=1, align="J", fill=True)  # Con borde, fondo gris y texto justificado
-    pdf.ln(2)
-
-    # Parte 2: Texto en negrita (sin rojo) para el resto del documento
-    pdf.set_text_color(0, 0, 0)  # Color negro
-    pdf.set_font("Arial", "B", 8)  # Fuente en negrita para el texto general
-    texto_resto = (
-    "En caso de ser detectadas afecciones a Dominio público forestal o pecuario, así como a Espacios Naturales Protegidos o RN2000, debe solicitar informe oficial a la D. G. de Patrimonio Natural y Acción Climática, a través de los procedimientos establecidos en sede electrónica:\n"
-    )
-    # Añadir el texto inicial en negrita
-    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 5, texto_resto, border=0, align="J")
-    pdf.ln(2)
-
     # Procedimientos sin negrita
     pdf.set_font("Arial", "", 8)  # Fuente normal para los procedimientos
     procedimientos_con_enlace = [
