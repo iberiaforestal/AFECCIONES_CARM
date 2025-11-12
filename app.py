@@ -1514,9 +1514,9 @@ def generar_pdf(datos, x, y, filename):
                 pdf.ln(line_h)
 
     # Ajustar altura final
-    pdf.set_y(max(y_final_col1, pdf.get_y()))   → Usa y_final_col1
-    col1_parrafos y col2_parrafos → DEFINIDOS Y LLENOS
-
+    pdf.set_y(max(y_final_col1, pdf.get_y()))   
+    col1_parrafos y col2_parrafos  
+    
     # === PIE ===
     pdf.ln(10)
     pdf.set_font("Arial", "", 9)
