@@ -303,10 +303,8 @@ class CustomPDF(FPDF):
         if self.logo_path and os.path.exists(self.logo_path):
             try:
                 # --- 1. ANCHO DISPONIBLE EN PÁGINA ---
-                page_width = self.w - 2 * self.l_margin  # Ancho útil
-
-                # --- 2. ALTURA MÁXIMA DEL LOGO ---
-                max_logo_height = 18  # Ajusta si quieres más/menos espacio
+                page_width = self.w  # ¡NO restar márgenes!
+                max_logo_height = 25  # Altura fija del logo (ajusta si quieres)
 
                 # --- 3. CARGAR IMAGEN Y CALCULAR PROPORCIÓN ---
                 from PIL import Image
@@ -314,8 +312,8 @@ class CustomPDF(FPDF):
                 img_width, img_height = img.size
                 ratio = img_width / img_height  # Proporción original
 
-                # --- 4. CALCULAR TAMAÑO AJUSTADO ---
-                target_width = page_width * 0.8
+                # Escalar para que quepa en el ancho total
+                target_width = page_width
                 target_height = target_width / ratio
 
                 # Si excede la altura máxima → escalar por altura
@@ -323,18 +321,12 @@ class CustomPDF(FPDF):
                     target_height = max_logo_height
                     target_width = target_height * ratio
 
-                # --- 5. CENTRAR HORIZONTALMENTE ---
+                # Centrar horizontalmente
                 x = self.l_margin + (page_width - target_width) / 2
                 y = 8  # Distancia desde arriba
 
-                # --- 6. DIBUJAR LOGO ---
-                self.image(
-                    self.logo_path,
-                    x=x,
-                    y=y,
-                    w=target_width,
-                    h=target_height
-                )
+                # Dibujar logo
+                self.image(self.logo_path, x=x, y=y, w=target_width, h=target_height)
 
                 # --- 7. DEJAR ESPACIO PARA EL CONTENIDO ---
                 self.set_y(y + target_height + 5)  # 5mm de margen inferior
@@ -343,7 +335,7 @@ class CustomPDF(FPDF):
                 st.warning(f"Error al cargar logo en cabecera: {e}")
                 self.set_y(15)  # Fallback
 
-        else:  # ← ¡AQUÍ ESTÁ EL ERROR ARREGLADO!
+        else:  
             self.set_y(15)  # Sin logo → espacio estándar
 
     def footer(self):
