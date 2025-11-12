@@ -1367,7 +1367,14 @@ def generar_pdf(datos, x, y, filename):
         ("7242", "Autorización de permutas en montes públicos.", "https://sede.carm.es/web/pagina?IDCONTENIDO=7242&IDTIPO=240&RASTRO=c$m40288"),
     ]
 
-# === 1. CALCULAR ALTURA TOTAL ANTES DE DIBUJAR NADA ===
+    texto_rojo = (
+        "Este borrador preliminar de afecciones no tiene el valor de una certificación oficial y por tanto carece de validez legal y solo sirve como información general con carácter orientativo."
+    )
+    texto_resto = (
+        "En caso de ser detectadas afecciones a Dominio público forestal o pecuario, así como a Espacios Naturales Protegidos o RN2000, debe solicitar informe oficial a la D. G. de Patrimonio Natural y Acción Climática, a través de los procedimientos establecidos en sede electrónica:\n"
+    )
+
+    # === 1. CALCULAR ALTURA TOTAL ANTES DE DIBUJAR NADA ===
     margin = pdf.l_margin
     line_height = 4
     codigo_width = 9
