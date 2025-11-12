@@ -315,7 +315,6 @@ class CustomPDF(FPDF):
                 ratio = img_width / img_height  # Proporción original
 
                 # --- 4. CALCULAR TAMAÑO AJUSTADO ---
-                # Opción A: Escalar por ancho (80% del ancho disponible)
                 target_width = page_width * 0.8
                 target_height = target_width / ratio
 
@@ -343,8 +342,9 @@ class CustomPDF(FPDF):
             except Exception as e:
                 st.warning(f"Error al cargar logo en cabecera: {e}")
                 self.set_y(15)  # Fallback
-    else:
-        self.set_y(15)  # Sin logo → espacio estándar
+
+        else:  # ← ¡AQUÍ ESTÁ EL ERROR ARREGLADO!
+            self.set_y(15)  # Sin logo → espacio estándar
 
     def footer(self):
         if self.page_no() > 0:
