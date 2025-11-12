@@ -302,41 +302,35 @@ class CustomPDF(FPDF):
     def header(self):
         if self.logo_path and os.path.exists(self.logo_path):
             try:
-                # --- ANCHO DISPONIBLE EN PÁGINA ---
-                page_width = self.w  # ¡NO restar márgenes!
-                max_logo_height = 25  # Altura fija del logo (ajusta si quieres)
+                # --- ÁREA IMPRIMIBLE (SIN MÁRGENES) ---
+                available_width = self.w - self.l_margin - self.r_margin  # ¡CORRECTO!
 
-                # --- CARGAR IMAGEN Y CALCULAR PROPORCIÓN ---
+                max_logo_height = 25  # Altura fija
+
                 from PIL import Image
                 img = Image.open(self.logo_path)
-                img_width, img_height = img.size
-                ratio = img_width / img_height  # Proporción original
+                ratio = img.width / img.height
 
-                # Escalar para que quepa en el ancho total
-                target_width = page_width
+                # Escalar al ancho disponible
+                target_width = available_width
                 target_height = target_width / ratio
 
-                # Si excede la altura máxima → escalar por altura
                 if target_height > max_logo_height:
                     target_height = max_logo_height
                     target_width = target_height * ratio
 
-                # Centrar horizontalmente
-                x = self.l_margin + (page_width - target_width) / 2
-                y = 2  # Distancia desde arriba
+                # --- CENTRAR DENTRO DEL ÁREA IMPRIMIBLE ---
+                x = self.l_margin + (available_width - target_width) / 2
+                y = 5
 
-                # Dibujar logo
                 self.image(self.logo_path, x=x, y=y, w=target_width, h=target_height)
-
-                # --- 7. DEJAR ESPACIO PARA EL CONTENIDO ---
-                self.set_y(y + target_height + 3)  # 3mm de margen inferior
+                self.set_y(y + target_height + 3)
 
             except Exception as e:
-                st.warning(f"Error al cargar logo en cabecera: {e}")
-                self.set_y(30)  # Fallback
-
-        else:  
-            self.set_y(30)  # Sin logo → espacio estándar
+                st.warning(f"Error al cargar logo: {e}")
+                self.set_y(30)
+        else:
+            self.set_y(30)
 
     def footer(self):
         if self.page_no() > 0:
