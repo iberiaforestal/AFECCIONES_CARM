@@ -302,11 +302,11 @@ class CustomPDF(FPDF):
     def header(self):
         if self.logo_path and os.path.exists(self.logo_path):
             try:
-                # --- 1. ANCHO DISPONIBLE EN PÁGINA ---
+                # --- ANCHO DISPONIBLE EN PÁGINA ---
                 page_width = self.w  # ¡NO restar márgenes!
                 max_logo_height = 25  # Altura fija del logo (ajusta si quieres)
 
-                # --- 3. CARGAR IMAGEN Y CALCULAR PROPORCIÓN ---
+                # --- CARGAR IMAGEN Y CALCULAR PROPORCIÓN ---
                 from PIL import Image
                 img = Image.open(self.logo_path)
                 img_width, img_height = img.size
@@ -323,20 +323,20 @@ class CustomPDF(FPDF):
 
                 # Centrar horizontalmente
                 x = self.l_margin + (page_width - target_width) / 2
-                y = 8  # Distancia desde arriba
+                y = 2  # Distancia desde arriba
 
                 # Dibujar logo
                 self.image(self.logo_path, x=x, y=y, w=target_width, h=target_height)
 
                 # --- 7. DEJAR ESPACIO PARA EL CONTENIDO ---
-                self.set_y(y + target_height + 5)  # 5mm de margen inferior
+                self.set_y(y + target_height + 3)  # 3mm de margen inferior
 
             except Exception as e:
                 st.warning(f"Error al cargar logo en cabecera: {e}")
-                self.set_y(15)  # Fallback
+                self.set_y(30)  # Fallback
 
         else:  
-            self.set_y(15)  # Sin logo → espacio estándar
+            self.set_y(30)  # Sin logo → espacio estándar
 
     def footer(self):
         if self.page_no() > 0:
