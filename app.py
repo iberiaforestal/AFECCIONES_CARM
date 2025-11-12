@@ -1499,16 +1499,14 @@ def generar_pdf(datos, x, y, filename):
     # --- ESCRIBIR COLUMNA 1 ---
     for parrafo in col1_parrafos:
         pdf.multi_cell(ancho_columna, line_h, parrafo, align="J")
-        pdf.ln(line_h)  # Espacio entre párrafos
-
+       
     y_final_col1 = pdf.get_y()
 
     # --- ESCRIBIR COLUMNA 2 (misma altura que la 1) ---
     pdf.set_xy(margen_lateral + ancho_columna + 5, y_inicio)
     for parrafo in col2_parrafos:
         pdf.multi_cell(ancho_columna, line_h, parrafo, align="J")
-        pdf.ln(line_h)
-
+        
     # Ajustar altura final
     pdf.set_y(max(y_final_col1, pdf.get_y()))   
         
