@@ -1431,28 +1431,6 @@ def generar_pdf(datos, x, y, filename):
     line_h = 4.5
     pdf.set_font("Arial", "", 9)
 
-    # --- TODAS LAS LÍNEAS EN UNA LISTA ---
-    lineas = [line.strip() for line in condicionado_texto.split('\n') if line.strip()]
-
-    # --- DIVIDIR LÍNEAS EN 2 GRUPOS DE ALTURA SIMILAR ---
-    col1_lines = []
-    col2_lines = []
-    altura_col1 = 0
-    altura_col2 = 0
-
-    for linea in lineas:
-        # Estimar altura de la línea
-        line_width = pdf.get_string_width(linea)
-        num_lineas = max(1, int(line_width / ancho_columna) + 1)
-        h_linea = num_lineas * line_h
-
-        if altura_col1 <= altura_col2:
-            col1_lines.append(linea)
-            altura_col1 += h_linea
-        else:
-            col2_lines.append(linea)
-            altura_col2 += h_linea
-
     condicionado_texto = (
         "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
         "2.- De acuerdo con lo establecido en el articulo 22.1 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculacion o inscripcion de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un termino municipal en el que existan montes demaniales requerira el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del organo forestal de la comunidad autonoma.\n\n"
@@ -1486,21 +1464,57 @@ def generar_pdf(datos, x, y, filename):
             "- Decreto n. 59/2016, de 22 de junio, de aprobacion de los planes de recuperacion del aguila perdicera, la nutria y el fartet.\n"
             "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
     )
+    
+    # --- TODAS LAS LÍNEAS EN UNA LISTA ---
+    parrafos = [p.strip() for p in condicionado_texto.split('\n\n') if p.strip()]
+
+    # --- DIVIDIR LÍNEAS EN 2 GRUPOS DE ALTURA SIMILAR ---
+    col1_lines = []
+    col2_lines = []
+    altura_col1 = 0
+    altura_col2 = 0
+
+    for parrafo in parrafos:
+        # Estimar altura del párrafo
+        lineas_parrafo = parrafo.split('\n')
+        h_parrafo = 0
+        for linea in lineas_parrafo:
+            if linea.strip():
+                line_width = pdf.get_string_width(linea)
+                num_lineas = max(1, int(line_width / ancho_columna) + 1)
+                h_parrafo += num_lineas * line_h
+            else:
+                h_parrafo += line_h
+
+        if altura_col1 <= altura_col2:
+            col1_parrafos.append(parrafo)
+            altura_col1 += h_parrafo
+        else:
+            col2_parrafos.append(parrafo)
+            altura_col2 += h_parrafo
 
     # --- GUARDAR POSICIÓN INICIAL ---
     y_inicio = pdf.get_y()
     pdf.set_x(margen_lateral)
 
     # --- ESCRIBIR COLUMNA 1 ---
-    for linea in col1_lines:
-        pdf.multi_cell(ancho_columna, line_h, linea, align="J")
+    for parrafo in col1_parrafos:
+        for linea in parrafo.split('\n'):
+            if linea.strip():
+                pdf.multi_cell(ancho_columna, line_h, linea, align="J")
+            else:
+                pdf.ln(line_h)
 
     y_final_col1 = pdf.get_y()
 
     # --- ESCRIBIR COLUMNA 2 (misma altura que la 1) ---
     pdf.set_xy(margen_lateral + ancho_columna + 5, y_inicio)
-    for linea in col2_lines:
-        pdf.multi_cell(ancho_columna, line_h, linea, align="J")
+    for parrafo in col2_parrafos:
+        for linea in parrafo.split('\n'):
+            if linea.strip():
+                pdf.multi_cell(ancho_columna, line_h, linea, align="J")
+            else:
+                pdf.ln(line_h)
 
     # Ajustar altura final
     pdf.set_y(max(y_final_col1, pdf.get_y()))
