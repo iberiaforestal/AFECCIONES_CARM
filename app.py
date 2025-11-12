@@ -337,6 +337,14 @@ class CustomPDF(FPDF):
             self.cell(0, 10, f"Página {self.page_no()}", align="R")
 
 # Función para generar el PDF con los datos de la solicitud
+def hay_espacio_suficiente(pdf, altura_necesaria, margen_inferior=20):
+    """
+    Verifica si hay suficiente espacio en la página actual.
+    margen_inferior: espacio mínimo que debe quedar debajo
+    """
+    espacio_disponible = pdf.h - pdf.get_y() - margen_inferior
+    return espacio_disponible >= altura_necesaria
+
 def generar_pdf(datos, x, y, filename):
     logo_path = "logos.jpg"
 
@@ -677,8 +685,13 @@ def generar_pdf(datos, x, y, filename):
                 pdf.ln(line_height)  # Avanzar solo lo necesario
         pdf.ln(2)
 
-    # === TABLA USO DEL SUELO ===
+    # === TABLA USO DEL SUELO ===    
     if uso_suelo_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(uso_suelo_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+            
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afección a Planeamiento Urbano (PGOU):", ln=True)
         pdf.ln(2)
@@ -710,8 +723,13 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_y(y + row_h)
         pdf.ln(5)
         
-    # Procesar VP para tabla si hay detecciones
+    # === TABLA VP ===
     if vp_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(vp_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afecciones a Vías Pecuarias (VP):", ln=True)
         pdf.ln(2)
@@ -787,8 +805,13 @@ def generar_pdf(datos, x, y, filename):
 
         pdf.ln(5)  # Espacio adicional después de la tabla
 
-    # Procesar MUP para tabla si hay detecciones
+    # === TABLA MUP === 
     if mup_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(mup_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afecciones a Montes (MUP):", ln=True)
         pdf.ln(2)
@@ -861,8 +884,13 @@ def generar_pdf(datos, x, y, filename):
 
         pdf.ln(5)  # Espacio después de la tabla
 
-    # Procesar tabla para ZEPA
+    # === TABLA ZEPA === 
     if zepa_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(zepa_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afecciones a Zonas de Especial Protección para las Aves (ZEPA):", ln=True)
         pdf.ln(2)
@@ -894,8 +922,13 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_y(y + row_h)
         pdf.ln(5)
 
-    # Procesar tabla para LIC
+    # === TALBA LIC === 
     if lic_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(lic_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afecciones a Lugares de Importancia Comunitaria (LIC):", ln=True)
         pdf.ln(2)
@@ -927,12 +960,14 @@ def generar_pdf(datos, x, y, filename):
             pdf.set_y(y + row_h)
         pdf.ln(5)
         
-    # Procesar tabla para ENP
+    # === TABLA ENP === 
     enp_detectado = list(set(tuple(row) for row in enp_detectado))  # ← ELIMINA DUPLICADOS
     if enp_detectado:
-        if pdf.get_y() + 60 > pdf.h - pdf.b_margin:
-            pdf.add_page()
-            pdf.ln(15)
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(enp_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe     
+
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afecciones a Espacios Naturales Protegidos (ENP):", ln=True)
         pdf.ln(2)
@@ -959,10 +994,6 @@ def generar_pdf(datos, x, y, filename):
             figura_lines = len(pdf.multi_cell(col_widths[1], line_height, figura, split_only=True))
             row_height = max(5, nombre_lines * line_height, figura_lines * line_height)
 
-            # Salto de página si no cabe
-            if pdf.get_y() + row_height > pdf.h - pdf.b_margin:
-                pdf.add_page()
-
             x = pdf.get_x()
             y = pdf.get_y()
 
@@ -981,9 +1012,13 @@ def generar_pdf(datos, x, y, filename):
 
         pdf.ln(5)
         
-    # Procesar tabla para ESTEPARIAS
-    esteparias_detectado = list(set(tuple(row) for row in esteparias_detectado))
+    # === TABLA ESTEPARIAS ===
     if esteparias_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(esteparias_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afecciones a zonas de distribución de aves esteparias:", ln=True)
         pdf.ln(2)
@@ -1038,6 +1073,11 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA TORTUGA ===
     if tortuga_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(tortuga_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afección a Plan de Recuperación tortuga mora:", ln=True)
         pdf.ln(2)
@@ -1071,6 +1111,11 @@ def generar_pdf(datos, x, y, filename):
         
     # === TABLA PERDICERA ===
     if perdicera_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(perdicera_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afección a Plan de Recuperación águila perdicera:", ln=True)
         pdf.ln(2)
@@ -1104,6 +1149,11 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA NUTRIA ===
     if nutria_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(nutria_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afección a Plan de Recuperación nutria:", ln=True)
         pdf.ln(2)
@@ -1137,8 +1187,13 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA FARTET ===
     if fartet_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(fartet_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afección a Plan de Recuperación fartet:", ln=True)
+        pdf.cell(0, 5, "Afección a Plan de Recuperación fartet:", ln=True)
         pdf.ln(2)
         col_w_clasificac = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
@@ -1170,8 +1225,13 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA MALVASIA ===
     if malvasia_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(malvasia_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afección a Plan de Recuperación malvasia:", ln=True)
+        pdf.cell(0, 5, "Afección a Plan de Recuperación malvasia:", ln=True)
         pdf.ln(2)
         col_w_clasificac = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
@@ -1203,8 +1263,13 @@ def generar_pdf(datos, x, y, filename):
 
     # === TABLA GARBANCILLO ===
     if garbancillo_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(garbancillo_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, "Afección a Plan de Recuperación garbancillo:", ln=True)
+        pdf.cell(0, 5, "Afección a Plan de Recuperación garbancillo:", ln=True)
         pdf.ln(2)
         col_w_tipo = 50
         col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo
@@ -1236,6 +1301,11 @@ def generar_pdf(datos, x, y, filename):
         
     # === TABLA FLORA ===
     if flora_detectado:
+        # Estimamos altura: título + cabecera + filas + espacio
+        altura_estimada = 5 + 5 + (len(flora_detectado) * 6) + 10
+        if not hay_espacio_suficiente(pdf, altura_estimada):
+            pdf.add_page()  # Salta a nueva página si no cabe
+        
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 5, "Afección a Plan de Recuperación flora:", ln=True)
         pdf.ln(2)
