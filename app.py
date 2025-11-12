@@ -1455,7 +1455,7 @@ def generar_pdf(datos, x, y, filename):
     # --- 2. TEXTO EN NEGRITA ---
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", "B", 8)
-    pdf.multi_cell(pdf.w - 2*margin, 5, texto_resto, border=0, align="="J")
+    pdf.multi_cell(pdf.w - 2*margin, 5, texto_resto, border=0, align="J")
     pdf.ln(2)
 
     # --- 3. PROCEDIMIENTOS ---
