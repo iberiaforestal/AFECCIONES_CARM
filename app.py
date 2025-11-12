@@ -1469,16 +1469,14 @@ def generar_pdf(datos, x, y, filename):
     parrafos = [p.strip() for p in condicionado_texto.split('\n\n') if p.strip()]
 
     # --- DIVIDIR LÍNEAS EN 2 GRUPOS DE ALTURA SIMILAR ---
-    col1_lines = []
-    col2_lines = []
+    col1_parrafos = []
+    col2_parrafos = []
     altura_col1 = 0
     altura_col2 = 0
 
     for parrafo in parrafos:
-        # Estimar altura del párrafo
-        lineas_parrafo = parrafo.split('\n')
         h_parrafo = 0
-        for linea in lineas_parrafo:
+        for linea in parrafo.split('\n'):
             if linea.strip():
                 line_width = pdf.get_string_width(linea)
                 num_lineas = max(1, int(line_width / ancho_columna) + 1)
@@ -1504,7 +1502,6 @@ def generar_pdf(datos, x, y, filename):
                 pdf.multi_cell(ancho_columna, line_h, linea, align="J")
             else:
                 pdf.ln(line_h)
-
     y_final_col1 = pdf.get_y()
 
     # --- ESCRIBIR COLUMNA 2 (misma altura que la 1) ---
@@ -1517,7 +1514,8 @@ def generar_pdf(datos, x, y, filename):
                 pdf.ln(line_h)
 
     # Ajustar altura final
-    pdf.set_y(max(y_final_col1, pdf.get_y()))
+    pdf.set_y(max(y_final_col1, pdf.get_y()))   → Usa y_final_col1
+    col1_parrafos y col2_parrafos → DEFINIDOS Y LLENOS
 
     # === PIE ===
     pdf.ln(10)
