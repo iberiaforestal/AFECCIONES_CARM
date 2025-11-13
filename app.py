@@ -117,42 +117,74 @@ def cargar_parcelas_wfs_catastro(municipio):
         st.error("Municipio no válido.")
         return None
 
-    # URL ATOM oficial del Catastro
-    atom_url = f"https://www.sedecatastro.gob.es/OVCServiceAT/rest/ATOM/Parcela?GGMM={cod_ine}"
-
+    # Feed ATOM oficial (XML con enlaces por municipio)
+    atom_feed_url = "https://www.catastro.hacienda.gob.es/INSPIRE/CadastralParcels/ES.SDGC.CP.atom.xml"
+    
     try:
-        with st.spinner(f"Descargando TODAS las parcelas de {municipio} vía ATOM..."):
-            response = session.get(atom_url, timeout=120)
-            if response.status_code != 200:
-                st.error(f"Error ATOM: {response.status_code}")
+        with st.spinner(f"Obteniendo enlaces ATOM para {municipio}..."):
+            # Descargar y parsear feed XML
+            response_feed = session.get(atom_feed_url, timeout=30)
+            if response_feed.status_code != 200:
+                st.error(f"Error en feed ATOM: {response_feed.status_code}")
+                return None
+            
+            root = etree.fromstring(response_feed.content)
+            namespaces = {'atom': 'http://www.w3.org/2005/Atom'}
+            
+            # Buscar enlaces para este municipio (U y R)
+            enlaces = {}
+            for entry in root.findall('.//atom:entry', namespaces):
+                title = entry.find('atom:title', namespaces).text
+                if cod_ine in title:  # Ej: "30001U" o "30001R"
+                    link = entry.find('atom:link[@rel="enclosure"]', namespaces)
+                    if link is not None:
+                        tipo = title[-1]  # U o R
+                        enlaces[tipo] = link.get('href')
+            
+            if not enlaces:
+                st.error(f"No se encontraron enlaces para {municipio} (código {cod_ine}). Verifica código INE.")
                 return None
 
-            # Guardar ZIP temporal
-            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp_zip:
-                tmp_zip.write(response.content)
-                zip_path = tmp_zip.name
+        # Descargar y procesar cada tipo (U y R)
+        all_gdfs = []
+        for tipo, enlace in enlaces.items():
+            with st.spinner(f"Descargando {municipio} {tipo}..."):
+                response_data = session.get(enlace, timeout=120)
+                if response_data.status_code != 200:
+                    st.warning(f"Error en {tipo}: {response_data.status_code}. Saltando...")
+                    continue
+                
+                # ZIP con GML
+                with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp_zip:
+                    tmp_zip.write(response_data.content)
+                    zip_path = tmp_zip.name
+                
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    gml_files = [f for f in zip_ref.namelist() if f.endswith('.gml')]
+                    if not gml_files:
+                        st.warning(f"No GML en {tipo}.")
+                        os.unlink(zip_path)
+                        continue
+                    gml_path = zip_ref.extract(gml_files[0], tempfile.gettempdir())
+                
+                # Leer GML con GeoPandas
+                gdf_tipo = gpd.read_file(gml_path, driver='GML')
+                gdf_tipo = gdf_tipo.to_crs("EPSG:25830")
+                all_gdfs.append(gdf_tipo)
+                os.unlink(gml_path)
+                os.unlink(zip_path)
 
-            # Extraer GML del ZIP
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                gml_files = [f for f in zip_ref.namelist() if f.endswith('.gml')]
-                if not gml_files:
-                    st.error("No se encontró GML en el ZIP.")
-                    os.unlink(zip_path)
-                    return None
-                gml_path = zip_ref.extract(gml_files[0], tempfile.gettempdir())
+        if not all_gdfs:
+            st.warning("No se descargaron datos.")
+            return None
 
-            # Leer con GeoPandas
-            gdf = gpd.read_file(gml_path, driver='GML')
-            os.unlink(gml_path)
-            os.unlink(zip_path)
+        # Combinar U + R
+        gdf = gpd.GeoDataFrame(pd.concat(all_gdfs, ignore_index=True))
+        gdf['MASA'] = gdf.get('nationalCadastralZoningReference', 'N/A').astype(str)
+        gdf['PARCELA'] = gdf.get('parcelReference', 'N/A').astype(str)
 
-            # Limpiar y asignar columnas
-            gdf = gdf.to_crs("EPSG:25830")
-            gdf['MASA'] = gdf.get('nationalCadastralZoningReference', 'N/A').astype(str)
-            gdf['PARCELA'] = gdf.get('parcelReference', 'N/A').astype(str)
-
-            st.success(f"¡Cargadas {len(gdf)} parcelas de {municipio} con ATOM!")
-            return gdf
+        st.success(f"¡Cargadas {len(gdf)} parcelas de {municipio} (U+R) desde ATOM oficial!")
+        return gdf
 
     except Exception as e:
         st.error(f"Error ATOM: {e}")
