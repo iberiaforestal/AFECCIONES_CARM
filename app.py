@@ -69,11 +69,15 @@ def cargar_parcelas_wfs_catastro(municipio):
         st.error("Municipio no válido.")
         return None
 
-    url = "http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
-    filtro = f"nationalCadastralZoningReference LIKE '{cod_ine}%'"
+    url = "https://ovc.catastro.gob.es/INSPIRE/wfsCP.aspx"  # ← CAMBIO: HTTPS + nuevo dominio
+    filtro = f"nationalCadastralZoningReference LIKE '{cod_ine}%'"  # ← CAMBIO: sin '30' extra
+    
+    # Fallback BBOX aproximado para Murcia (ajusta si es necesario por municipio)
+    bbox_murcia = "600000,4100000,700000,4400000"  # Ejemplo amplio para zona 30 UTM
+    
     all_features = []
     start_index = 0
-    count = 500  # MÁXIMO SEGURO
+    count = 1000  # ← AUMENTADO para eficiencia
 
     with st.spinner(f"Cargando {municipio} (puede tardar)..."):
         while True:
@@ -89,10 +93,21 @@ def cargar_parcelas_wfs_catastro(municipio):
                 "startIndex": start_index
             }
             try:
-                response = session.get(url, params=params, timeout=30)
+                # ← AGREGAR LOGGING PARA DEPURAR
+                st.info(f"Filtro aplicado: {filtro}")  # Temporal, quítalo después
+                
+                response = session.get(url, params=params, timeout=60)  # ← TIMEOUT AUMENTADO
+                st.info(f"Status code: {response.status_code}")  # Temporal
+                
                 if response.status_code != 200:
-                    st.warning(f"Error {response.status_code}")
-                    break
+                    st.warning(f"Error {response.status_code}. Intentando con BBOX...")
+                    # Fallback: Usa BBOX en lugar de filtro
+                    params["BBOX"] = bbox_murcia
+                    params.pop("CQL_FILTER", None)
+                    response = session.get(url, params=params, timeout=60)
+                    if response.status_code != 200:
+                        st.error(f"Error persistente: {response.status_code}. Servicio posiblemente down.")
+                        break
 
                 data = response.json()
                 features = data.get("features", [])
@@ -101,8 +116,6 @@ def cargar_parcelas_wfs_catastro(municipio):
 
                 all_features.extend(features)
                 start_index += count
-
-                # Progreso
                 st.write(f"Descargadas {len(all_features)} parcelas...")
 
                 if len(features) < count:
@@ -112,19 +125,19 @@ def cargar_parcelas_wfs_catastro(municipio):
                 st.error(f"Error de conexión: {e}")
                 break
 
-        if not all_features:
-            st.warning("No se encontraron parcelas.")
-            return None
+    if not all_features:
+        st.warning("No se encontraron parcelas. Verifica el código INE o el servicio.")
+        return None
 
-        # Convertir a GeoDataFrame
-        gdf = gpd.GeoDataFrame.from_features(all_features)
-        gdf = gdf.set_crs("EPSG:25830")
+    # Convertir a GeoDataFrame
+    gdf = gpd.GeoDataFrame.from_features(all_features)
+    gdf = gdf.set_crs("EPSG:25830")
 
-        # COLUMNAS SEGURAS
-        gdf['MASA'] = gdf.get('nationalCadastralZoningReference', 'N/A').astype(str)
-        gdf['PARCELA'] = gdf.get('parcelReference', 'N/A').astype(str)
+    # COLUMNAS SEGURAS
+    gdf['MASA'] = gdf.get('nationalCadastralZoningReference', 'N/A').astype(str)
+    gdf['PARCELA'] = gdf.get('parcelReference', 'N/A').astype(str)
 
-        return gdf
+    return gdf
     
 # Función para encontrar municipio, polígono y parcela a partir de coordenadas
 def encontrar_municipio_poligono_parcela(x,  y):
