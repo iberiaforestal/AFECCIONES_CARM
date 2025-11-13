@@ -1453,8 +1453,6 @@ def generar_pdf(datos, x, y, filename):
     pdf.ln(espacio_final)
     
     # === CONDICIONADO:===
-    def add_condicionado_section(self):
-        # === CONDICIONADO ===
         self.add_page()
         self.set_font("Arial", "B", 12)
         self.cell(0, 12, "CONDICIONADO", ln=True, align="C")
