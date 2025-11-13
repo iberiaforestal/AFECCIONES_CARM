@@ -21,6 +21,10 @@ from urllib3.util.retry import Retry
 import shutil
 from PIL import Image
 
+# Crear sesión global
+session = Session()
+session.headers.update({'User-Agent': 'Streamlit-App-Catastro'})
+
 # Sesión segura con reintentos
 session = requests.Session()
 retry = Retry(total=3, backoff_factor=2, status_forcelist=[500, 502, 503, 504, 429])
@@ -40,7 +44,6 @@ municipios_disponibles = [
     "TORRE PACHECO", "TOTANA", "ULEA", "VILLANUEVA DEL RIO SEGURA", "YECLA"
 ]
 
-# Códigos INE del Catastro (para WFS)
 codigos_ine = {
     "ABANILLA": "30001", "ABARAN": "30002", "AGUILAS": "30003", "ALBUDEITE": "30004",
     "ALCANTARILLA": "30005", "ALEDO": "30006", "ALGUAZAS": "30007", "ALHAMA DE MURCIA": "30008",
@@ -56,22 +59,22 @@ codigos_ine = {
     "TORRE PACHECO": "30041", "TOTANA": "30042", "ULEA": "30043",
     "VILLANUEVA DEL RIO SEGURA": "30044", "YECLA": "30045"
 }
+
 # Función para cargar shapefiles desde GitHub
 @st.cache_data(ttl=3600)
 def cargar_parcelas_wfs_catastro(municipio):
     cod_ine = codigos_ine.get(municipio)
     if not cod_ine:
-        st.error("Municipio no encontrado.")
+        st.error("Código INE no encontrado.")
         return None
 
     url = "http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
     filtro = f"nationalCadastralZoningReference LIKE '30{cod_ine}%'"
-    
     all_gdf = gpd.GeoDataFrame()
     start_index = 0
     count = 2000
 
-    with st.spinner(f"Cargando {municipio} desde Catastro..."):
+    try:
         while True:
             params = {
                 "service": "WFS",
@@ -84,90 +87,74 @@ def cargar_parcelas_wfs_catastro(municipio):
                 "count": count,
                 "startIndex": start_index
             }
-            try:
-                response = session.get(url, params=params, timeout=60)
-                if response.status_code != 200:
-                    st.warning(f"Error {response.status_code}. Usando datos locales.")
-                    return None
+            response = session.get(url, params=params, timeout=60)
+            if response.status_code != 200:
+                st.warning(f"WFS error {response.status_code}")
+                break
 
-                data = BytesIO(response.content)
-                page_gdf = gpd.read_file(data)
-                if page_gdf.empty:
-                    break
+            data = BytesIO(response.content)
+            page_gdf = gpd.read_file(data)
+            if page_gdf.empty:
+                break
 
-                all_gdf = pd.concat([all_gdf, page_gdf], ignore_index=True)
-                start_index += count
+            all_gdf = pd.concat([all_gdf, page_gdf], ignore_index=True)
+            start_index += count
+            if len(page_gdf) < count:
+                break
 
-                if len(page_gdf) < count:
-                    break
-            except Exception as e:
-                st.error(f"Error WFS: {e}")
-                return None
+    except Exception as e:
+        st.error(f"Error WFS: {e}")
+        return None
 
     if all_gdf.empty:
         st.warning("No hay parcelas.")
         return None
 
-    # Adaptar columnas
-    all_gdf['MASA'] = all_gdf['nationalCadastralZoningReference'].astype(str)
-    all_gdf['PARCELA'] = all_gdf['parcelReference'].astype(str)
-
+    # ADAPTAR COLUMNAS
+    all_gdf['MASA'] = all_gdf.get('nationalCadastralZoningReference', pd.Series()).astype(str)
+    all_gdf['PARCELA'] = all_gdf.get('parcelReference', pd.Series()).astype(str)
     return all_gdf
     
 # Función para encontrar municipio, polígono y parcela a partir de coordenadas
 def encontrar_municipio_poligono_parcela(x,  y):
     try:
         punto = Point(x, y)
-        buffer = 50  # 50 metros de tolerancia
+        buffer = 100
+        bbox = f"{x-buffer},{y-buffer},{x+buffer},{y+buffer},urn:ogc:def:crs:EPSG::25830"
+        url = "http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
 
-        # BBOX para buscar parcelas cercanas
-        xmin, ymin = x - buffer, y - buffer
-        xmax, ymax = x + buffer, y + buffer
-        bbox = f"{xmin},{ymin},{xmax},{ymax},urn:ogc:def:crs:EPSG::25830"
-
-        # Filtro por toda Murcia + BBOX
-        filtro = "nationalCadastralZoningReference LIKE '30%'"
-        url = f"http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
-        
         params = {
             "service": "WFS", "version": "2.0.0", "request": "GetFeature",
             "TYPENAMES": "cp:CadastralParcel", "outputFormat": "application/json",
-            "SRSNAME": "EPSG:25830", "CQL_FILTER": filtro,
-            "BBOX": bbox, "count": 100
+            "SRSNAME": "EPSG:25830", "CQL_FILTER": "nationalCadastralZoningReference LIKE '30%'",
+            "BBOX": bbox, "count": 50
         }
 
         response = session.get(url, params=params, timeout=60)
         if response.status_code != 200:
-            st.warning("No se pudo conectar al Catastro.")
             return "N/A", "N/A", "N/A", None
 
         data = BytesIO(response.content)
         gdf = gpd.read_file(data)
-        
         if gdf.empty:
             return "N/A", "N/A", "N/A", None
 
-        # Adaptar columnas
-        gdf['MASA'] = gdf['nationalCadastralZoningReference'].astype(str)
-        gdf['PARCELA'] = gdf['parcelReference'].astype(str)
+        gdf['MASA'] = gdf.get('nationalCadastralZoningReference', pd.Series()).astype(str)
+        gdf['PARCELA'] = gdf.get('parcelReference', pd.Series()).astype(str)
 
-        # Buscar parcela que contenga el punto
         seleccion = gdf[gdf.contains(punto)]
         if not seleccion.empty:
-            parcela_gdf = seleccion.iloc[[0]]
-            masa = parcela_gdf["MASA"].iloc[0]
-            parcela = parcela_gdf["PARCELA"].iloc[0]
-
-            # Extraer municipio del código MASA
-            cod_ine = masa[2:7]  # e.g., "30016" de "300160123"
+            p = seleccion.iloc[0]
+            masa = p['MASA']
+            parcela = p['PARCELA']
+            cod_ine = masa[2:7] if len(masa) > 6 else "30000"
             municipio = next((k for k, v in codigos_ine.items() if v == cod_ine), "Murcia")
-
-            return municipio, masa, parcela, parcela_gdf
+            return municipio, masa, parcela, seleccion.iloc[[0]]
 
         return "N/A", "N/A", "N/A", None
 
     except Exception as e:
-        st.error(f"Error al buscar parcela: {str(e)}")
+        st.error(f"Error: {e}")
         return "N/A", "N/A", "N/A", None
 
 # Función para transformar coordenadas de ETRS89 a WGS84
@@ -1610,53 +1597,44 @@ st.title("Informe basico de Afecciones al medio")
 
 modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
 
-x = 0.0
-y = 0.0
-municipio_sel = ""
-masa_sel = ""
-parcela_sel = ""
+x = y = 0.0
+municipio_sel = masa_sel = parcela_sel = ""
 parcela = None
 
 if modo == "Por parcela":
-    municipio_sel = st.selectbox("Municipio", sorted(municipios_disponibles))  
+    municipio_sel = st.selectbox("Municipio", sorted(municipios_disponibles))
     
-    # CARGAR DESDE WFS DEL CATASTRO
-    with st.spinner(f"Cargando parcelas de {municipio_sel}..."):
+    with st.spinner(f"Cargando {municipio_sel}..."):
         gdf = cargar_parcelas_wfs_catastro(municipio_sel)
-   
+
     if gdf is not None and not gdf.empty:
         masa_sel = st.selectbox("Polígono", sorted(gdf["MASA"].unique()))
         gdf_masa = gdf[gdf["MASA"] == masa_sel]
         parcela_sel = st.selectbox("Parcela", sorted(gdf_masa["PARCELA"].unique()))
-        
         parcela = gdf_masa[gdf_masa["PARCELA"] == parcela_sel]
-       
-        if not parcela.empty and parcela.geometry.geom_type.isin(['Polygon', 'MultiPolygon']).all():
+
+        if not parcela.empty:
             centroide = parcela.geometry.centroid.iloc[0]
-            x = centroide.x
-            y = centroide.y
-                   
-            st.success("Parcela cargada correctamente.")
-            st.write(f"Municipio: {municipio_sel}")
-            st.write(f"Polígono: {masa_sel}")
-            st.write(f"Parcela: {parcela_sel}")
+            x, y = centroide.x, centroide.y
+            st.success("Parcela cargada.")
+            st.write(f"**{municipio_sel} | MASA: {masa_sel} | PARCELA: {parcela_sel}**")
         else:
-            st.error("La geometría seleccionada no es un polígono válido.")
+            st.error("Geometría inválida.")
     else:
-        st.error(f"No se pudo cargar datos para el municipio: {municipio_sel}")
+        st.error("No se pudo cargar el municipio.")
 
 with st.form("formulario"):
     if modo == "Por coordenadas":
-        x = st.number_input("Coordenada X (ETRS89)", format="%.2f", help="Introduce coordenadas en metros, sistema ETRS89 / UTM zona 30")
-        y = st.number_input("Coordenada Y (ETRS89)", format="%.2f")
-        if x != 0.0 and y != 0.0:
+        x = st.number_input("X (ETRS89)", format="%.2f")
+        y = st.number_input("Y (ETRS89)", format="%.2f")
+        if x and y:
             municipio_sel, masa_sel, parcela_sel, parcela = encontrar_municipio_poligono_parcela(x, y)
             if municipio_sel != "N/A":
-                st.success(f"Parcela encontrada: Municipio: {municipio_sel}, Polígono: {masa_sel}, Parcela: {parcela_sel}")
+                st.success(f"**{municipio_sel} | {masa_sel} | {parcela_sel}**")
             else:
-                st.warning("No se encontró una parcela para las coordenadas proporcionadas.")
+                st.warning("No se encontró parcela.")
     else:
-        st.info(f"Coordenadas obtenidas del centroide de la parcela: X = {x}, Y = {y}")
+        st.info(f"Coordenadas: X = {x:.2f}, Y = {y:.2f}")
         
     nombre = st.text_input("Nombre")
     apellidos = st.text_input("Apellidos")
