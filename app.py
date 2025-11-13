@@ -1618,9 +1618,7 @@ parcela_sel = ""
 parcela = None
 
 if modo == "Por parcela":
-    municipio_sel = st.selectbox("Municipio", sorted(municipios_disponibles))
-    
-    gdf = cargar_shapefile_desde_github(archivo_base)
+    municipio_sel = st.selectbox("Municipio", sorted(municipios_disponibles))  
     
     # CARGAR DESDE WFS DEL CATASTRO
     with st.spinner(f"Cargando parcelas de {municipio_sel}..."):
