@@ -391,6 +391,7 @@ def generar_pdf(datos, x, y, filename):
     pdf = CustomPDF(logo_path)
     pdf.set_margins(left=15, top=15, right=15)
     pdf.add_page()
+    pdf.add_condicionado()
 
     # TÍTULO GRANDE SOLO EN LA PRIMERA PÁGINA
     pdf.set_font("Arial", "B", 16)
