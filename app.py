@@ -70,7 +70,7 @@ def cargar_parcelas_wfs_catastro(municipio):
         return None
 
     url = "http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
-    filtro = f"nationalCadastralZoningReference LIKE '30{cod_ine}%'"
+    filtro = f"nationalCadastralZoningReference LIKE '{cod_ine}%'"
     all_features = []
     start_index = 0
     count = 500  # MÁXIMO SEGURO
