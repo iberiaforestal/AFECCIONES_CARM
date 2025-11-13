@@ -1454,19 +1454,15 @@ def generar_pdf(datos, x, y, filename):
     
     # === CONDICIONADO:===
     pdf.add_page()
-    pdf.set_font("Arial", "B", 13)
-    pdf.set_fill_color(141, 179, 226)
-    pdf.cell(0, 10, "CONDICIONADO", ln=True, fill=True, align="C")
-    pdf.ln(5)
-
-    # Configuración de columnas
-    margen_lateral = 15
-    ancho_total = pdf.l_margin + pdf.r_margin
-    ancho_columna = (pdf.w - 2 * margen_lateral - 5) / 2
-    line_h = 4.5
     pdf.set_font("Arial", "", 9)
 
-    parrafos_ordenados = (
+    # Configuración de columnas
+    col_width = (pdf.w - 2 * pdf.l_margin - 10) / 2  # dos columnas separadas por 10 mm
+    col_height = pdf.h - pdf.t_margin - pdf.b_margin
+    x_start = pdf.l_margin
+    y_start = pdf.get_y()
+
+    texto_condicionado = (
         "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
         "2.- De acuerdo con lo establecido en el articulo 22.1 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculacion o inscripcion de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un termino municipal en el que existan montes demaniales requerira el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del organo forestal de la comunidad autonoma.\n\n"
         "3.- De acuerdo con lo establecido en el articulo 25.5 de la ley 43/2003 de 21 de noviembre de Montes, para posibilitar el ejercicio del derecho de adquisicion preferente a traves de la accion de tanteo, el transmitente debera notificar fehacientemente a la Administracion publica titular de ese derecho los datos relativos al precio y caracteristicas de la transmision proyectada, la cual dispondra de un plazo de tres meses, a partir de dicha notificacion, para ejercitar dicho derecho, mediante el abono o consignacion de su importe en las referidas condiciones.\n\n"
@@ -1500,55 +1496,23 @@ def generar_pdf(datos, x, y, filename):
             "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
     )
     
-    # === CALCULAR ALTURA DE CADA PÁRRAFO ===
-    alturas = []
-    for p in parrafos_ordenados:
-        lineas = p.split('\n')
-        h = 0
-        for linea in lineas:
-            if linea.strip():
-                w = pdf.get_string_width(linea)
-                lineas_necesarias = max(1, int(w / ancho_columna) + 1)
-                h += lineas_necesarias * line_h
-            else:
-                h += line_h
-        alturas.append(h)
-
-    # === DISTRIBUIR EN 2 COLUMNAS EQUILIBRADAS ===
-    col1, col2 = [], []
-    h1, h2 = 0, 0
-    for p, h in zip(parrafos_ordenados, alturas):
-        if h1 <= h2:
-            col1.append(p)
-            h1 += h
-        else:
-            col2.append(p)
-            h2 += h
-
-    # === VERIFICAR SI CABE EN LA PÁGINA ===
-    altura_max = max(h1, h2)
-    if pdf.get_y() + altura_max + 20 > pdf.h:
-        pdf.add_page()
-
-    # === DIBUJAR COLUMNAS ===
+    # Configuración de columnas
+    col_width = (pdf.w - 2 * pdf.l_margin - 10) / 2  # dos columnas separadas por 10 mm
+    col_height = pdf.h - pdf.t_margin - pdf.b_margin
+    x_start = pdf.l_margin
     y_start = pdf.get_y()
-    x1 = margen_lateral
-    x2 = margen_lateral + ancho_columna + 5
-       
-    # Columna 1
-    pdf.set_xy(x1, y_start)
-    for p in col1:
-        pdf.multi_cell(ancho_columna, line_h, p, align="J")
-    y1 = pdf.get_y()
 
-    # Columna 2
-    pdf.set_xy(x2, y_start)
-    for p in col2:
-        pdf.multi_cell(ancho_columna, line_h, p, align="J")
-    y2 = pdf.get_y()
-        
-    # Ajustar altura final
-    pdf.set_y(max(y1, y2))
+    # Divide el texto en líneas
+    lineas = pdf.multi_cell(col_width, 5, texto_condicionado, split_only=True)
+    mitad = len(lineas) // 2
+
+    # Primera columna
+    pdf.set_xy(x_start, y_start)
+    pdf.multi_cell(col_width, 5, "\n".join(lineas[:mitad]), align="J")
+
+    # Segunda columna
+    pdf.set_xy(x_start + col_width + 10, y_start)
+    pdf.multi_cell(col_width, 5, "\n".join(lineas[mitad:]), align="J")
         
     # === PIE ===
     pdf.ln(10)
