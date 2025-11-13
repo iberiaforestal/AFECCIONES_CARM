@@ -29,84 +29,91 @@ session.mount('http://', adapter)
 session.mount('https://', adapter)
 
 # Diccionario con los nombres de municipios y sus nombres base de archivo
-shp_urls = {
-    "ABANILLA": "ABANILLA",
-    "ABARAN": "ABARAN",
-    "AGUILAS": "AGUILAS",
-    "ALBUDEITE": "ALBUDEITE",
-    "ALCANTARILLA": "ALCANTARILLA",
-    "ALEDO": "ALEDO",
-    "ALGUAZAS": "ALGUAZAS",
-    "ALHAMA DE MURCIA": "ALHAMA_DE_MURCIA",
-    "ARCHENA": "ARCHENA",
-    "BENIEL": "BENIEL",
-    "BLANCA": "BLANCA",
-    "BULLAS": "BULLAS",
-    "CALASPARRA": "CALASPARRA",
-    "CAMPOS DEL RIO": "CAMPOS_DEL_RIO",
-    "CARAVACA DE LA CRUZ": "CARAVACA_DE_LA_CRUZ",
-    "CARTAGENA": "CARTAGENA",
-    "CEHEGIN": "CEHEGIN",
-    "CEUTI": "CEUTI",
-    "CIEZA": "CIEZA",
-    "FORTUNA": "FORTUNA",
-    "FUENTE ALAMO DE MURCIA": "FUENTE_ALAMO_DE_MURCIA",
-    "JUMILLA": "JUMILLA",
-    "LAS TORRES DE COTILLAS": "LAS_TORRES_DE_COTILLAS",
-    "LA UNION": "LA_UNION",
-    "LIBRILLA": "LIBRILLA",
-    "LORCA": "LORCA",
-    "LORQUI": "LORQUI",
-    "LOS ALCAZARES": "LOS_ALCAZARES",
-    "MAZARRON": "MAZARRON",
-    "MOLINA DE SEGURA": "MOLINA_DE_SEGURA",
-    "MORATALLA": "MORATALLA",
-    "MULA": "MULA",
-    "MURCIA": "MURCIA",
-    "OJOS": "OJOS",
-    "PLIEGO": "PLIEGO",
-    "PUERTO LUMBRERAS": "PUERTO_LUMBRERAS",
-    "RICOTE": "RICOTE",
-    "SANTOMERA": "SANTOMERA",
-    "SAN JAVIER": "SAN_JAVIER",
-    "SAN PEDRO DEL PINATAR": "SAN_PEDRO_DEL_PINATAR",
-    "TORRE PACHECO": "TORRE_PACHECO",
-    "TOTANA": "TOTANA",
-    "ULEA": "ULEA",
-    "VILLANUEVA DEL RIO SEGURA": "VILLANUEVA_DEL_RIO_SEGURA",
-    "YECLA": "YECLA",
-}
+municipios_disponibles = [
+    "ABANILLA", "ABARAN", "AGUILAS", "ALBUDEITE", "ALCANTARILLA", "ALEDO", "ALGUAZAS",
+    "ALHAMA DE MURCIA", "ARCHENA", "BENIEL", "BLANCA", "BULLAS", "CALASPARRA",
+    "CAMPOS DEL RIO", "CARAVACA DE LA CRUZ", "CARTAGENA", "CEHEGIN", "CEUTI", "CIEZA",
+    "FORTUNA", "FUENTE ALAMO DE MURCIA", "JUMILLA", "LAS TORRES DE COTILLAS",
+    "LA UNION", "LIBRILLA", "LORCA", "LORQUI", "LOS ALCAZARES", "MAZARRON",
+    "MOLINA DE SEGURA", "MORATALLA", "MULA", "MURCIA", "OJOS", "PLIEGO",
+    "PUERTO LUMBRERAS", "RICOTE", "SANTOMERA", "SAN JAVIER", "SAN PEDRO DEL PINATAR",
+    "TORRE PACHECO", "TOTANA", "ULEA", "VILLANUEVA DEL RIO SEGURA", "YECLA"
+]
 
+# Códigos INE del Catastro (para WFS)
+codigos_ine = {
+    "ABANILLA": "30001", "ABARAN": "30002", "AGUILAS": "30003", "ALBUDEITE": "30004",
+    "ALCANTARILLA": "30005", "ALEDO": "30006", "ALGUAZAS": "30007", "ALHAMA DE MURCIA": "30008",
+    "ARCHENA": "30009", "BENIEL": "30010", "BLANCA": "30011", "BULLAS": "30012",
+    "CALASPARRA": "30013", "CAMPOS DEL RIO": "30014", "CARAVACA DE LA CRUZ": "30015",
+    "CARTAGENA": "30016", "CEHEGIN": "30017", "CEUTI": "30018", "CIEZA": "30019",
+    "FORTUNA": "30020", "FUENTE ALAMO DE MURCIA": "30021", "JUMILLA": "30022",
+    "LAS TORRES DE COTILLAS": "30039", "LA UNION": "30040", "LIBRILLA": "30023",
+    "LORCA": "30024", "LORQUI": "30025", "LOS ALCAZARES": "30026", "MAZARRON": "30027",
+    "MOLINA DE SEGURA": "30028", "MORATALLA": "30029", "MULA": "30030", "MURCIA": "30031",
+    "OJOS": "30032", "PLIEGO": "30033", "PUERTO LUMBRERAS": "30034", "RICOTE": "30035",
+    "SANTOMERA": "30036", "SAN JAVIER": "30037", "SAN PEDRO DEL PINATAR": "30038",
+    "TORRE PACHECO": "30041", "TOTANA": "30042", "ULEA": "30043",
+    "VILLANUEVA DEL RIO SEGURA": "30044", "YECLA": "30045"
+}
 # Función para cargar shapefiles desde GitHub
-@st.cache_data
-def cargar_shapefile_desde_github(base_name):
-    base_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/CATASTRO/"
-    exts = [".shp", ".shx", ".dbf", ".prj", ".cpg"]
+@st.cache_data(ttl=3600)
+def cargar_parcelas_wfs_catastro(municipio):
+    cod_ine = codigos_ine.get(municipio)
+    if not cod_ine:
+        st.error("Municipio no encontrado.")
+        return None
+
+    url = "http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
+    filtro = f"nationalCadastralZoningReference LIKE '30{cod_ine}%'"
     
-    with tempfile.TemporaryDirectory() as tmpdir:
-        local_paths = {}
-        for ext in exts:
-            filename = base_name + ext
-            url = base_url + filename
+    all_gdf = gpd.GeoDataFrame()
+    start_index = 0
+    count = 2000
+
+    with st.spinner(f"Cargando {municipio} desde Catastro..."):
+        while True:
+            params = {
+                "service": "WFS",
+                "version": "2.0.0",
+                "request": "GetFeature",
+                "TYPENAMES": "cp:CadastralParcel",
+                "outputFormat": "application/json",
+                "SRSNAME": "EPSG:25830",
+                "CQL_FILTER": filtro,
+                "count": count,
+                "startIndex": start_index
+            }
             try:
-                response = requests.get(url, timeout=100)
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                st.error(f"Error al descargar {url}: {str(e)}")
+                response = session.get(url, params=params, timeout=60)
+                if response.status_code != 200:
+                    st.warning(f"Error {response.status_code}. Usando datos locales.")
+                    return None
+
+                data = BytesIO(response.content)
+                page_gdf = gpd.read_file(data)
+                if page_gdf.empty:
+                    break
+
+                all_gdf = pd.concat([all_gdf, page_gdf], ignore_index=True)
+                start_index += count
+
+                if len(page_gdf) < count:
+                    break
+            except Exception as e:
+                st.error(f"Error WFS: {e}")
                 return None
-            
-            local_path = os.path.join(tmpdir, filename)
-            with open(local_path, "wb") as f:
-                f.write(response.content)
-            local_paths[ext] = local_path
-        
-        shp_path = local_paths[".shp"]
-        try:
-            gdf = gpd.read_file(shp_path)
-            return gdf
-        except Exception as e:
-            st.error(f"Error al leer shapefile {shp_path}: {str(e)}")
-            return None
+
+    if all_gdf.empty:
+        st.warning("No hay parcelas.")
+        return None
+
+    # Adaptar columnas
+    all_gdf['MASA'] = all_gdf['nationalCadastralZoningReference'].astype(str)
+    all_gdf['PARCELA'] = all_gdf['parcelReference'].astype(str)
+
+    return all_gdf
+    
 # Función para encontrar municipio, polígono y parcela a partir de coordenadas
 def encontrar_municipio_poligono_parcela(x, y):
     try:
@@ -1574,21 +1581,26 @@ parcela_sel = ""
 parcela = None
 
 if modo == "Por parcela":
-    municipio_sel = st.selectbox("Municipio", sorted(shp_urls.keys()))
-    archivo_base = shp_urls[municipio_sel]
+    municipio_sel = st.selectbox("Municipio", sorted(municipios_disponibles))
     
     gdf = cargar_shapefile_desde_github(archivo_base)
     
-    if gdf is not None:
+    # CARGAR DESDE WFS DEL CATASTRO
+    with st.spinner(f"Cargando parcelas de {municipio_sel}..."):
+        gdf = cargar_parcelas_wfs_catastro(municipio_sel)
+   
+    if gdf is not None and not gdf.empty:
         masa_sel = st.selectbox("Polígono", sorted(gdf["MASA"].unique()))
-        parcela_sel = st.selectbox("Parcela", sorted(gdf[gdf["MASA"] == masa_sel]["PARCELA"].unique()))
-        parcela = gdf[(gdf["MASA"] == masa_sel) & (gdf["PARCELA"] == parcela_sel)]
+        gdf_masa = gdf[gdf["MASA"] == masa_sel]
+        parcela_sel = st.selectbox("Parcela", sorted(gdf_masa["PARCELA"].unique()))
         
-        if parcela.geometry.geom_type.isin(['Polygon', 'MultiPolygon']).all():
+        parcela = gdf_masa[gdf_masa["PARCELA"] == parcela_sel]
+       
+        if not parcela.empty and parcela.geometry.geom_type.isin(['Polygon', 'MultiPolygon']).all():
             centroide = parcela.geometry.centroid.iloc[0]
             x = centroide.x
-            y = centroide.y         
-                    
+            y = centroide.y
+                   
             st.success("Parcela cargada correctamente.")
             st.write(f"Municipio: {municipio_sel}")
             st.write(f"Polígono: {masa_sel}")
@@ -1596,7 +1608,7 @@ if modo == "Por parcela":
         else:
             st.error("La geometría seleccionada no es un polígono válido.")
     else:
-        st.error(f"No se pudo cargar el shapefile para el municipio: {municipio_sel}")
+        st.error(f"No se pudo cargar datos para el municipio: {municipio_sel}")
 
 with st.form("formulario"):
     if modo == "Por coordenadas":
