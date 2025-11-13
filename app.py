@@ -1517,7 +1517,7 @@ def generar_pdf(datos, x, y, filename):
     # === PIE ===
     pdf.ln(10)
     pdf.set_font("Arial", "", 9)
-    pdf.multi_cell(0, line_h,
+    pdf.multi_cell(0, line_height,
         "La normativa de referencia esta actualizada a fecha de uno de enero de dos mil veintiseis, y sera revisada trimestralmente.\n\n"
         "Para mas informacion:\n"
         "E-mail: info@iberiaforestal.es",
