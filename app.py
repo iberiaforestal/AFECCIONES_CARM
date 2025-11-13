@@ -1453,148 +1453,148 @@ def generar_pdf(datos, x, y, filename):
     pdf.ln(espacio_final)
     
     # === CONDICIONADO:===
-        self.add_page()
-        self.set_font("Arial", "B", 12)
-        self.cell(0, 12, "CONDICIONADO", ln=True, align="C")
-        self.ln(8)
+    self.add_page()
+    self.set_font("Arial", "B", 12)
+    self.cell(0, 12, "CONDICIONADO", ln=True, align="C")
+    self.ln(8)
 
-        # Configuración
-        margen_lateral = 15
-        separacion = 5
-        ancho_total = self.w - 2 * margen_lateral
-        ancho_columna = (ancho_total - separacion) / 2
-        line_h = 4.5
-        self.set_font("Arial", "", 9)
+    # Configuración
+    margen_lateral = 15
+    separacion = 5
+    ancho_total = self.w - 2 * margen_lateral
+    ancho_columna = (ancho_total - separacion) / 2
+    line_h = 4.5
+    self.set_font("Arial", "", 9)
 
-        # Texto completo
-        texto = (
-            "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
-            "2.- De acuerdo con lo establecido en el articulo 22.1 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculacion o inscripcion de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un termino municipal en el que existan montes demaniales requerira el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del organo forestal de la comunidad autonoma.\n\n"
-            "3.- De acuerdo con lo establecido en el articulo 25.5 de la ley 43/2003 de 21 de noviembre de Montes, para posibilitar el ejercicio del derecho de adquisicion preferente a traves de la accion de tanteo, el transmitente debera notificar fehacientemente a la Administracion publica titular de ese derecho los datos relativos al precio y caracteristicas de la transmision proyectada, la cual dispondra de un plazo de tres meses, a partir de dicha notificacion, para ejercitar dicho derecho, mediante el abono o consignacion de su importe en las referidas condiciones.\n\n"
-            "4.- En relacion al Dominio Publico Pecuario, salvaguardando lo que pudiera resultar de los futuros deslindes, en la parcela objeto este informe, cualquier construccion, plantacion, vallado, obras, instalaciones, etc., no deberian realizarse dentro del area delimitada como Dominio Publico Pecuario provisional para evitar invadir este.\n"
-            "En todo caso, no podra interrumpirse el transito por el Dominio Publico Pecuario, dejando siempre el paso adecuado para el transito ganadero y otros usos legalmente establecidos en la Ley 3/1995, de 23 de marzo, de Vias Pecuarias.\n\n"
-            "5.- El Planeamiento se regira por la Ley 13/2015, de 30 de marzo, de ordenacion territorial y urbanistica de la Region de Murcia, y por el PGOU del termino municipal. El Regimen del suelo no urbanizable se recoge en el articulo 5 de la citada Ley. Se indica que en casos de suelo no urbanizables.\n\n"
-            "6.- En suelo no urbanizable se prestara especial atencion a la Disposicion adicional segunda de la Ley 3/2020, de 27 de julio, de recuperacion y proteccion del Mar Menor, solicitando para posibles cambios de uso lo establecido en el articulo 8 de la Ley 8/2014, de 21 de noviembre, de Medidas Tributarias, de Simplificacion Administrativa y en materia de Funcion Publica.\n\n"
-            "7.- Los Planes de Gestion de la Red Natura 2000 aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
-            "- Decreto n. 13/2017, de 1 de marzo - Declaracion de las ZEC \"Minas de la Celia\" y \"Cueva de las Yeseras\" y aprobacion de su Plan de Gestion.\n"
-            "- Decreto n. 259/2019, de 10 de octubre - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los Espacios Protegidos del Mar Menor y la Franja Litoral Mediterranea.\n"
-            "- Decreto n. 231/2020, de 29 de diciembre - Aprobacion del Plan de Gestion Integral de los Espacios Protegidos Red Natura 2000 de la Sierra de Ricote y La Navela.\n"
-            "- Decreto n. 47/2022, de 5 de mayo - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los Espacios Protegidos Red Natura 2000 del Alto Guadalentin; y aprobacion de los Planes de gestion de las ZEC del Cabezo de la Jara y Rambla de Nogalte y de la Sierra de Enmedio.\n"
-            "- Decreto n. 252/2022, de 22 de diciembre - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los espacios protegidos de los relieves y cuencas centro-orientales de la Region de Murcia.\n"
-            "- Decreto n. 28/2025, de 10 de abril - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los Espacios Protegidos del Altiplano de la Region de Murcia.\n\n"
-            "8.- Los Planes de Ordenacion de los Recursos Naturales aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
-            "- Parque Regional Sierra de la Pila - Decreto n 43/2004, de 14 de mayo (aprobado definitivamente; BORM n 130, de 07/06/2004).\n"
-            "- Parque Regional Sierra de El Carche - Decreto n 69/2002, de 22 de marzo (aprobado; BORM n 77, de 04/04/2002).\n"
-            "- Parque Regional Salinas y Arenales de San Pedro del Pinatar - Decreto 44/1995, de 26 de mayo de 1995 (BORM n 151, de 01/07/1995).\n"
-            "- Parque Regional Calblanque, Monte de las Cenizas y Pena del Aguila - Decreto 45/1995, de 26 de mayo de 1995 (BORM n 152, de 03/07/1995).\n"
-            "- Parque Regional Sierra Espuna (incluido el Paisaje Protegido Barrancos de Gebas) - Decreto 13/1995, de 31 de marzo de 1995 (aprobacion del PORN; BORM n 85, de 11/04/1995).\n"
-            "- Humedal del Ajauque y Rambla Salada - Orden (1998) (fase inicial).\n"
-            "- Saladares del Guadalentin - Orden (29/12/1998) (fase inicial).\n"
-            "- Sierra de Salinas - Orden (03/07/2002) (fase inicial).\n"
-            "- Carrascoy y El Valle - Orden (18/05/2005) (fase inicial - ademas, existe en 2025 proyecto de Plan / Plan de Gestion/ZEC en informacion publica).\n"
-            "- Sierra de la Muela, Cabo Tinoso y Roldan - Orden (15/03/2006) (fase inicial).\n\n"
-            "9.- Los Planes de Recuperacion de Flora aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
-            "- Decreto 244/2014, de 19 de diciembre: aprueba los planes de recuperacion de las especies Cistus heterophyllus subsp. carthaginensis, Erica arborea, Juniperus turbinata, Narcissus nevadensis subsp. enemeritoi y Scrophularia arguta. Publicado en BORM n 297, de 27/12/2014.\n"
-            "- Decreto 12/2007, de 22 de febrero: aprueba el plan de recuperacion de la especie Astragalus nitidiflorus (\"garbancillo de Tallante\"). Publicado en BORM n 51, de 3/03/2007.\n\n"
-            "10.- Los Planes de Recuperacion de Fauna aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
-            "- Decreto n. 59/2016, de 22 de junio, de aprobacion de los planes de recuperacion del aguila perdicera, la nutria y el fartet.\n"
-            "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
-        )
+    # Texto completo
+     texto = (
+        "1.- Las afecciones del presente informe se basan en cartografia oficial de la Comunidad Autonoma de la Region de Murcia y de la Direccion General del Catastro, cumpliendo el estandar tecnico Web Feature Service (WFS) definido por el Open Geospatial Consortium (OGC) y la Directiva INSPIRE, eximiendo a IBERIA FORESTAL INGENIERIA S.L de cualquier error en la cartografia.\n\n"
+        "2.- De acuerdo con lo establecido en el articulo 22.1 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculacion o inscripcion de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un termino municipal en el que existan montes demaniales requerira el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del organo forestal de la comunidad autonoma.\n\n"
+        "3.- De acuerdo con lo establecido en el articulo 25.5 de la ley 43/2003 de 21 de noviembre de Montes, para posibilitar el ejercicio del derecho de adquisicion preferente a traves de la accion de tanteo, el transmitente debera notificar fehacientemente a la Administracion publica titular de ese derecho los datos relativos al precio y caracteristicas de la transmision proyectada, la cual dispondra de un plazo de tres meses, a partir de dicha notificacion, para ejercitar dicho derecho, mediante el abono o consignacion de su importe en las referidas condiciones.\n\n"
+        "4.- En relacion al Dominio Publico Pecuario, salvaguardando lo que pudiera resultar de los futuros deslindes, en la parcela objeto este informe, cualquier construccion, plantacion, vallado, obras, instalaciones, etc., no deberian realizarse dentro del area delimitada como Dominio Publico Pecuario provisional para evitar invadir este.\n"
+        "En todo caso, no podra interrumpirse el transito por el Dominio Publico Pecuario, dejando siempre el paso adecuado para el transito ganadero y otros usos legalmente establecidos en la Ley 3/1995, de 23 de marzo, de Vias Pecuarias.\n\n"
+        "5.- El Planeamiento se regira por la Ley 13/2015, de 30 de marzo, de ordenacion territorial y urbanistica de la Region de Murcia, y por el PGOU del termino municipal. El Regimen del suelo no urbanizable se recoge en el articulo 5 de la citada Ley. Se indica que en casos de suelo no urbanizables.\n\n"
+        "6.- En suelo no urbanizable se prestara especial atencion a la Disposicion adicional segunda de la Ley 3/2020, de 27 de julio, de recuperacion y proteccion del Mar Menor, solicitando para posibles cambios de uso lo establecido en el articulo 8 de la Ley 8/2014, de 21 de noviembre, de Medidas Tributarias, de Simplificacion Administrativa y en materia de Funcion Publica.\n\n"
+        "7.- Los Planes de Gestion de la Red Natura 2000 aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
+        "- Decreto n. 13/2017, de 1 de marzo - Declaracion de las ZEC \"Minas de la Celia\" y \"Cueva de las Yeseras\" y aprobacion de su Plan de Gestion.\n"
+        "- Decreto n. 259/2019, de 10 de octubre - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los Espacios Protegidos del Mar Menor y la Franja Litoral Mediterranea.\n"
+        "- Decreto n. 231/2020, de 29 de diciembre - Aprobacion del Plan de Gestion Integral de los Espacios Protegidos Red Natura 2000 de la Sierra de Ricote y La Navela.\n"
+        "- Decreto n. 47/2022, de 5 de mayo - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los Espacios Protegidos Red Natura 2000 del Alto Guadalentin; y aprobacion de los Planes de gestion de las ZEC del Cabezo de la Jara y Rambla de Nogalte y de la Sierra de Enmedio.\n"
+        "- Decreto n. 252/2022, de 22 de diciembre - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los espacios protegidos de los relieves y cuencas centro-orientales de la Region de Murcia.\n"
+        "- Decreto n. 28/2025, de 10 de abril - Declaracion de ZEC y aprobacion del Plan de Gestion Integral de los Espacios Protegidos del Altiplano de la Region de Murcia.\n\n"
+        "8.- Los Planes de Ordenacion de los Recursos Naturales aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
+        "- Parque Regional Sierra de la Pila - Decreto n 43/2004, de 14 de mayo (aprobado definitivamente; BORM n 130, de 07/06/2004).\n"
+        "- Parque Regional Sierra de El Carche - Decreto n 69/2002, de 22 de marzo (aprobado; BORM n 77, de 04/04/2002).\n"
+        "- Parque Regional Salinas y Arenales de San Pedro del Pinatar - Decreto 44/1995, de 26 de mayo de 1995 (BORM n 151, de 01/07/1995).\n"
+        "- Parque Regional Calblanque, Monte de las Cenizas y Pena del Aguila - Decreto 45/1995, de 26 de mayo de 1995 (BORM n 152, de 03/07/1995).\n"
+        "- Parque Regional Sierra Espuna (incluido el Paisaje Protegido Barrancos de Gebas) - Decreto 13/1995, de 31 de marzo de 1995 (aprobacion del PORN; BORM n 85, de 11/04/1995).\n"
+        "- Humedal del Ajauque y Rambla Salada - Orden (1998) (fase inicial).\n"
+        "- Saladares del Guadalentin - Orden (29/12/1998) (fase inicial).\n"
+        "- Sierra de Salinas - Orden (03/07/2002) (fase inicial).\n"
+        "- Carrascoy y El Valle - Orden (18/05/2005) (fase inicial - ademas, existe en 2025 proyecto de Plan / Plan de Gestion/ZEC en informacion publica).\n"
+        "- Sierra de la Muela, Cabo Tinoso y Roldan - Orden (15/03/2006) (fase inicial).\n\n"
+        "9.- Los Planes de Recuperacion de Flora aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
+        "- Decreto 244/2014, de 19 de diciembre: aprueba los planes de recuperacion de las especies Cistus heterophyllus subsp. carthaginensis, Erica arborea, Juniperus turbinata, Narcissus nevadensis subsp. enemeritoi y Scrophularia arguta. Publicado en BORM n 297, de 27/12/2014.\n"
+        "- Decreto 12/2007, de 22 de febrero: aprueba el plan de recuperacion de la especie Astragalus nitidiflorus (\"garbancillo de Tallante\"). Publicado en BORM n 51, de 3/03/2007.\n\n"
+        "10.- Los Planes de Recuperacion de Fauna aprobados, en la actualidad para la Comunidad Autonoma de la Region de Murcia son:\n"
+        "- Decreto n. 59/2016, de 22 de junio, de aprobacion de los planes de recuperacion del aguila perdicera, la nutria y el fartet.\n"
+        "- Decreto n. 70/2016, de 12 de julio - Catalogacion de la malvasia cabeciblanca como especie en peligro de extincion y aprobacion de su Plan de Recuperacion en la Region de Murcia."
+    )
 
-        # Dividir en párrafos
-        parrafos = [p.strip() for p in texto.split('\n\n') if p.strip()]
+    # Dividir en párrafos
+    parrafos = [p.strip() for p in texto.split('\n\n') if p.strip()]
 
-        # Calcular altura de cada párrafo
-        def altura_parrafo(parrafo):
-            h = 0
-            for linea in parrafo.split('\n'):
-                if linea.strip():
-                    w = self.get_string_width(linea)
-                    lineas = max(1, math.ceil(w / ancho_columna))
-                    h += lineas * line_h
-                else:
-                    h += line_h
-            return h
-
-        # Balancear columnas
-        col1, col2 = [], []
-        h1, h2 = 0, 0
-        for p in parrafos:
-            hp = altura_parrafo(p)
-            if h1 <= h2:
-                col1.append((p, hp))
-                h1 += hp
+    # Calcular altura de cada párrafo
+    def altura_parrafo(parrafo):
+        h = 0
+        for linea in parrafo.split('\n'):
+            if linea.strip():
+                w = self.get_string_width(linea)
+                lineas = max(1, math.ceil(w / ancho_columna))
+                h += lineas * line_h
             else:
-                col2.append((p, hp))
-                h2 += hp
+                h += line_h
+        return h
 
-        # Altura máxima disponible (desde y actual hasta 30mm del final)
-        y_inicio = self.get_y()
-        altura_disponible = self.h - y_inicio - 30  # 30mm pie de página
-
-        # Si no cabe en una página → dividir en dos páginas
-        if max(h1, h2) > altura_disponible:
-            self.render_dos_columnas_balanceadas(col1, col2, ancho_columna, line_h, margen_lateral, separacion)
+    # Balancear columnas
+    col1, col2 = [], []
+    h1, h2 = 0, 0
+    for p in parrafos:
+        hp = altura_parrafo(p)
+        if h1 <= h2:
+            col1.append((p, hp))
+            h1 += hp
         else:
-            self.render_dos_columnas_una_pagina(col1, col2, ancho_columna, line_h, margen_lateral, separacion, y_inicio)
+            col2.append((p, hp))
+            h2 += hp
 
-    def render_dos_columnas_una_pagina(self, col1, col2, w, h, mx, sep, y0):
-        # Columna 1
-        self.set_xy(mx, y0)
-        for texto, _ in col1:
-            self.multi_cell(w, h, texto, align="J")
-        y1 = self.get_y()
+    # Altura máxima disponible (desde y actual hasta 30mm del final)
+    y_inicio = self.get_y()
+    altura_disponible = self.h - y_inicio - 30  # 30mm pie de página
 
-        # Columna 2
-        self.set_xy(mx + w + sep, y0)
-        for texto, _ in col2:
-            self.multi_cell(w, h, texto, align="J")
-        y2 = self.get_y()
+    # Si no cabe en una página → dividir en dos páginas
+    if max(h1, h2) > altura_disponible:
+        self.render_dos_columnas_balanceadas(col1, col2, ancho_columna, line_h, margen_lateral, separacion)
+    else:
+        self.render_dos_columnas_una_pagina(col1, col2, ancho_columna, line_h, margen_lateral, separacion, y_inicio)
 
-        # Cursor final
-        self.set_y(max(y1, y2))
+def render_dos_columnas_una_pagina(self, col1, col2, w, h, mx, sep, y0):
+    # Columna 1
+    self.set_xy(mx, y0)
+    for texto, _ in col1:
+        self.multi_cell(w, h, texto, align="J")
+    y1 = self.get_y()
 
-    def render_dos_columnas_balanceadas(self, col1, col2, w, h, mx, sep):
-        # Dividir cada columna para que quepa
-        def dividir_columna(col):
-            izq, der = [], []
-            hi, hd = 0, 0
-            for texto, hp in col:
-                if hi <= hd:
-                    izq.append((texto, hp))
-                    hi += hp
-                else:
-                    der.append((texto, hp))
-                    hd += hp
-            return izq, der
+    # Columna 2
+    self.set_xy(mx + w + sep, y0)
+    for texto, _ in col2:
+        self.multi_cell(w, h, texto, align="J")
+    y2 = self.get_y()
 
-        c1_izq, c1_der = dividir_columna(col1)
-        c2_izq, c2_der = dividir_columna(col2)
+    # Cursor final
+    self.set_y(max(y1, y2))
 
-        # Página 1: col1_izq + col2_izq
-        y0 = self.get_y()
-        self.set_xy(mx, y0)
-        for t, _ in c1_izq: self.multi_cell(w, h, t, align="J")
-        y1 = self.get_y()
+def render_dos_columnas_balanceadas(self, col1, col2, w, h, mx, sep):
+    # Dividir cada columna para que quepa
+    def dividir_columna(col):
+        izq, der = [], []
+        hi, hd = 0, 0
+        for texto, hp in col:
+            if hi <= hd:
+                izq.append((texto, hp))
+                hi += hp
+            else:
+                der.append((texto, hp))
+                hd += hp
+        return izq, der
 
-        self.set_xy(mx + w + sep, y0)
-        for t, _ in c2_izq: self.multi_cell(w, h, t, align="J")
-        self.set_y(max(y1, self.get_y()))
+    c1_izq, c1_der = dividir_columna(col1)
+    c2_izq, c2_der = dividir_columna(col2)
 
-        # Página 2: col1_der + col2_der
-        self.add_page()
-        self.set_font("Arial", "B", 12)
-        self.cell(0, 12, "CONDICIONADO (continuación)", ln=True, align="C")
-        self.ln(8)
+    # Página 1: col1_izq + col2_izq
+    y0 = self.get_y()
+    self.set_xy(mx, y0)
+    for t, _ in c1_izq: self.multi_cell(w, h, t, align="J")
+    y1 = self.get_y()
 
-        y0 = self.get_y()
-        self.set_xy(mx, y0)
-        for t, _ in c1_der: self.multi_cell(w, h, t, align="J")
-        y1 = self.get_y()
+    self.set_xy(mx + w + sep, y0)
+    for t, _ in c2_izq: self.multi_cell(w, h, t, align="J")
+    self.set_y(max(y1, self.get_y()))
 
-        self.set_xy(mx + w + sep, y0)
-        for t, _ in c2_der: self.multi_cell(w, h, t, align="J")
-        self.set_y(max(y1, self.get_y()))
+    # Página 2: col1_der + col2_der
+    self.add_page()
+    self.set_font("Arial", "B", 12)
+    self.cell(0, 12, "CONDICIONADO (continuación)", ln=True, align="C")
+    self.ln(8)
+
+    y0 = self.get_y()
+    self.set_xy(mx, y0)
+    for t, _ in c1_der: self.multi_cell(w, h, t, align="J")
+    y1 = self.get_y()
+
+    self.set_xy(mx + w + sep, y0)
+    for t, _ in c2_der: self.multi_cell(w, h, t, align="J")
+    self.set_y(max(y1, self.get_y()))
         
     # === PIE ===
     pdf.ln(10)
