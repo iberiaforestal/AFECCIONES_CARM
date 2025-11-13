@@ -115,20 +115,57 @@ def cargar_parcelas_wfs_catastro(municipio):
     return all_gdf
     
 # Función para encontrar municipio, polígono y parcela a partir de coordenadas
-def encontrar_municipio_poligono_parcela(x, y):
+def encontrar_municipio_poligono_parcela(x,  y):
     try:
         punto = Point(x, y)
-        for municipio, archivo_base in shp_urls.items():
-            gdf = cargar_shapefile_desde_github(archivo_base)
-            if gdf is None:
-                continue
-            seleccion = gdf[gdf.contains(punto)]
-            if not seleccion.empty:
-                parcela_gdf = seleccion.iloc[[0]]
-                masa = parcela_gdf["MASA"].iloc[0]
-                parcela = parcela_gdf["PARCELA"].iloc[0]
-                return municipio, masa, parcela, parcela_gdf
+        buffer = 50  # 50 metros de tolerancia
+
+        # BBOX para buscar parcelas cercanas
+        xmin, ymin = x - buffer, y - buffer
+        xmax, ymax = x + buffer, y + buffer
+        bbox = f"{xmin},{ymin},{xmax},{ymax},urn:ogc:def:crs:EPSG::25830"
+
+        # Filtro por toda Murcia + BBOX
+        filtro = "nationalCadastralZoningReference LIKE '30%'"
+        url = f"http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
+        
+        params = {
+            "service": "WFS", "version": "2.0.0", "request": "GetFeature",
+            "TYPENAMES": "cp:CadastralParcel", "outputFormat": "application/json",
+            "SRSNAME": "EPSG:25830", "CQL_FILTER": filtro,
+            "BBOX": bbox, "count": 100
+        }
+
+        response = session.get(url, params=params, timeout=60)
+        if response.status_code != 200:
+            st.warning("No se pudo conectar al Catastro.")
+            return "N/A", "N/A", "N/A", None
+
+        data = BytesIO(response.content)
+        gdf = gpd.read_file(data)
+        
+        if gdf.empty:
+            return "N/A", "N/A", "N/A", None
+
+        # Adaptar columnas
+        gdf['MASA'] = gdf['nationalCadastralZoningReference'].astype(str)
+        gdf['PARCELA'] = gdf['parcelReference'].astype(str)
+
+        # Buscar parcela que contenga el punto
+        seleccion = gdf[gdf.contains(punto)]
+        if not seleccion.empty:
+            parcela_gdf = seleccion.iloc[[0]]
+            masa = parcela_gdf["MASA"].iloc[0]
+            parcela = parcela_gdf["PARCELA"].iloc[0]
+
+            # Extraer municipio del código MASA
+            cod_ine = masa[2:7]  # e.g., "30016" de "300160123"
+            municipio = next((k for k, v in codigos_ine.items() if v == cod_ine), "Murcia")
+
+            return municipio, masa, parcela, parcela_gdf
+
         return "N/A", "N/A", "N/A", None
+
     except Exception as e:
         st.error(f"Error al buscar parcela: {str(e)}")
         return "N/A", "N/A", "N/A", None
