@@ -1453,7 +1453,6 @@ def generar_pdf(datos, x, y, filename):
     pdf.ln(espacio_final)
     
     # === CONDICIONADO:===
-class PDF(FPDF):
     def add_condicionado_section(self):
         # === CONDICIONADO ===
         self.add_page()
