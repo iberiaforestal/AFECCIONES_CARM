@@ -1540,12 +1540,14 @@ def generar_pdf(datos, x, y, filename):
             self.render_dos_columnas_una_pagina(col1, col2, ancho_columna, line_h, margen_lateral, separacion, y_inicio)
 
     def render_dos_columnas_una_pagina(self, col1, col2, w, h, mx, sep, y0):
+        # Columna 1
         self.set_xy(mx, y0)
         for texto, _ in col1:
             self.multi_cell(w, h, texto, align="J")
-            self.ln(2)  # Espacio entre párrafos
+            self.ln(2)
         y1 = self.get_y()
 
+        # Columna 2
         self.set_xy(mx + w + sep, y0)
         for texto, _ in col2:
             self.multi_cell(w, h, texto, align="J")
@@ -1553,40 +1555,40 @@ def generar_pdf(datos, x, y, filename):
         y2 = self.get_y()
 
         self.set_y(max(y1, y2))
-
-    def render_dos_columnas_balanceadas(self, col1, col2, w, h, mx, sep):
+        
+    def render_dos_columnas_balanceadas(self, col1, col2, w, h_line, mx, sep, line_h):
         def dividir_columna(col):
             izq, der = [], []
             hi = hd = 0
             for texto, hp in col:
                 if hi <= hd:
                     izq.append((texto, hp))
-                    hi += hp + h
+                    hi += hp + line_h
                 else:
                     der.append((texto, hp))
-                    hd += hp + h
+                    hd += hp + line_h
             return izq, der
 
         c1_izq, c1_der = dividir_columna(col1)
         c2_izq, c2_der = dividir_columna(col2)
 
-        # Página 1
+    # --- Página 1 ---
         y0 = self.get_y()
         self.set_xy(mx, y0)
         for t, _ in c1_izq:
-            self.multi_cell(w, h, t, align="J")
+            self.multi_cell(w, h_line, t, align="J")
             self.ln(2)
         y1 = self.get_y()
 
         self.set_xy(mx + w + sep, y0)
         for t, _ in c2_izq:
-            self.multi_cell(w, h, t, align="J")
+            self.multi_cell(w, h_line, t, align="J")
             self.ln(2)
 
         self.set_y(max(y1, self.get_y()))
         self.add_page()
 
-        # Página 2 - continuación
+        # --- PÁGINA 2: CONTINUACIÓN ---
         self.set_font("Arial", "B", 12)
         self.cell(0, 12, "CONDICIONADO (continuación)", ln=True, align="C")
         self.ln(8)
@@ -1595,13 +1597,13 @@ def generar_pdf(datos, x, y, filename):
         y0 = self.get_y()
         self.set_xy(mx, y0)
         for t, _ in c1_der:
-            self.multi_cell(w, h, t, align="J")
+            self.multi_cell(w, h_line, t, align="J")
             self.ln(2)
         y1 = self.get_y()
 
         self.set_xy(mx + w + sep, y0)
         for t, _ in c2_der:
-            self.multi_cell(w, h, t, align="J")
+            self.multi_cell(w, h_line, t, align="J")
             self.ln(2)
 
         self.set_y(max(y1, self.get_y()))
