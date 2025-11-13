@@ -1535,7 +1535,7 @@ def generar_pdf(datos, x, y, filename):
         altura_disponible = self.h - y_inicio - 30  # 30mm pie
 
         if max(h1, h2) > altura_disponible:
-            self.render_dos_columnas_balanceadas(col1, col2, ancho_columna, line_h, margen_lateral, separacion)
+            self.render_dos_columnas_balanceadas(col1, col2, ancho_columna, line_h, margen_lateral, separacion, line_h)
         else:
             self.render_dos_columnas_una_pagina(col1, col2, ancho_columna, line_h, margen_lateral, separacion, y_inicio)
 
@@ -1572,7 +1572,7 @@ def generar_pdf(datos, x, y, filename):
         c1_izq, c1_der = dividir_columna(col1)
         c2_izq, c2_der = dividir_columna(col2)
 
-    # --- Página 1 ---
+        # --- PÁGINA 1 ---
         y0 = self.get_y()
         self.set_xy(mx, y0)
         for t, _ in c1_izq:
@@ -1588,7 +1588,7 @@ def generar_pdf(datos, x, y, filename):
         self.set_y(max(y1, self.get_y()))
         self.add_page()
 
-        # --- PÁGINA 2: CONTINUACIÓN ---
+        # --- PÁGINA 2 ---
         self.set_font("Arial", "B", 12)
         self.cell(0, 12, "CONDICIONADO (continuación)", ln=True, align="C")
         self.ln(8)
