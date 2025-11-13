@@ -1454,7 +1454,10 @@ def generar_pdf(datos, x, y, filename):
     
     # === CONDICIONADO:===
     pdf.add_page()
-    pdf.set_font("Arial", "", 9)
+    pdf.set_font("Arial", "B", 13)
+    pdf.set_fill_color(141, 179, 226)
+    pdf.cell(0, 10, "CONDICIONADO", ln=True, fill=True, align="C")
+    pdf.ln(5)
 
     # Configuración de columnas
     col_width = (pdf.w - 2 * pdf.l_margin - 10) / 2  # dos columnas separadas por 10 mm
