@@ -110,93 +110,79 @@ bbox_por_municipio = {
 }
 
 # Función para cargar shapefiles desde GitHub
-@st.cache_data(ttl=1800)
+@st.cache_data(ttl=3600)  # 1 hora
 def cargar_parcelas_wfs_catastro(municipio):
     cod_ine = codigos_ine.get(municipio)
     if not cod_ine:
         st.error("Municipio no válido.")
         return None
 
-    # Usa BBOX del municipio
-    bbox = bbox_por_municipio.get(municipio, "600000,4100000,700000,4400000")
-    url = "https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
+    # URL ATOM oficial del Catastro
+    atom_url = f"https://www.sedecatastro.gob.es/OVCServiceAT/rest/ATOM/Parcela?GGMM={cod_ine}"
 
-    all_features = []
-    start_index = 0
-    count = 500
+    try:
+        with st.spinner(f"Descargando TODAS las parcelas de {municipio} vía ATOM..."):
+            response = session.get(atom_url, timeout=120)
+            if response.status_code != 200:
+                st.error(f"Error ATOM: {response.status_code}")
+                return None
 
-    with st.spinner(f"Cargando parcelas de {municipio}..."):
-        while True:
-            params = {
-                "service": "WFS",
-                "version": "2.0.0",
-                "request": "GetFeature",
-                "TYPENAMES": "cp:CadastralParcel",
-                "outputFormat": "application/json",
-                "SRSNAME": "EPSG:25830",
-                "BBOX": bbox,
-                "count": count,
-                "startIndex": start_index
-            }
-            try:
-                response = session.get(url, params=params, timeout=60)
-                if response.status_code != 200:
-                    st.error(f"Error HTTP: {response.status_code}")
-                    break
+            # Guardar ZIP temporal
+            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp_zip:
+                tmp_zip.write(response.content)
+                zip_path = tmp_zip.name
 
-                if 'application/json' not in response.headers.get('Content-Type', ''):
-                    st.error(f"Respuesta no JSON: {response.text[:300]}")
-                    break
+            # Extraer GML del ZIP
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                gml_files = [f for f in zip_ref.namelist() if f.endswith('.gml')]
+                if not gml_files:
+                    st.error("No se encontró GML en el ZIP.")
+                    os.unlink(zip_path)
+                    return None
+                gml_path = zip_ref.extract(gml_files[0], tempfile.gettempdir())
 
-                data = response.json()
-                features = data.get("features", [])
-                if not features:
-                    break
+            # Leer con GeoPandas
+            gdf = gpd.read_file(gml_path, driver='GML')
+            os.unlink(gml_path)
+            os.unlink(zip_path)
 
-                # Filtrar localmente por código INE
-                filtered = [
-                    f for f in features
-                    if cod_ine in str(f.get('properties', {}).get('nationalCadastralZoningReference', ''))
-                ]
-                all_features.extend(filtered)
+            # Limpiar y asignar columnas
+            gdf = gdf.to_crs("EPSG:25830")
+            gdf['MASA'] = gdf.get('nationalCadastralZoningReference', 'N/A').astype(str)
+            gdf['PARCELA'] = gdf.get('parcelReference', 'N/A').astype(str)
 
-                start_index += count
-                st.write(f"Descargadas {len(all_features)} parcelas filtradas...")
+            st.success(f"¡Cargadas {len(gdf)} parcelas de {municipio} con ATOM!")
+            return gdf
 
-                if len(features) < count:
-                    break
-
-            except Exception as e:
-                st.error(f"Error: {e}")
-                break
-
-    if not all_features:
-        st.warning("No se encontraron parcelas.")
+    except Exception as e:
+        st.error(f"Error ATOM: {e}")
         return None
-
-    gdf = gpd.GeoDataFrame.from_features(all_features, crs="EPSG:25830")
-    gdf['MASA'] = gdf.get('nationalCadastralZoningReference', 'N/A').astype(str)
-    gdf['PARCELA'] = gdf.get('parcelReference', 'N/A').astype(str)
-
-    st.success(f"¡Cargadas {len(gdf)} parcelas!")
-    return gdf
     
 # Función para encontrar municipio, polígono y parcela a partir de coordenadas
-def encontrar_municipio_poligono_parcela(x,  y):
+def encontrar_municipio_poligono_parcela(x, y):
     try:
         punto = Point(x, y)
-        buffer = 200
+        buffer = 100  # Solo 100 metros alrededor
         bbox = f"{x-buffer},{y-buffer},{x+buffer},{y+buffer}"
 
+        url = "https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
         params = {
-            "service": "WFS", "version": "2.0.0", "request": "GetFeature",
-            "TYPENAMES": "cp:CadastralParcel", "outputFormat": "application/json",
-            "SRSNAME": "EPSG:25830", "CQL_FILTER": "nationalCadastralZoningReference LIKE '30%'",
-            "BBOX": bbox, "count": 20
+            "service": "WFS",
+            "version": "2.0.0",
+            "request": "GetFeature",
+            "TYPENAMES": "cp:CadastralParcel",
+            "outputFormat": "application/json",
+            "SRSNAME": "EPSG:25830",
+            "BBOX": bbox,
+            "count": 10
         }
 
-        response = session.get("http://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx", params=params, timeout=30)
+        response = session.get(url, params=params, timeout=30)
         if response.status_code != 200:
+            return "N/A", "N/A", "N/A", None
+
+        if 'application/json' not in response.headers.get('Content-Type', ''):
+            st.warning("WFS devolvió error (BBOX demasiado grande o sin datos).")
             return "N/A", "N/A", "N/A", None
 
         data = response.json()
@@ -206,7 +192,6 @@ def encontrar_municipio_poligono_parcela(x,  y):
 
         gdf = gpd.GeoDataFrame.from_features(features)
         gdf = gdf.set_crs("EPSG:25830")
-
         gdf['MASA'] = gdf.get('nationalCadastralZoningReference', 'N/A').astype(str)
         gdf['PARCELA'] = gdf.get('parcelReference', 'N/A').astype(str)
 
