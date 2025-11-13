@@ -22,7 +22,7 @@ import shutil
 from PIL import Image
 
 # Crear sesión global
-session = Session()
+session = requests.Session()
 session.headers.update({'User-Agent': 'Streamlit-App-Catastro'})
 
 # Sesión segura con reintentos
