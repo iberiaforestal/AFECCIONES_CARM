@@ -61,25 +61,71 @@ codigos_ine = {
     "VILLANUEVA DEL RIO SEGURA": "30044", "YECLA": "30045"
 }
 
+bbox_por_municipio = {
+    "ABANILLA": "650000,4250000,660000,4260000",
+    "ABARAN": "640000,4240000,650000,4250000",
+    "AGUILAS": "690000,4150000,710000,4180000",
+    "ALBUDEITE": "660000,4230000,670000,4240000",
+    "ALCANTARILLA": "630000,4250000,640000,4260000",
+    "ALEDO": "650000,4230000,660000,4240000",
+    "ALGUAZAS": "630000,4240000,640000,4250000",
+    "ALHAMA DE MURCIA": "640000,4200000,660000,4230000",
+    "ARCHENA": "630000,4230000,640000,4240000",
+    "BENIEL": "630000,4245000,640000,4255000",
+    "BLANCA": "620000,4230000,630000,4240000",
+    "BULLAS": "640000,4220000,650000,4240000",
+    "CALASPARRA": "630000,4200000,640000,4220000",
+    "CAMPOS DEL RIO": "640000,4220000,650000,4230000",
+    "CARAVACA DE LA CRUZ": "620000,4200000,640000,4220000",
+    "CARTAGENA": "660000,4150000,690000,4200000",
+    "CEHEGIN": "630000,4190000,640000,4220000",
+    "CEUTI": "630000,4240000,640000,4250000",
+    "CIEZA": "620000,4220000,630000,4240000",
+    "FORTUNA": "640000,4240000,650000,4250000",
+    "FUENTE ALAMO DE MURCIA": "640000,4190000,660000,4220000",
+    "JUMILLA": "610000,4190000,630000,4230000",
+    "LAS TORRES DE COTILLAS": "630000,4235000,640000,4245000",
+    "LA UNION": "680000,4150000,690000,4170000",
+    "LIBRILLA": "640000,4210000,650000,4220000",
+    "LORCA": "610000,4150000,650000,4200000",
+    "LORQUI": "640000,4225000,650000,4235000",
+    "LOS ALCAZARES": "650000,4170000,660000,4180000",
+    "MAZARRON": "640000,4160000,660000,4200000",
+    "MOLINA DE SEGURA": "640000,4230000,650000,4250000",
+    "MORATALLA": "630000,4190000,640000,4220000",
+    "MULA": "640000,4210000,650000,4230000",
+    "MURCIA": "620000,4200000,650000,4270000",
+    "OJOS": "630000,4235000,640000,4245000",
+    "PLIEGO": "640000,4220000,650000,4230000",
+    "PUERTO LUMBRERAS": "610000,4160000,620000,4180000",
+    "RICOTE": "630000,4220000,640000,4230000",
+    "SANTOMERA": "640000,4235000,650000,4245000",
+    "SAN JAVIER": "650000,4160000,670000,4180000",
+    "SAN PEDRO DEL PINATAR": "650000,4175000,670000,4190000",
+    "TORRE PACHECO": "640000,4200000,660000,4220000",
+    "TOTANA": "630000,4170000,640000,4200000",
+    "ULEA": "630000,4240000,640000,4250000",
+    "VILLANUEVA DEL RIO SEGURA": "630000,4230000,640000,4240000",
+    "YECLA": "600000,4200000,620000,4250000"
+}
+
 # Función para cargar shapefiles desde GitHub
-@st.cache_data(ttl=1800)  # 30 minutos
+@st.cache_data(ttl=1800)
 def cargar_parcelas_wfs_catastro(municipio):
     cod_ine = codigos_ine.get(municipio)
     if not cod_ine:
         st.error("Municipio no válido.")
         return None
 
-    url = "https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"  # ← CORREGIDO: HTTPS + meh.es
-    filtro = f"nationalCadastralZoningReference LIKE '{cod_ine}%'"  # ← Filtro correcto
-    
-    # BBOX fallback aproximado para Murcia (UTM 30N: minX, minY, maxX, maxY)
-    bbox_murcia = "600000,4100000,700000,4400000"  # Amplio para toda la región
-    
+    # Usa BBOX del municipio
+    bbox = bbox_por_municipio.get(municipio, "600000,4100000,700000,4400000")
+    url = "https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
+
     all_features = []
     start_index = 0
-    count = 500  # ← Límite seguro del servicio
+    count = 500
 
-    with st.spinner(f"Cargando {municipio} (puede tardar varios minutos para municipios grandes)..."):
+    with st.spinner(f"Cargando parcelas de {municipio}..."):
         while True:
             params = {
                 "service": "WFS",
@@ -88,63 +134,51 @@ def cargar_parcelas_wfs_catastro(municipio):
                 "TYPENAMES": "cp:CadastralParcel",
                 "outputFormat": "application/json",
                 "SRSNAME": "EPSG:25830",
-                "CQL_FILTER": filtro,
+                "BBOX": bbox,
                 "count": count,
                 "startIndex": start_index
             }
             try:
-                # ← LOGGING TEMPORAL PARA DEPURAR (quita después de probar)
-                st.info(f"URL base: {url}")
-                st.info(f"Filtro: {filtro}")
-                st.info(f"Params completos: {params}")
-                
-                response = session.get(url, params=params, timeout=60)  # ← Timeout aumentado
-                st.info(f"Status code: {response.status_code}")  # Temporal
-                
+                response = session.get(url, params=params, timeout=60)
                 if response.status_code != 200:
-                    st.warning(f"Error {response.status_code} con filtro. Intentando fallback con BBOX...")
-                    # Fallback: Remueve filtro y usa BBOX (luego filtra localmente por cod_ine)
-                    params.pop("CQL_FILTER", None)
-                    params["BBOX"] = bbox_murcia
-                    response = session.get(url, params=params, timeout=60)
-                    if response.status_code != 200:
-                        st.error(f"Error persistente: {response.status_code}. Verifica conexión o servicio down.")
-                        break
+                    st.error(f"Error HTTP: {response.status_code}")
+                    break
+
+                if 'application/json' not in response.headers.get('Content-Type', ''):
+                    st.error(f"Respuesta no JSON: {response.text[:300]}")
+                    break
 
                 data = response.json()
                 features = data.get("features", [])
                 if not features:
                     break
 
-                all_features.extend(features)
-                start_index += count
-                st.write(f"Descargadas {len(all_features)} parcelas...")
+                # Filtrar localmente por código INE
+                filtered = [
+                    f for f in features
+                    if cod_ine in str(f.get('properties', {}).get('nationalCadastralZoningReference', ''))
+                ]
+                all_features.extend(filtered)
 
-                # ← FILTRO LOCAL SI USAMOS BBOX FALLBACK
-                if "BBOX" in params:
-                    all_features = [f for f in all_features if cod_ine in str(f.get('properties', {}).get('nationalCadastralZoningReference', ''))]
+                start_index += count
+                st.write(f"Descargadas {len(all_features)} parcelas filtradas...")
 
                 if len(features) < count:
                     break
 
             except Exception as e:
-                st.error(f"Error de conexión: {e}")
+                st.error(f"Error: {e}")
                 break
 
     if not all_features:
-        st.warning("No se encontraron parcelas. Prueba con un municipio pequeño o verifica el servicio.")
+        st.warning("No se encontraron parcelas.")
         return None
 
-    # Convertir a GeoDataFrame
-    gdf = gpd.GeoDataFrame.from_features(all_features)
-    gdf = gpd.GeoDataFrame.from_features(all_features)
-    gdf = gdf.set_crs("EPSG:25830")
-
-    # Columnas seguras
+    gdf = gpd.GeoDataFrame.from_features(all_features, crs="EPSG:25830")
     gdf['MASA'] = gdf.get('nationalCadastralZoningReference', 'N/A').astype(str)
     gdf['PARCELA'] = gdf.get('parcelReference', 'N/A').astype(str)
 
-    st.success(f"Cargadas {len(gdf)} parcelas para {municipio}.")
+    st.success(f"¡Cargadas {len(gdf)} parcelas!")
     return gdf
     
 # Función para encontrar municipio, polígono y parcela a partir de coordenadas
