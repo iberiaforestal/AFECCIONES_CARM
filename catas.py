@@ -78,53 +78,62 @@ shp_urls = {
 }
 
 # Función para cargar shapefiles desde GitHub
-@st.cache_data
-def cargar_shapefile_desde_github(base_name):
-    base_url = "https://raw.githubusercontent.com/UDIFCARM/Afecciones_UDIF/main/CATASTRO/"
-    exts = [".shp", ".shx", ".dbf", ".prj", ".cpg"]
+# === WFS CATASTRO: BÚSQUEDA POR REFERENCIA ===
+def buscar_parcela_wfs(municipio, poligono, parcela):
+    municipio = municipio.strip().upper()
+    poligono = poligono.zfill(3)
+    parcela = parcela.zfill(5)
     
-    with tempfile.TemporaryDirectory() as tmpdir:
-        local_paths = {}
-        for ext in exts:
-            filename = base_name + ext
-            url = base_url + filename
-            try:
-                response = requests.get(url, timeout=100)
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                st.error(f"Error al descargar {url}: {str(e)}")
-                return None
-            
-            local_path = os.path.join(tmpdir, filename)
-            with open(local_path, "wb") as f:
-                f.write(response.content)
-            local_paths[ext] = local_path
-        
-        shp_path = local_paths[".shp"]
-        try:
-            gdf = gpd.read_file(shp_path)
-            return gdf
-        except Exception as e:
-            st.error(f"Error al leer shapefile {shp_path}: {str(e)}")
-            return None
-# Función para encontrar municipio, polígono y parcela a partir de coordenadas
-def encontrar_municipio_poligono_parcela(x, y):
+    url = "https://ovc.catastro.meh.es/OVCServWeb/OVCWcfLibres/OVCFiltros.svc/ObtenerGeometria"
+    payload = {
+        "Provincia": "MURCIA",
+        "Municipio": municipio,
+        "Poligono": poligono,
+        "Parcela": parcela,
+        "SRS": "EPSG:25830"
+    }
     try:
-        punto = Point(x, y)
-        for municipio, archivo_base in shp_urls.items():
-            gdf = cargar_shapefile_desde_github(archivo_base)
-            if gdf is None:
-                continue
-            seleccion = gdf[gdf.contains(punto)]
-            if not seleccion.empty:
-                parcela_gdf = seleccion.iloc[[0]]
-                masa = parcela_gdf["MASA"].iloc[0]
-                parcela = parcela_gdf["PARCELA"].iloc[0]
-                return municipio, masa, parcela, parcela_gdf
-        return "N/A", "N/A", "N/A", None
+        r = requests.post(url, json=payload, timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("Geometria"):
+                geom = shape(data["Geometria"])
+                centroide = geom.centroid
+                return {
+                    'x': centroide.x,
+                    'y': centroide.y,
+                    'geom': geom,
+                    'municipio': municipio,
+                    'poligono': poligono,
+                    'parcela': parcela
+                }
     except Exception as e:
-        st.error(f"Error al buscar parcela: {str(e)}")
-        return "N/A", "N/A", "N/A", None
+        st.error(f"Error WFS (ref): {e}")
+    return None
+    
+# === WFS CATASTRO: BÚSQUEDA POR COORDENADAS ===
+def buscar_parcela_por_coordenadas(x, y):
+    url = "https://ovc.catastro.meh.es/OVCServWeb/OVCWcfLibres/OVCFiltros.svc/ObtenerParcelaPorCoordenadas"
+    payload = {
+        "Provincia": "MURCIA",
+        "SRS": "EPSG:25830",
+        "Coordenada_X": str(x),
+        "Coordenada_Y": str(y)
+    }
+    try:
+        r = requests.post(url, json=payload, timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("ListaParcelas"):
+                p = data["ListaParcelas"][0]
+                ref = p["RefCatastral"]
+                municipio = p["NombreMunicipio"]
+                poligono = ref[7:10]
+                parcela = ref[10:15]
+                return buscar_parcela_wfs(municipio, poligono, parcela)
+    except Exception as e:
+        st.error(f"Error WFS (coord): {e}")
+    return None
 
 # Función para transformar coordenadas de ETRS89 a WGS84
 def transformar_coordenadas(x, y):
@@ -1564,52 +1573,70 @@ st.image(
 )
 st.title("Informe basico de Afecciones al medio")
 
-modo = st.radio("Seleccione el modo de búsqueda. Recuerde que la busqueda por parcela analiza afecciones al total de la superficie de la parcela, por el contrario la busqueda por coodenadas analiza las afecciones del punto", ["Por coordenadas", "Por parcela"])
+st.markdown("## Búsqueda de Parcela")
 
-x = 0.0
-y = 0.0
-municipio_sel = ""
-masa_sel = ""
-parcela_sel = ""
-parcela = None
+modo = st.radio(
+    "Modo de búsqueda",
+    ["Por referencia catastral (rústica)", "Por coordenadas (X, Y)"],
+    horizontal=True
+)
 
-if modo == "Por parcela":
-    municipio_sel = st.selectbox("Municipio", sorted(shp_urls.keys()))
-    archivo_base = shp_urls[municipio_sel]
+resultado = None
+
+if modo == "Por referencia catastral (rústica)":
+    col1, col2, col3, col4 = st.columns([3, 3, 1, 1])
+    with col1:
+        st.markdown("**Provincia**")
+        st.text_input("prov", value="MURCIA", disabled=True, label_visibility="collapsed")
+    with col2:
+        st.markdown("**Municipio**")
+        mun = st.text_input("mun", placeholder="LORCA, CARTAGENA...", label_visibility="collapsed")
+    with col3:
+        st.markdown("**Polígono**")
+        pol = st.text_input("pol", max_chars=3, placeholder="000", label_visibility="collapsed")
+    with col4:
+        st.markdown("**Parcela**")
+        parc = st.text_input("parc", max_chars=5, placeholder="00000", label_visibility="collapsed")
     
-    gdf = cargar_shapefile_desde_github(archivo_base)
-    
-    if gdf is not None:
-        masa_sel = st.selectbox("Polígono", sorted(gdf["MASA"].unique()))
-        parcela_sel = st.selectbox("Parcela", sorted(gdf[gdf["MASA"] == masa_sel]["PARCELA"].unique()))
-        parcela = gdf[(gdf["MASA"] == masa_sel) & (gdf["PARCELA"] == parcela_sel)]
-        
-        if parcela.geometry.geom_type.isin(['Polygon', 'MultiPolygon']).all():
-            centroide = parcela.geometry.centroid.iloc[0]
-            x = centroide.x
-            y = centroide.y         
-                    
-            st.success("Parcela cargada correctamente.")
-            st.write(f"Municipio: {municipio_sel}")
-            st.write(f"Polígono: {masa_sel}")
-            st.write(f"Parcela: {parcela_sel}")
+    if st.button("Buscar parcela", type="primary"):
+        if mun and len(pol) == 3 and pol.isdigit():
+            with st.spinner("Consultando Catastro..."):
+                resultado = buscar_parcela_wfs(mun, pol, parc)
         else:
-            st.error("La geometría seleccionada no es un polígono válido.")
-    else:
-        st.error(f"No se pudo cargar el shapefile para el municipio: {municipio_sel}")
+            st.warning("Complete municipio y polígono (3 dígitos).")
 
-with st.form("formulario"):
-    if modo == "Por coordenadas":
-        x = st.number_input("Coordenada X (ETRS89)", format="%.2f", help="Introduce coordenadas en metros, sistema ETRS89 / UTM zona 30")
-        y = st.number_input("Coordenada Y (ETRS89)", format="%.2f")
-        if x != 0.0 and y != 0.0:
-            municipio_sel, masa_sel, parcela_sel, parcela = encontrar_municipio_poligono_parcela(x, y)
-            if municipio_sel != "N/A":
-                st.success(f"Parcela encontrada: Municipio: {municipio_sel}, Polígono: {masa_sel}, Parcela: {parcela_sel}")
-            else:
-                st.warning("No se encontró una parcela para las coordenadas proporcionadas.")
-    else:
-        st.info(f"Coordenadas obtenidas del centroide de la parcela: X = {x}, Y = {y}")
+else:
+    col1, col2 = st.columns(2)
+    with col1:
+        x_input = st.number_input("Coordenada X (ETRS89)", format="%.2f", value=0.0)
+    with col2:
+        y_input = st.number_input("Coordenada Y (ETRS89)", format="%.2f", value=0.0)
+    
+    if st.button("Buscar por coordenadas", type="primary"):
+        if x_input > 0 and y_input > 0:
+            with st.spinner("Buscando parcela..."):
+                resultado = buscar_parcela_por_coordenadas(x_input, y_input)
+        else:
+            st.warning("Introduce coordenadas válidas.")
+
+# === MOSTRAR RESULTADO ===
+if resultado:
+    st.success("¡Parcela encontrada!")
+    st.info(f"""
+    **Referencia:** {resultado['municipio']} - Pol. {resultado['poligono']} - Parc. {resultado['parcela']}  
+    **Centroide (ETRS89 / UTM 30N):**  
+    X = `{resultado['x']:.2f}` | Y = `{resultado['y']:.2f}`
+    """)
+    
+    st.session_state.update({
+        'x': resultado['x'],
+        'y': resultado['y'],
+        'geom': resultado['geom'],
+        'ref_cat': f"{resultado['municipio']} {resultado['poligono']} {resultado['parcela']}"
+    })
+else:
+    for k in ['x', 'y', 'geom', 'ref_cat']:
+        st.session_state.pop(k, None)
         
     nombre = st.text_input("Nombre")
     apellidos = st.text_input("Apellidos")
