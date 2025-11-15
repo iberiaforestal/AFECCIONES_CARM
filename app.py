@@ -1833,3 +1833,33 @@ if st.session_state.get('pdf_file') and st.session_state.get('mapa_html'):
     if not st.session_state.get("ya_registrado", False):
         registrar_uso(municipio_sel, masa_sel, parcela_sel, objeto)
         st.session_state["ya_registrado"] = True
+
+# ===================================================================
+# BOTÓN SECRETO PARA DESCARGAR LA BASE DE DATOS DE ESTADÍSTICAS (solo tú)
+# ===================================================================
+
+# Cambia la contraseña a la que tú quieras (o quítala si prefieres que sea público)
+CONTRASEÑA_STATS = "carm2025"   # ← cámbiala por la que quieras
+
+if st.sidebar.checkbox("🔐 Modo administrador (estadísticas)", value=False):
+    pwd = st.sidebar.text_input("Contraseña", type="password")
+    if pwd == CONTRASEÑA_STATS:
+        st.sidebar.success("Acceso concedido")
+        
+        if os.path.exists("usage_stats.db"):
+            with open("usage_stats.db", "rb") as f:
+                st.sidebar.download_button(
+                    label="📊 Descargar usage_stats.db",
+                    data=f,
+                    file_name="usage_stats.db",
+                    mime="application/octet-stream"
+                )
+            # Bonus: mostrar cuántos registros hay
+            conn = sqlite3.connect("usage_stats.db")
+            total = pd.read_sql_query("SELECT COUNT(*) FROM usage", conn).iloc[0,0]
+            conn.close()
+            st.sidebar.info(f"Total de informes registrados: **{total}**")
+        else:
+            st.sidebar.warning("Todavía no se ha creado usage_stats.db")
+    elif pwd != "":
+        st.sidebar.error("Contraseña incorrecta")
