@@ -1668,8 +1668,10 @@ if submitted:
     st.session_state.pop('pdf_file', None)
 
     # === 2. VALIDAR CAMPOS OBLIGATORIOS ===
-    if not nombre or not apellidos or not dni or x == 0 or y == 0:
-        st.warning("Por favor, completa todos los campos obligatorios y asegúrate de que las coordenadas son válidas.")
+    if not nombre or not apellidos or not dni or not objeto:
+        st.error("Complete todos los campos obligatorios (*).")
+    elif 'x' not in st.session_state or 'y' not in st.session_state:
+        st.error("Primero localice una parcela con el buscador superior.")
     else:
         # === 3. TRANSFORMAR COORDENADAS ===
         lon, lat = transformar_coordenadas(x, y)
