@@ -1,170 +1,585 @@
-# CATASTRO.py
-# CATASTRO NACIONAL - RESULTADOS SÍ O SÍ
-# CASCADA + COORDENADAS → PDF
-# UN ARCHIVO → STREAMLIT CLOUD
-
-import streamlit as st
-import geopandas as gpd
-from fpdf import FPDF
-import tempfile
-from pyproj import Transformer
-from shapely.geometry import Point
+# coding=utf-8
 import requests
-from io import BytesIO
-import time
+import xmltodict
+import json
 
-# ------------------- CONFIG -------------------
-st.set_page_config(page_title="Catastro Nacional", layout="centered")
-st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Escudo_de_Espa%C3%B1a.svg/200px-Escudo_de_Espa%C3%B1a_svg.png", width=80)
-st.title("Catastro Nacional - Resultados Garantizados")
+try:
+    __version__ = __import__('pkg_resources') \
+        .get_distribution(__name__).version
+except Exception as e:
+    __version__ = 'unknown'
 
-# ------------------- TRANSFORMER -------------------
-transformer = Transformer.from_crs("EPSG:25830", "EPSG:4326", always_xy=True)
 
-# ------------------- WFS CATASTRO -------------------
-session = requests.Session()
-session.headers.update({'User-Agent': 'CatastroApp/1.0'})
+class Catastro(object):
+    """Library developed in python. This library allow to access the public web services of the Portal of Spanish Catastro and obtains the results in json format.
+    """
 
-@st.cache_data(ttl=3600)
-def _wfs_request(typename, cql_filter=None, bbox=None):
-    url = "https://ovc.catastro.hacienda.gob.es/INSPIRE/wfs"
-    params = {
-        'service': 'WFS', 'version': '1.1.0', 'request': 'GetFeature',
-        'typeName': typename, 'outputFormat': 'application/json'
-    }
-    if cql_filter: params['CQL_FILTER'] = cql_filter
-    if bbox: params['bbox'] = bbox
-    for _ in range(3):
-        try:
-            r = session.get(url, params=params, timeout=60)
-            if r.status_code == 200 and len(r.content) > 100:
-                return gpd.read_file(BytesIO(r.content))
-        except: time.sleep(1)
-    return gpd.GeoDataFrame()
+    home_url = "http://ovc.catastro.meh.es/ovcservweb/"
 
-# ------------------- LISTAS -------------------
-COMUNIDADES = ["Región de Murcia", "Aragón", "Comunidad de Madrid"]
-PROVINCIAS = {"Región de Murcia": "Murcia", "Aragón": "Zaragoza", "Comunidad de Madrid": "Madrid"}
+    @classmethod
+    def ConsultaProvincia():
+        """Proporciona un listado de todas las provincias de España.
 
-# MURCIA - CÓDIGOS INE (primeros 5 dígitos de ref catastral)
-MUNICIPIOS_MURCIA = {
-    "Murcia": "30030", "Lorca": "30024", "Cartagena": "30016", "Molina de Segura": "30027",
-    "Alcantarilla": "30004", "Cieza": "30019", "Yecla": "30044", "Caravaca de la Cruz": "30015"
-}
+           Proporciona un listado de todas las provincias españolas en
+           las que tiene competencia la Dirección general del Catastro.
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
 
-# ------------------- POR COORDENADAS -------------------
-def get_by_coordenadas(x, y):
-    lon, lat = transformer.transform(x, y)
-    punto = Point(lon, lat)
-    buffer = 0.001  # 100m
-    bbox = f"{lon-buffer},{lat-buffer},{lon+buffer},{lat+buffer}"
+        url = home_url + "OVCCallejero.asmx/ConsultaProvincia"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
 
-    gdf = _wfs_request("CP:CadastralParcel", bbox=bbox)
-    if gdf.empty:
-        return None
+    @classmethod
+    def ConsultaMunicipioJSon(provincia, municipio=None):
+        """Proporciona un listado de todos los municipios de una provincia.
 
-    if gdf.intersects(punto).any():
-        row = gdf[gdf.intersects(punto)].iloc[0]
-    else:
-        row = gdf.iloc[0]  # fallback al más cercano
+            Proporciona un listado de todos los nombres de los municipios de una
+            provincia (parámetro "Provincia"),así como sus códigos (de Hacienda
+            y del INE), cuyo nombre Servicios web del Catastro 5 contiene la cadena
+            del parámetro de entrada "Municipio". En caso de que este último
+            parámetro no tenga ningún valor, el servicio devuelve todos los
+            municipios de la  provincia.También proporciona información de si
+            existe cartografía catastral (urbana o rústica) de cada municipio.
 
-    ref = row.get('nationalCadastralReference', '')
-    if len(ref) < 14:
-        return None
+            :param str: Nombre de la provincia
+            :param str: Opcional , nombre del municipio
 
-    return {
-        "ca": "Región de Murcia" if ref.startswith("30") else "Aragón" if ref.startswith("50") else "Comunidad de Madrid",
-        "provincia": "Murcia" if ref.startswith("30") else "Zaragoza" if ref.startswith("50") else "Madrid",
-        "municipio": ref[0:5],
-        "poligono": ref[7:12],
-        "parcela": ref[12:14],
-        "ref_catastral": ref,
-        "x": x, "y": y, "lat": round(lat, 6), "lon": round(lon, 6)
-    }
+            :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+            :return_type: json
+        """
 
-# ------------------- POR CASCADA -------------------
-def get_by_cascada(mun_code, pol, par):
-    ref_exacta = f"{mun_code}{pol.zfill(5)}{par.zfill(2)}"
-    cql = f"nationalCadastralReference = '{ref_exacta}'"
-    gdf = _wfs_request("CP:CadastralParcel", cql_filter=cql)
-    if gdf.empty:
-        return None
-    row = gdf.iloc[0]
-    ref = row.get('nationalCadastralReference', '')
-    return {
-        "ca": "Región de Murcia" if mun_code.startswith("30") else "Aragón" if mun_code.startswith("50") else "Comunidad de Madrid",
-        "provincia": "Murcia" if mun_code.startswith("30") else "Zaragoza" if mun_code.startswith("50") else "Madrid",
-        "municipio": mun_code,
-        "poligono": pol.zfill(5),
-        "parcela": par.zfill(2),
-        "ref_catastral": ref,
-        "x": "N/A", "y": "N/A", "lat": "N/A", "lon": "N/A"
-    }
+        params = {'Provincia': provincia}
+        if municipio:
+            params['Municipio'] = municipio
+        else:
+            params['Municipio'] = ''
+        url = home_url + "OVCCallejero.asmx/ConsultaMunicipio"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
 
-# ------------------- INPUT -------------------
-tab1, tab2 = st.tabs(["Por Coordenadas", "Por Cascada"])
+    @classmethod
+    def ConsultaViaJSon(provincia, municipio, tipovia=None, nombrevia=None):
+        """Proporciona un listado de todas las vías de un municipio.
 
-info = None
+            Proporciona un listado de todas las vías de un municipio (parámetros
+            "Provincia" y "Municipio"), así como los códigos de las mismas según la
+            Dirección General del Catastro (DGC) , cuyo nombre contiene la cadena
+            del parámetro de entrada "NombreVia" y, en caso de que el parámetro
+            "TipoVia" contenga información, existe coincidencia en el tipo de la
+            vía. En caso de que el parámetro "NombreVia" no tenga ningún valor, el
+            servicio devuelve todas las vías del municipio del "TipoVia" indicado.
 
-# === COORDENADAS ===
-with tab1:
-    col1, col2 = st.columns(2)
-    with col1:
-        x = st.number_input("X (ETRS89)", value=600000, step=1)
-    with col2:
-        y = st.number_input("Y (ETRS89)", value=4200000, step=1)
-    if st.button("BUSCAR POR COORDENADAS", type="primary"):
-        with st.spinner("Buscando parcela..."):
-            info = get_by_coordenadas(x, y)
+            :param str: Nombre de la provincia
+            :param str: Nombre de municipio
 
-# === CASCADA ===
-with tab2:
-    ca = st.selectbox("Comunidad Autónoma", COMUNIDADES)
-    provincia = PROVINCIAS[ca]
-    st.write(f"**Provincia:** {provincia}")
+            :return: Retorna un dicionario con los datos de la consutla
+            :return_type: json
+        """
+        params = {'Provincia': provincia, 'Municipio': municipio}
+        if tipovia:
+            params['TipoVia'] = tipovia
+        else:
+            params['TipoVia'] = ''
+        if nombrevia:
+            params['NombreVia'] = nombrevia
+        else:
+            params['NombreVia'] = ''
+        url = home_url + "OVCCallejero.asmx/ConsultaVia"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
 
-    if provincia == "Murcia":
-        mun_nombre = st.selectbox("Municipio", list(MUNICIPIOS_MURCIA.keys()))
-        mun_code = MUNICIPIOS_MURCIA[mun_nombre]
-    else:
-        mun_code = "50297"  # Zaragoza ciudad
-        mun_nombre = "Zaragoza"
+    @classmethod
+    def ConsultaNumeroJSon(provincia, municipio, tipovia, nombrevia, numero):
+        """Proporciona la referencia catastral de la finca correspondiente.
 
-    col1, col2 = st.columns(2)
-    with col1:
-        pol = st.text_input("Polígono", "00123")
-    with col2:
-        par = st.text_input("Parcela", "45")
+            Proporciona,o bien la referencia catastral de la finca correspondiente
+            al contenido del parámetro "Número",en caso de que este exista,o bien se
+            devuelve un error ("El número no existe") y se proporciona una lista
+            de los números más aproximados al solicitado, en un rango de 5 por
+            arriba y 5 por abajo. Por ejemplo, si se solicita el número 10, y en
+            esa vía existen los números 2,3,6,7,9,11,15 y 17, se devuelve una lista
+            con los números 6,7,9,11 y 15.Junto con la lista de números, se
+            proporcionan las referencias catastrales de las fincas.
 
-    if st.button("BUSCAR POR CASCADA", type="primary"):
-        with st.spinner("Buscando..."):
-            info = get_by_cascada(mun_code, pol, par)
+            :param str: Nombre de la provincia
+            :param str: Nombre del municipio
+            :param str: Tipo d ela via
+            :param str: Nombre de la via
+            :param str,int: Numero del que se desea conocer la referencia
 
-# ------------------- RESULTADO + PDF -------------------
-if info:
-    st.success("PARCELA ENCONTRADA")
-    st.json(info)
+            :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+            :return_type: json
+        """
 
-    # PDF
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "INFORME CATASTRAL", ln=True, align='C')
-    pdf.ln(5)
-    pdf.set_font("Arial", size=11)
+        params = {
+            'Provincia': provincia,
+            'Municipio': municipio,
+            'TipoVia': tipovia,
+            'NomVia': nombrevia,
+            'Numero': str(numero)
+        }
+        url = home_url + "OVCCallejero.asmx/ConsultaNumero"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
 
-    for k, v in info.items():
-        if k != "geometry":
-            pdf.set_font("Arial", 'B', 11)
-            pdf.cell(50, 8, f"{k.upper()}:", ln=False)
-            pdf.set_font("Arial", size=11)
-            pdf.cell(0, 8, str(v), ln=True)
+    def ConsultaDNPLOCJson(provincia,
+                           municipio,
+                           sigla,
+                           calle,
+                           numero,
+                           bloque=None,
+                           escalera=None,
+                           planta=None,
+                           puerta=None):
+        """Proporciona la lista de todos los inmuebles coincidentes o sus datos.
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        pdf.output(tmp.name)
-        st.download_button("PDF", data=open(tmp.name, "rb"), file_name="catastro.pdf")
-else:
-    if st.button:
-        st.error("No se encontró. Prueba con coordenadas dentro de una parcela o ref exacta.")
+            Este servicio puede devolver o bien la lista de todos los inmuebles que
+            coinciden con los criterios de búsqueda, proporcionando para cada
+            inmueble la referencia catastral y su localización
+            (bloque/escalera/planta/puerta) o bien, en el caso de que solo exista
+            un inmueble con los parámetros de entrada indicados, proporciona los
+            datos de un inmueble.
 
+            :param str: Nombre de la provincia
+            :param str: Nombre del municipio
+            :param str: Sigla
+            :param str: Nombre de la calle
+            :param str,int: Numero del que se quiere conocer los datos
+            :param str,int: Opcional,numero de bloque
+            :param str: Opcional, numero d'escala
+            :param str,int: Opcional, numero de planta
+            :param str,int: Opcional, numero de puerta
+
+            :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+            :return_type: json
+        """
+
+        params = {
+            'Provincia': provincia,
+            'Municipio': municipio,
+            'Sigla': sigla,
+            'Calle': calle,
+            'Numero': str(numero)
+        }
+        if bloque:
+            params['Bloque'] = str(bloque)
+        else:
+            params['Bloque'] = ''
+        if escalera:
+            params['Escalera'] = escalera
+        else:
+            params['Escalera'] = ''
+        if planta:
+            params['Planta'] = str(planta)
+        else:
+            params['Planta'] = ''
+        if puerta:
+            params['Puerta'] = str(puerta)
+        else:
+            params['Puerta'] = ''
+        url = home_url + "ovcswlocalizacionrc/ovccallejero.asmx/Consulta_DNPLOC?"
+        response = requests.get(url, params=params)
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaDNPRCJSon(provincia, municipio, rc):
+        """Proporciona los datos catastrales no protegidos de un inmueble
+
+           Este servicio es idéntico al de "Consulta de DATOS CATASTRALES NO
+           PROTEGIDOS de un inmueble identificado por su localización" en todo
+           excepto en los parámetros de entrada.
+
+           :param str: Nombre de la provincia
+           :param str: Nombre del municipio
+           :param str: Referencia catastral
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+        params = {"Provincia": provincia, "Municipio": municipio, "RC": rc}
+        url = home_url + "OVCCallejero.asmx/Consulta_DNPRC"
+        response = requests.get(url, params=params)
+        return xmltodict.parse(
+            response.content, process_namespaces=False, xml_attribs=False)
+
+    @classmethod
+    def Consulta_DNPPPJSon(provincia, municipio, poligono, parcela):
+        """Proporciona los datos catastrales no protegidos de un inmueble
+
+           Este servicio es idéntico al de "Consulta de DATOS CATASTRALES NO
+           PROTEGIDOS de un inmueble identificado por su localización" en todo
+           excepto en los parámetros de entrada.
+
+           :param str: Nombre de la provincia
+           :param str: Nombre del municipio
+           :param str: Codigo del poligono
+           :param str: Codigo de la parcela
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {
+            'Provincia': provincia,
+            'Municipio': municipio,
+            'Poligono': poligono,
+            'Parcela': parcela
+        }
+        url = home_url + "OVCCallejero.asmx/Consulta_DNPPP"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaProvinciaJSon(cls):
+        """Proporciona un listado de las provincias.
+
+           Proporciona un listado de todas las provincias españolas en las que
+           tiene competencia la Dirección general del Catastro.
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        url = home_url + "OVCCallejero.asmx/ConsultaProvincia"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaMunicipioCodigosJSon(provincia, municipio):
+        """Proporciona un listado de todos los nombres de los municipios de una provincia.
+
+           Proporciona un listado de todos los nombres de los municipios de una
+           provincia (parámetro "Provincia"),así como sus códigos (de Hacienda y
+           del INE), cuyo nombre Servicios web del Catastro 5 contiene la cadena
+           del parámetro de entrada "Municipio".En caso de que este último
+           parámetro no tenga ningún valor, el servicio devuelve todos los
+           municipios de la provincia.También proporciona información de si existe
+           cartografía catastral (urbana o rústica) de cada municipio.
+
+           :param str: Nombre de la provincia
+           :param str: Nombre del municipio
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {"Provincia": provincia, "Municipio": municipio}
+        url = home_url + "OVCCallejero.asmx/ConsultaMunicipio"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaViaCodigosJSon(provincia,
+                               municipio,
+                               tipovia=None,
+                               nombrevia=None):
+        """Proporciona un listado de las vías de un municipio
+
+           Proporciona un listado de todas las vías de un municipio
+           (parámetros "Provincia" y "Municipio"), así como los códigos de las
+           mismas según la Dirección General del Catastro (DGC), cuyo nombre
+           contiene la cadena del parámetro de entrada "NombreVia" y, en caso
+           de que el parámetro "TipoVia" contenga información, existe
+           coincidencia en el tipo de la vía. En caso de que el parámetro
+           "NombreVia" no tenga ningún valor, el servicio devuelve todas
+           las vías del municipio del "TipoVia" indicado.
+
+           :param str: Nombre de provincia
+           :param str: Nombre del municipio
+           :param str: Opcional,Tipo de via
+           :param str: Nombre de via
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {'Provincia': provincia, 'Municipio': municipio}
+        if nombrevia:
+            params['NombreVia'] = nombrevia
+        else:
+            params['NombreVia'] = ''
+        if tipovia:
+            params['TipoVia'] = tipovia
+        else:
+            params['TipoVia'] = ''
+        url = home_url + "OVCCallejero.asmx/ConsultaVia"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaNumeroCodigosJson(provincia, municipio, tipovia, nombrevia,
+                                  numero):
+        """Proporciona la referencia catastral de la finca correspondiente.
+
+           Proporciona, o bien la referencia catastral de la finca correspondiente
+           al contenido del parámetro "Número", en caso de que este exista, o bien
+           se devuelve un error ("El número no existe") y se proporciona una lista
+           de los números más aproximados al solicitado, en un rango de 5 por arriba
+           y 5 por abajo. Por ejemplo, si se solicita el número 10, y en esa vía
+           existen los números 2,3,6,7,9,11,15 y 17, se devuelve una lista con los
+           números 6,7,9,11 y 15. Junto con la lista de números, se proporcionan
+           las referencias catastrales de las fincas.
+
+           :param str: Nombre de la provincia
+           :param str: Nombre del municipio
+           :param str: Tipo de la via
+           :param str: Nombre de la via
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {
+            'Provincia': provincia,
+            'Municipio': municipio,
+            'TipoVia': tipovia,
+            'NomVia': nombrevia,
+            'Numero': numero
+        }
+        url = home_url + "OVCCallejero.asmx/ConsultaVia"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaDNPLOCCodigosJson(provincia,
+                                  municipio,
+                                  sigla,
+                                  nombrevia,
+                                  numero,
+                                  bloque=None,
+                                  escalera=None,
+                                  planta=None,
+                                  puerta=None):
+        """Proporciona la lista de todos los inmuebles que coinciden.
+
+           Este servicio puede devolver o bien la lista de todos los inmuebles que
+           coinciden con los criterios de búsqueda, proporcionando para cada
+           inmueble la referencia catastral y su localización
+           (bloque/escalera/planta/puerta) o bien,en el caso de que solo exista un
+           inmueble con los parámetros de entrada indicados, proporciona los datos
+           de un inmueble.
+
+           :param str: Nombre de la provincia
+           :param str: Nombre del municipio
+           :param str: Sigla
+           :param str: Nombre de la via
+           :param str,int: Numero de inmueble
+           :param str,int: Numero de bloque
+           :param str: Escalera
+           :param str,int: Numero de planta
+           :param str,int: Numero de puerta
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {
+            'Provincia': provincia,
+            'Municipio': municipio,
+            'Sigla': sigla,
+            'Calle': nombrevia,
+            'Numero': str(numero)
+        }
+        if bloque:
+            params['Bloque'] = bloque
+        else:
+            params['Bloque'] = ''
+        if planta:
+            params['Escalera'] = escalera
+        else:
+            params['Escalera'] = ''
+        if puerta:
+            params['Puerta'] = str(puerta)
+        else:
+            params['Puerta'] = ''
+        if escalera:
+            params['Escalera'] = str(escalera)
+        else:
+            params['Escalera'] = ''
+
+        url = home_url + "OVCSWLocalizacionRC/OVCCallejero.asmx/Consulta_DNPLOC"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaDNPRCCodigosJson(provincia, municipio, rc):
+        """Proporciona los datos catastrales de un inmueble,
+
+           Este servicio es idéntico al de "Consulta de DATOS CATASTRALES NO
+           PROTEGIDOS de un inmueble identificado por su localización"
+           en todo excepto en los parámetros de entrada.
+
+           :param str: Nombre de la provincia
+           :param str: Nombre del municipio
+           :param str: Referencia catastral
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {'Provincia': provincia, 'Municipio': municipio, 'RC': rc}
+        url = home_url + "OVCCallejero.asmx/Consulta_DNPRC"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaDNPPPCodigosJson(provincia, municipio, poligono, parcela):
+        """Proporciona los datos catastrales de un inmueble.
+
+           Este servicio es idéntico al de "Consulta de DATOS CATASTRALES NO
+           PROTEGIDOS de un inmueble identificado por su localización" en todo
+           excepto en los parámetros de entrada.
+
+           :param str: Nombre de la provincia
+           :param str: Nombre del municipio
+           :param str: Codigo del poligono
+           :param str: Codigo de la parcela
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {
+            "Provincia": provincia,
+            "Municipio": municipio,
+            "Poligono": poligono,
+            "Parcela": parcela
+        }
+        url = home_url + "OVCCallejero.asmx/Consulta_DNPPP"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaRCCOORJSon(srs, x, y):
+        """A partir de unas coordenadas se obtiene la referencia catastral.
+
+           A partir de unas coordenadas (X e Y) y su sistema de referencia se
+           obtiene la referencia catastral de la parcela localizada en ese punto
+           así como el domicilio (municipio, calle y número o polígono, parcela y
+           municipio).
+
+           :param str,int: Sistema de coordenadas
+           :param str,int,float: Coordanda x
+           :param str,int,float: Coordenada Y
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {"Coordenada_X": str(x), "Coordenada_Y": str(y)}
+        if type(srs) == str:
+            params["SRS"] = srs
+        else:
+            params["SRS"] = "EPSG:" + str(srs)
+        url = home_url + "OVCCoordenadas.asmx?op=Consulta_RCCOOR"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaRCCOORDistanciaJson(srs, x, y):
+        """Proporciona la referencia catastral a partir de unas coordenadas.
+
+           A partir de unas coordenadas (X e Y) y su sistema de referencia se
+           obtiene la referencia catastral de la parcela localizada en ese
+           punto así como el domicilio (municipio, calle y número o polígono,
+           parcela y municipio). En caso de no encontrar ninguna referencia
+           catastral en dicho punto, se buscará en un área cuadrada de 50
+           metros de lado, centrada en dichas coordenadas, y se devolverá
+           la lista de referencias catastrales encontradas en dicha área.
+
+           :param str,int: Sistema de coordenadas
+           :param str,int,float: Coordanda X
+           :param str,int,float: Coordanda Y
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {'Coordenada_X': x, 'Coordenada_Y': y}
+        if type(srs) == str:
+            params['SRS'] = srs
+        else:
+            params['SRS'] = "EPSG:" + str(srs)
+        url = home_url + "OVCCoordenadas.asmx/Consulta_RCCOOR_Distancia"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
+
+    @classmethod
+    def ConsultaCPMRCJSon(provicia, municipio, srs, rc):
+        """Proporciona la localizacion de una parcela.
+
+           A partir de la RC de una parcela se obtienen las coordenadas X, Y en el
+           sistema de referencia en el que está almacenado el dato en la D.G. del
+           Catastro, a menos que se especifique lo contrario en el parámetro
+           opcional SRS que se indica en la respuesta, así como el domicilio
+           (municipio, calle y número o polígono, parcela y unicipio).
+
+           :param str: Nombre de la provincia
+           :param str: Nombre del municipio
+           :param str,int: Sistema de coordenadas
+           :param str: Referencia catastral
+
+           :return: Retorna los datos que devuelve el servicio del catastro formateados en JSON
+           :return_type: json
+        """
+
+        params = {
+            'SRS': srs,
+            'Provincia': provicia,
+            'Municipio': municipio,
+            'RC': rc
+        }
+        url = home_url + "OVCCoordenadas.asmx/Consulta_CPMRC"
+        salida_json = json.dumps(
+            xmltodict.parse(
+                response.content, process_namespaces=False, xml_attribs=False),
+            ensure_ascii=False)
+        return salida_json
 
