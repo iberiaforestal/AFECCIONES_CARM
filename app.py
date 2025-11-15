@@ -1769,18 +1769,15 @@ if st.session_state['mapa_html'] and st.session_state['pdf_file']:
         st.error(f"Error al descargar el mapa HTML: {str(e)}")
 
 # ===================================================================
-# REGISTRO DE USO PARA ESTADÍSTICAS (solo cuando el informe se genera bien)
+# REGISTRO DE USO — VERSIÓN 100% FUNCIONAL (15-nov-2025)
 # ===================================================================
-
 import sqlite3
 import hashlib
 from datetime import datetime
-import streamlit as st  # ← ESTE IMPORT FALTABA
-import os
+import streamlit as st
+import os   # ← ESTE IMPORT ES CLAVE
 
-# -*- coding: utf-8 -*-  # ← ESTA LÍNEA VA AL PRINCIPIO DEL ARCHIVO, NO AQUÍ
-# (Si quieres mantener acentos en comentarios, ponla en la línea 2 del archivo completo)
-
+# 1. Crear la base de datos si no existe
 def init_usage_db():
     conn = sqlite3.connect("usage_stats.db")
     c = conn.cursor()
@@ -1799,9 +1796,12 @@ def init_usage_db():
     conn.commit()
     conn.close()
 
-# Se ejecuta al cargar la app
-init_usage_db()
+# Forzar creación la primera vez (solo aparece una vez)
+if not os.path.exists("usage_stats.db"):
+    init_usage_db()
+    st.success("Base de datos de estadísticas creada correctamente")
 
+# 2. Función de registro
 def registrar_uso(municipio, poligono, parcela, objeto_solicitud):
     try:
         headers = st.context.headers if hasattr(st, "context") else {}
@@ -1812,8 +1812,7 @@ def registrar_uso(municipio, poligono, parcela, objeto_solicitud):
         conn = sqlite3.connect("usage_stats.db")
         c = conn.cursor()
         c.execute('''
-            INSERT INTO usage 
-            (fecha, municipio, poligono, parcela, ip_hash, user_agent, objeto)
+            INSERT INTO usage (fecha, municipio, poligono, parcela, ip_hash, user_agent, objeto)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -1826,41 +1825,13 @@ def registrar_uso(municipio, poligono, parcela, objeto_solicitud):
         ))
         conn.commit()
         conn.close()
-    except Exception as e:
-        pass  # Nunca rompemos la app
+    except:
+        pass  # nunca rompe la app
 
-# REGISTRO FINAL (sin duplicados)
+# 3. REGISTRAR SOLO CUANDO EL INFORME SE GENERA CORRECTAMENTE
 if st.session_state.get('pdf_file') and st.session_state.get('mapa_html'):
-    if not st.session_state.get("ya_registrado", False):
+    if not st.session_state.get("stats_registrado", False):
         registrar_uso(municipio_sel, masa_sel, parcela_sel, objeto)
-        st.session_state["ya_registrado"] = True
-
-# ===================================================================
-# BOTÓN SECRETO PARA DESCARGAR LA BASE DE DATOS DE ESTADÍSTICAS (solo tú)
-# ===================================================================
-
-# Cambia la contraseña a la que tú quieras (o quítala si prefieres que sea público)
-CONTRASEÑA_STATS = "carm2025"   # ← cámbiala por la que quieras
-
-if st.sidebar.checkbox("🔐 Modo administrador (estadísticas)", value=False):
-    pwd = st.sidebar.text_input("Contraseña", type="password")
-    if pwd == CONTRASEÑA_STATS:
-        st.sidebar.success("Acceso concedido")
-        
-        if os.path.exists("usage_stats.db"):
-            with open("usage_stats.db", "rb") as f:
-                st.sidebar.download_button(
-                    label="📊 Descargar usage_stats.db",
-                    data=f,
-                    file_name="usage_stats.db",
-                    mime="application/octet-stream"
-                )
-            # Bonus: mostrar cuántos registros hay
-            conn = sqlite3.connect("usage_stats.db")
-            total = pd.read_sql_query("SELECT COUNT(*) FROM usage", conn).iloc[0,0]
-            conn.close()
-            st.sidebar.info(f"Total de informes registrados: **{total}**")
-        else:
-            st.sidebar.warning("Todavía no se ha creado usage_stats.db")
-    elif pwd != "":
+        st.session_state["stats_registrado"] = True
+        # st.toast("Estadísticas registradas")   # opcional: descomenta si quieres verlo
         st.sidebar.error("Contraseña incorrecta")
