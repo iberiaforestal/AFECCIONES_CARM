@@ -1776,6 +1776,7 @@ import sqlite3
 import hashlib
 from datetime import datetime
 import streamlit as st  # ← ESTE IMPORT FALTABA
+import os
 
 # -*- coding: utf-8 -*-  # ← ESTA LÍNEA VA AL PRINCIPIO DEL ARCHIVO, NO AQUÍ
 # (Si quieres mantener acentos en comentarios, ponla en la línea 2 del archivo completo)
