@@ -42,7 +42,7 @@ def _wfs_request(typename, bbox=None, cql_filter=None):
         except: time.sleep(1)
     return gpd.GeoDataFrame()
 
-# ------------------- FUNCIÓN POR COORDENADAS -------------------
+# ------------------- POR COORDENADAS -------------------
 def get_by_coordenadas(x, y):
     lon, lat = transformer.transform(x, y)
     punto = Point(lon, lat)
@@ -77,9 +77,8 @@ def get_by_coordenadas(x, y):
         }
     return None
 
-# ------------------- FUNCIÓN POR DATOS -------------------
+# ------------------- POR DATOS -------------------
 def get_by_datos(provincia, poligono, parcela):
-    # Construir filtro CQL (aproximado)
     pol = poligono.zfill(5)
     par = parcela.zfill(2)
     prov_code = provincia[:2].upper()
@@ -132,4 +131,48 @@ if info:
     **Provincia:** {info.get('provincia', 'N/A')}  
     **Municipio:** {info.get('municipio', 'N/A')}  
     **Polígono:** {info.get('poligono', 'N/A')}  
-    **Parcela:** {info.get('parcela', '
+    **Parcela:** {info.get('parcela', 'N/A')}  
+    **Referencia Catastral:** {info.get('ref_catastral', 'N/A')}  
+    **Coordenadas ETRS89:** X={info.get('x', 'N/A')}, Y={info.get('y', 'N/A')}  
+    **Coordenadas WGS84:** Lat={info.get('lat', 'N/A')}, Lon={info.get('lon', 'N/A')}
+    """)
+
+    # --- PDF ---
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "INFORME CATASTRAL NACIONAL", ln=True, align='C')
+    pdf.ln(5)
+    pdf.set_font("Arial", size=11)
+
+    datos = [
+        ("CA", info.get('ca', 'España')),
+        ("Provincia", info.get('provincia', 'N/A')),
+        ("Municipio", info.get('municipio', 'N/A')),
+        ("Polígono", info.get('poligono', 'N/A')),
+        ("Parcela", info.get('parcela', 'N/A')),
+        ("Ref. Catastral", info.get('ref_catastral', 'N/A')),
+        ("ETRS89", f"X={info.get('x', 'N/A')}, Y={info.get('y', 'N/A')}"),
+        ("WGS84", f"Lat={info.get('lat', 'N/A')}, Lon={info.get('lon', 'N/A')}"),
+        ("Fuente", "Catastro INSPIRE"),
+        ("Fecha", "15/11/2025")
+    ]
+
+    for label, value in datos:
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(50, 8, f"{label}:", ln=False)
+        pdf.set_font("Arial", size=11)
+        pdf.cell(0, 8, str(value), ln=True)
+
+    # --- DESCARGAR ---
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        pdf.output(tmp.name)
+        st.download_button(
+            "DESCARGAR PDF",
+            data=open(tmp.name, "rb"),
+            file_name=f"catastro_{info.get('ref_catastral', 'sin_ref')}.pdf",
+            mime="application/pdf"
+        )
+else:
+    if st.session_state.get("button_pressed", False):
+        st.error("No se encontró parcela. Verifica los datos.")
