@@ -1637,7 +1637,8 @@ if resultado:
 else:
     for k in ['x', 'y', 'geom', 'ref_cat']:
         st.session_state.pop(k, None)
-        
+
+with st.form("formulario", clear_on_submit=False):
     nombre = st.text_input("Nombre")
     apellidos = st.text_input("Apellidos")
     dni = st.text_input("DNI")
