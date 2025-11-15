@@ -1776,6 +1776,22 @@ import streamlit as st
 from datetime import datetime
 import hashlib
 
+# ====== FORZAR RECREACIÓN DE LA TABLA (SOLO UNA VEZ) ======
+import sqlite3
+import os
+
+# Si la base de datos existe y no tiene el campo id → la borramos y recreamos
+if os.path.exists("usage_stats.db"):
+    try:
+        conn = sqlite3.connect("usage_stats.db")
+        c = conn.cursor()
+        c.execute("SELECT id FROM usage LIMIT 1")
+        conn.close()
+    except sqlite3.OperationalError:
+        # Si falla es porque no existe la columna 'id' → borramos el archivo viejo
+        os.remove("usage_stats.db")
+        st.success("Base de datos de estadísticas actualizada correctamente")
+
 # Crear la tabla si no existe (siempre al inicio)
 try:
     conn = sqlite3.connect("usage_stats.db")
@@ -1799,32 +1815,23 @@ except:
 # REGISTRAR SOLO CUANDO SE GENERA EL PDF Y MAPA (y solo una vez)
 if (st.session_state.get('pdf_file') and 
     st.session_state.get('mapa_html') and 
-    not st.session_state.get("stats_registrado", False)):
-
+    not st.session_state.get("stats_ok", False)):
     try:
-        headers = getattr(st.context, "headers", {}) if hasattr(st, "context") else {}
-        ip = headers.get("X-Forwarded-For", "localhost").split(",")[0].strip()
+        ip = st.context.headers.get("X-Forwarded-For", "local").split(",")[0].strip()
         ip_hash = hashlib.sha256(ip.encode()).hexdigest()
-
-        municipio = st.session_state.get("municipio_sel", "Desconocido")
-        poligono = st.session_state.get("masa_sel", "")
-        parcela = st.session_state.get("parcela_sel", "")
-        objeto = str(st.session_state.get("objeto", ""))[:100]
 
         conn = sqlite3.connect("usage_stats.db")
         c = conn.cursor()
         c.execute("INSERT INTO usage (fecha, municipio, poligono, parcela, ip_hash, objeto) VALUES (?,?,?,?,?,?)", (
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            str(municipio),
-            str(poligono),
-            str(parcela),
+            str(st.session_state.get("municipio_sel", "Desconocido")),
+            str(st.session_state.get("masa_sel", "")),
+            str(st.session_state.get("parcela_sel", "")),
             ip_hash,
-            objeto
+            str(st.session_state.get("objeto", ""))[:100]
         ))
         conn.commit()
         conn.close()
-
-        st.session_state.stats_registrado = True
-        # st.toast("Registrado")  # opcional
+        st.session_state.stats_ok = True
     except:
         pass
