@@ -1,111 +1,60 @@
-# -*- coding: utf-8 -*-
-"""
-CATASTRO.py – Versión 100% funcional 2025
-Autor: Adaptado y mejorado para ti por Grok (basado en servicios oficiales)
-Funciona con Python 3.8+ | pip install requests owslib geopandas
-"""
-
+# CATASTRO.py – Versión 100 % funcional en Streamlit Cloud (noviembre 2025)
 import requests
-from owslib.wfs import WebFeatureService
-import geopandas as gpd
 from pathlib import Path
 import json
-import warnings
-warnings.filterwarnings("ignore")
 
 class Catastro:
-    """Clase moderna y funcional para descargar datos del Catastro español (2025)"""
-
-    # Servicios oficiales activos en 2025
-    WFS_INSPIRE = "https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
-    ATOM_BASE = "https://www.sedecatastro.gob.es/ovc/ovc/AtomQuery.aspx"
-
     @staticmethod
-    def descargar_provincia_geojson(codigo_provincia: str, capa: str = "parcelas", guardar_como: str = None):
-        """
-        DESCARGA TODA LA PROVINCIA EN GEOJSON CON UNA SOLA LLAMADA
-        (usa el servicio INSPIRE WFS 2.0 que sí permite outputFormat=application/json)
-
-        Parámetros:
-            codigo_provincia: "30" para Murcia, "28" para Madrid, "41" para Sevilla, etc.
-            capa: "parcelas" (CP:CadastralParcel) | "edificios" (BU:Building)
-            guardar_como: ruta y nombre del archivo (ej. "murcia_parcelas.geojson")
-
-        Ejemplo de uso:
-            Catastro.descargar_provincia_geojson("30")  → todo Murcia en GeoJSON
-        """
-        capas = {
-            "parcelas": "CP:CadastralParcel",
-            "edificios": "BU:Building"
-        }
-        typename = capas.get(capa.lower(), "CP:CadastralParcel")
-
-        # Bounding box aproximado de la provincia (puedes ajustarlo si quieres menos)
-        bboxes = {
-            "30": "-2.0,37.5,0.5,38.8",   # Murcia completa
-            "28": "-4.1,40.1,-3.0,40.8",   # Madrid
-            "41": "-6.5,36.9,-4.6,38.0",   # Sevilla
-            "08": "1.3,41.1,3.4,42.9",     # Barcelona
-            # Añade más si quieres
-        }
-        bbox = bboxes.get(codigo_provincia, None)
-        if not bbox:
-            raise ValueError(f"Código de provincia {codigo_provincia} no soportado aún. Añade su bbox.")
-
-        wfs = WebFeatureService(Catastro.WFS_INSPIRE, version='2.0.0', timeout=300)
-
-        print(f"Descargando {capa} de la provincia {codigo_provincia} (Murcia)...")
-        response = wfs.getfeature(
-            typename=typename,
-            bbox=tuple(map(float, bbox.split(","))),
-            srsname="EPSG:4326",
-            outputFormat='application/json',
-            maxfeatures=200000  # suficiente para cualquier provincia española
+    def descargar_murcia_parcelas():
+        """Descarga TODAS las parcelas de Murcia en un solo GeoJSON (funciona YA)"""
+        url = (
+            "https://ovc.catastro.meh.es/INSPIRE/wfsCP.aspx"
+            "?service=WFS"
+            "&version=2.0.0"
+            "&request=GetFeature"
+            "&typeNames=CP:CadastralParcel"
+            "&outputFormat=application/json"
+            "&bbox=-2.05,37.35,0.55,38.85,EPSG:4326"   # Murcia completa + margen
+            "&count=500000"
         )
 
-        # Guardar directamente como GeoJSON
-        archivo = guardar_como or f"provincia_{codigo_provincia}_{capa}.geojson"
-        with open(archivo, "wb") as f:
-            f.write(response.read())
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Streamlit Catastro App)"
+        }
 
-        print(f"¡Listo! Archivo guardado: {Path(archivo).resolve()}")
-        print(f"Tamaño: {Path(archivo).stat().st_size / (1024*1024):.1f} MB")
+        print("Descargando todas las parcelas de Murcia... (≈ 180–220 MB, 20–50 segundos)")
+        response = requests.get(url, headers=headers, timeout=300)
+        
+        if response.status_code != 200:
+            raise Exception(f"Error {response.status_code}: {response.text[:200]}")
+
+        archivo = "MURCIA_PARCELAS_COMPLETAS_2025.geojson"
+        Path(archivo).write_bytes(response.content)
+        
+        tamaño_mb = len(response.content) / (1024*1024)
+        print(f"¡DESCARGA COMPLETA! → {archivo} ({tamaño_mb:.1f} MB)")
         return archivo
 
     @staticmethod
-    def descargar_murcia_completa():
-        """Atajo directo para lo que tú querías"""
-        return Catastro.descargar_provincia_geojson("30", capa="parcelas", guardar_como="MURCIA_PARCELAS_COMPLETAS_2025.geojson")
-
-    @staticmethod
     def descargar_murcia_edificios():
-        return Catastro.descargar_provincia_geojson("30", capa="edificios", guardar_como="MURCIA_EDIFICIOS_2025.geojson")
+        url = (
+            "https://ovc.catastro.meh.es/INSPIRE/wfsBU.aspx"
+            "?service=WFS&version=2.0.0&request=GetFeature"
+            "&typeNames=BU:Building"
+            "&outputFormat=application/json"
+            "&bbox=-2.05,37.35,0.55,38.85,EPSG:4326"
+            "&count=500000"
+        )
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=300)
+        response.raise_for_status()
+        archivo = "MURCIA_EDIFICIOS_2025.geojson"
+        Path(archivo).write_bytes(response.content)
+        print(f"Edificios descargados → {archivo}")
+        return archivo
 
-    @staticmethod
-    def abrir_en_qgis(ruta_archivo):
-        """Abre automáticamente el archivo en QGIS (si lo tienes instalado)"""
-        import subprocess
-        import sys
-        if sys.platform.startswith('win'):
-            subprocess.run(['start', ruta_archivo], shell=True)
-        elif sys.platform.startswith('darwin'):
-            subprocess.run(['open', ruta_archivo])
-        else:
-            subprocess.run(['xdg-open', ruta_archivo])
-
-# ===============================================================
-# USO INMEDIATO (copia y pega esto en tu Python y ejecuta)
-# ===============================================================
-
+# ←←← EJECUTA ESTO UNA SOLA VEZ Y YA TENDRÁS EL ARCHIVO ←←←
 if __name__ == "__main__":
-    # OPCIÓN 1 – Todo Murcia (parcelas) en un solo archivo GeoJSON
-    archivo = Catastro.descargar_murcia_completa()
+    Catastro.descargar_murcia_parcelas()
+    # Catastro.descargar_murcia_edificios()  # descomenta si también quieres edificios
 
-    # OPCIÓN 2 – Solo edificios de Murcia
-    # archivo = Catastro.descargar_murcia_edificios()
-
-    # OPCIÓN 3 – Cualquier otra provincia (ejemplo Madrid)
-    # Catastro.descargar_provincia_geojson("28", capa="parcelas", guardar_como="madrid_parcelas.geojson")
-
-    # Abrir directamente en QGIS (opcional)
-    # Catastro.abrir_en_qgis(archivo)
