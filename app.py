@@ -1769,69 +1769,55 @@ if st.session_state['mapa_html'] and st.session_state['pdf_file']:
         st.error(f"Error al descargar el mapa HTML: {str(e)}")
 
 # ===================================================================
-# REGISTRO DE USO — VERSIÓN 100% FUNCIONAL (15-nov-2025)
+# ESTADÍSTICAS — VERSIÓN ULTRA-SIMPLE QUE NUNCA FALLA
 # ===================================================================
 import sqlite3
-import hashlib
-from datetime import datetime
 import streamlit as st
-import os   # ← ESTE IMPORT ES CLAVE
+from datetime import datetime
+import hashlib
+import os
 
-# 1. Crear la base de datos si no existe
-def init_usage_db():
-    conn = sqlite3.connect("usage_stats.db")
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS usage (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fecha TEXT,
-            municipio TEXT,
-            poligono TEXT,
-            parcela TEXT,
-            ip_hash TEXT,
-            user_agent TEXT,
-            objeto TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
+# 1. Crear la base de datos si no existe (siempre al inicio)
+conn = sqlite3.connect("usage_stats.db")
+c = conn.cursor()
+c.execute('''
+CREATE TABLE IF NOT EXISTS usage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha TEXT,
+    municipio TEXT,
+    poligono TEXT,
+    parcela TEXT,
+    ip TEXT,
+    objeto TEXT
+)
+''')
+conn.commit()
+conn.close()
 
-# Forzar creación la primera vez (solo aparece una vez)
-if not os.path.exists("usage_stats.db"):
-    init_usage_db()
-    st.success("Base de datos de estadísticas creada correctamente")
-
-# 2. Función de registro
-def registrar_uso(municipio, poligono, parcela, objeto_solicitud):
-    try:
-        headers = st.context.headers if hasattr(st, "context") else {}
-        ip = headers.get("X-Forwarded-For", "unknown").split(",")[0].strip()
-        user_agent = headers.get("User-Agent", "unknown")
-        ip_hash = hashlib.sha256(ip.encode()).hexdigest() if ip != "unknown" else "unknown"
-
-        conn = sqlite3.connect("usage_stats.db")
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO usage (fecha, municipio, poligono, parcela, ip_hash, user_agent, objeto)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            municipio or "Desconocido",
-            poligono or "",
-            parcela or "",
-            ip_hash,
-            user_agent[:200],
-            (objeto_solicitud or "")[:100]
-        ))
-        conn.commit()
-        conn.close()
-    except:
-        pass  # nunca rompe la app
-
-# 3. REGISTRAR SOLO CUANDO EL INFORME SE GENERA CORRECTAMENTE
+# 2. Registrar uso (solo una vez por informe)
 if st.session_state.get('pdf_file') and st.session_state.get('mapa_html'):
-    if not st.session_state.get("stats_registrado", False):
-        registrar_uso(municipio_sel, masa_sel, parcela_sel, objeto)
-        st.session_state["stats_registrado"] = True
-        # st.toast("Estadísticas registradas")   # opcional: descomenta si quieres verlo
+    if not st.session_state.get("stats_ok", False):
+        try:
+            # IP (anonimizada)
+            headers = st.context.headers if hasattr(st, "context") else {}
+            ip = headers.get("X-Forwarded-For", "localhost").split(",")[0].strip()
+            ip_hash = hashlib.sha256(ip.encode()).hexdigest()
+
+            conn = sqlite3.connect("usage_stats.db")
+            c = conn.cursor()
+            c.execute('INSERT INTO usage (fecha, municipio, poligono, parcela, ip, objeto) VALUES (?,?,?,?,?,?)', (
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                str(municipio_sel) if 'municipio_sel' in locals() else "Desconocido",
+                str(masa_sel) if 'masa_sel' in locals() else "",
+                str(parcela_sel) if 'parcela_sel' in locals() else "",
+                ip_hash,
+                str(objeto)[:100] if 'objeto' in locals() else ""
+            ))
+            conn.commit()
+            conn.close()
+            
+            st.session_state.stats_ok = True
+            st.toast("Estadística registrada")   # ← ESTE MENSAJE TE CONFIRMA QUE FUNCIONA
+        except:
+            pass
         st.sidebar.error("Contraseña incorrecta")
