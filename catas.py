@@ -1,43 +1,40 @@
-# archivo: catastro_app.py
+from zeep import Client
 
-import streamlit as st
-import geopandas as gpd
-import requests
-import contextily as ctx
-import matplotlib.pyplot as plt
+CATASRO_WCF_URL = "https://www.catastro.hacienda.gob.es/OVCServWeb/OVCWcf.asmx?wsdl"
 
-st.title("🔍 Buscador Catastro España - WFS 2025")
-st.markdown("Introduce la referencia catastral de 20 dígitos (rústica o urbana)")
+client = Client(CATASRO_WCF_URL)
 
-ref = st.text_input("Referencia catastral", "13045A00100001000000")
-
-if st.button("Buscar parcela"):
-    if len(ref) != 20:
-        st.error("La referencia debe tener exactamente 20 caracteres")
-    else:
-        with st.spinner("Consultando Catastro..."):
-            url = "https://services.catastro.hacienda.gob.es/INSPIRE/CP/wfs"
-            params = {
-                "service": "WFS", "version": "2.0.0", "request": "GetFeature",
-                "typeNames": "CP.CadastralParcel",
-                "CQL_FILTER": f"reference='{ref}'",
-                "outputFormat": "application/json"
-            }
-            r = requests.get(url, params=params, timeout=30)
-            
-            if r.status_code != 200 or r.json()["features"] == []:
-                st.error("Parcela no encontrada")
-            else:
-                gdf = gpd.read_file(r.content)
-                parcela = gdf.iloc[0]
-                
-                st.success(f"¡Encontrada! Superficie: {int(parcela.areaValue):,} m²")
-                
-                fig, ax = plt.subplots(figsize=(10,8))
-                gdf.to_crs(epsg=3857).plot(ax=ax, facecolor="none", edgecolor="red", linewidth=4)
-                ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
-                ax.set_title(f"Ref. {ref}")
-                ax.axis('off')
-                st.pyplot(fig)
-                
-                st.download_button("Descargar GeoJSON", gdf.to_json(), f"{ref}.geojson")
+def encontrar_municipio_poligono_parcela_wcf(lat, lon):
+    """
+    Busca la parcela que contiene las coordenadas (lat, lon)
+    usando el servicio WCF Consulta_RCCOOR.
+    Devuelve JSON con municipio, polígono, parcela y RefCat.
+    """
+    try:
+        response = client.service.Consulta_RCCOOR(
+            Latitud=str(lat),
+            Longitud=str(lon),
+            SRS="EPSG:4326"
+        )
+        
+        # Zeep devuelve un objeto tipo dict/XML; lo convertimos a dict simple
+        # La estructura típica:
+        # response.lpi.pnp -> polígono
+        # response.lpi.par -> parcela
+        # response.lpi.prov -> provincia
+        # response.lpi.mun -> municipio
+        resultado = {
+            "Poligono": getattr(response.lpi, "pnp", None),
+            "Parcela": getattr(response.lpi, "par", None),
+            "Provincia": getattr(response.lpi, "prov", None),
+            "Municipio": getattr(response.lpi, "mun", None),
+        }
+        return resultado
+    except Exception as e:
+        print(f"Error en WCF: {str(e)}")
+        return {
+            "Poligono": None,
+            "Parcela": None,
+            "Provincia": None,
+            "Municipio": None,
+        }
