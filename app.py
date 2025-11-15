@@ -1768,15 +1768,18 @@ if st.session_state['mapa_html'] and st.session_state['pdf_file']:
     except Exception as e:
         st.error(f"Error al descargar el mapa HTML: {str(e)}")
 
-===================================================================
+# ===================================================================
 # REGISTRO DE USO PARA ESTADÍSTICAS (solo cuando el informe se genera bien)
 # ===================================================================
 
 import sqlite3
 import hashlib
 from datetime import datetime
+import streamlit as st  # ← ESTE IMPORT FALTABA
 
-# 1. Crear/inicializar la base de datos (se ejecuta cada vez que se inicia la app)
+# -*- coding: utf-8 -*-  # ← ESTA LÍNEA VA AL PRINCIPIO DEL ARCHIVO, NO AQUÍ
+# (Si quieres mantener acentos en comentarios, ponla en la línea 2 del archivo completo)
+
 def init_usage_db():
     conn = sqlite3.connect("usage_stats.db")
     c = conn.cursor()
@@ -1795,18 +1798,14 @@ def init_usage_db():
     conn.commit()
     conn.close()
 
-# Ejecutar al inicio (una sola vez por ejecución de la app)
+# Se ejecuta al cargar la app
 init_usage_db()
 
-# 2. Función para registrar el uso
 def registrar_uso(municipio, poligono, parcela, objeto_solicitud):
     try:
-        # Obtener IP real del usuario (funciona en Streamlit Cloud)
         headers = st.context.headers if hasattr(st, "context") else {}
         ip = headers.get("X-Forwarded-For", "unknown").split(",")[0].strip()
         user_agent = headers.get("User-Agent", "unknown")
-
-        # Anonimizamos la IP
         ip_hash = hashlib.sha256(ip.encode()).hexdigest() if ip != "unknown" else "unknown"
 
         conn = sqlite3.connect("usage_stats.db")
@@ -1821,23 +1820,16 @@ def registrar_uso(municipio, poligono, parcela, objeto_solicitud):
             poligono or "",
             parcela or "",
             ip_hash,
-            user_agent[:200],  # limitamos por si es muy largo
+            user_agent[:200],
             (objeto_solicitud or "")[:100]
         ))
         conn.commit()
         conn.close()
     except Exception as e:
-        # Nunca rompemos la app por el logging
-        pass
+        pass  # Nunca rompemos la app
 
-# 3. ¡AQUÍ ES DONDE REGISTRAMOS! (justo después de generar el PDF con éxito)
+# REGISTRO FINAL (sin duplicados)
 if st.session_state.get('pdf_file') and st.session_state.get('mapa_html'):
-    # Solo registramos una vez por generación (evitamos duplicados)
     if not st.session_state.get("ya_registrado", False):
-        registrar_uso(
-            municipio=municipio_sel,
-            poligono=masa_sel,
-            parcela=parcela_sel,
-            objeto_solicitud=objeto
-        )
-        st.session_state["ya_registrado"] = True  # bandera para no duplicar
+        registrar_uso(municipio_sel, masa_sel, parcela_sel, objeto)
+        st.session_state["ya_registrado"] = True
