@@ -9,7 +9,7 @@ import os
 st.set_page_config(page_title="Estadísticas Afecciones CARM", layout="wide", initial_sidebar_state="collapsed")
 
 # ────── LOGIN ──────
-PASSWORD = "carm2025"   # ← cambia por la tuya
+PASSWORD = "carm2025stats"   # ← cambia por la tuya
 
 if st.session_state.get("auth") != True:
     st.image("https://www.carm.es/wp-content/uploads/2023/06/logo-carm-blanco.png", width=200)
@@ -83,4 +83,5 @@ with coly:
 
 # Auto-refresh cada 60 segundos
 st.rerun() if st.checkbox("Auto-refresh cada minuto", value=True) else None
+
 
