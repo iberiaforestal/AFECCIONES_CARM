@@ -1782,6 +1782,7 @@ try:
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             fecha TEXT,
             municipio TEXT,
             poligono TEXT,
@@ -1801,31 +1802,29 @@ if (st.session_state.get('pdf_file') and
     not st.session_state.get("stats_registrado", False)):
 
     try:
-        # Obtener IP anonimizada
         headers = getattr(st.context, "headers", {}) if hasattr(st, "context") else {}
         ip = headers.get("X-Forwarded-For", "localhost").split(",")[0].strip()
         ip_hash = hashlib.sha256(ip.encode()).hexdigest()
 
-        # Tomar datos directamente de session_state (así nunca falla)
         municipio = st.session_state.get("municipio_sel", "Desconocido")
         poligono = st.session_state.get("masa_sel", "")
         parcela = st.session_state.get("parcela_sel", "")
-        objeto = st.session_state.get("objeto", "")[:100]
+        objeto = str(st.session_state.get("objeto", ""))[:100]
 
         conn = sqlite3.connect("usage_stats.db")
         c = conn.cursor()
-        c.execute("INSERT INTO usage VALUES (?,?,?,?,?,?)", (
+        c.execute("INSERT INTO usage (fecha, municipio, poligono, parcela, ip_hash, objeto) VALUES (?,?,?,?,?,?)", (
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             str(municipio),
             str(poligono),
             str(parcela),
             ip_hash,
-            str(objeto)
+            objeto
         ))
         conn.commit()
         conn.close()
 
         st.session_state.stats_registrado = True
-        st.toast("Informe registrado en estadísticas")   # ← ESTE MENSAJE ES LA PRUEBA
+        # st.toast("Registrado")  # opcional
     except:
         pass
