@@ -114,4 +114,5 @@ if info and x is not None:
 
 else:
     if st.session_state.get("button_pressed"):
+
         st.error("No se encontró la parcela. Verifica los datos.")
