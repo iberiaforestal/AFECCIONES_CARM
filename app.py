@@ -1768,7 +1768,7 @@ if submitted:
             # === 11. LIMPIAR DATOS TEMPORALES ===
             st.session_state.pop('query_geom', None)
             st.session_state.pop('wfs_urls', None)
-if st.session_state['mapa_html'] and st.session_state['pdf_file']:
+if st.session_state.get('mapa_html') and st.session_state.get('pdf_file'):
     try:
         with open(st.session_state['pdf_file'], "rb") as f:
             st.download_button("📄 Descargar informe PDF", f, file_name="informe_afecciones.pdf")
