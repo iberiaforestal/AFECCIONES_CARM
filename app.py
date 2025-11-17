@@ -1035,7 +1035,7 @@ def generar_pdf(datos, x, y, filename):
 
         col_cuad = 35
         col_esp  = 50
-        col_nom  = pdf.w - 2 * pdf.l_margin - col_cuad - col_esp
+        col_nom  = 190 - col_cuad - col_esp
         line_height = 5
 
         # --- CABECERA ---
