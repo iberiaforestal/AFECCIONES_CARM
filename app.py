@@ -451,6 +451,20 @@ def generar_pdf(datos, x, y, filename):
     pdf.set_font("Arial", "B", 11)
     pdf.cell(0, 10, f"Coordenadas ETRS89: X = {x}, Y = {y}", ln=True)
 
+    # --- Cálculo de la superficie de la parcela ---
+    superficie = "No disponible"
+    try:
+        if parcela_gdf is not None and not parcela_gdf.empty:
+            # Asegurar que la geometría está en metros (EPSG 25830)
+            parcela_metros = parcela_gdf.to_crs("EPSG:25830")
+            area_m2 = parcela_metros.geometry.area.iloc[0]
+            superficie = f"{area_m2:,.2f} m²".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        pass
+
+    pdf.set_font("Arial", "B", 11)
+    pdf.cell(0, 10, f"Superficie de la parcela: {superficie}", ln=True)
+
     imagen_mapa_path = generar_imagen_estatica_mapa(x, y)
     if imagen_mapa_path and os.path.exists(imagen_mapa_path):
         epw = pdf.w - 2 * pdf.l_margin
