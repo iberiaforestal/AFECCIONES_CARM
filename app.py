@@ -905,7 +905,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(2)
         pdf.set_x(pdf.l_margin)
         col_w_code = 30
-        col_w_name = pdf.w - pdf.l_margin - pdf.r_margin - col_w_code
+        col_w_name = 190 - col_w_code
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
