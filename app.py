@@ -1760,7 +1760,7 @@ if submitted:
             # === 10. GENERAR PDF (AL FINAL, CUANDO `datos` EXISTE) ===
             pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
             try:
-                generar_pdf(datos, x, y, filename, parcela_gdf)
+                generar_pdf(datos, x, y, pdf_filename, parcela_gdf)
                 st.session_state['pdf_file'] = pdf_filename
             except Exception as e:
                 st.error(f"Error al generar el PDF: {str(e)}")
