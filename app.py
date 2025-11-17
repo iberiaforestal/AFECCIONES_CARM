@@ -354,7 +354,7 @@ def hay_espacio_suficiente(pdf, altura_necesaria, margen_inferior=20):
     espacio_disponible = pdf.h - pdf.get_y() - margen_inferior
     return espacio_disponible >= altura_necesaria
 
-def generar_pdf(datos, x, y, filename):
+def generar_pdf(datos, x, y, filename, parcela_gdf=None):
     logo_path = "logos.jpg"
 
     if not os.path.exists(logo_path):
@@ -451,16 +451,15 @@ def generar_pdf(datos, x, y, filename):
     pdf.set_font("Arial", "B", 11)
     pdf.cell(0, 10, f"Coordenadas ETRS89: X = {x}, Y = {y}", ln=True)
 
-    # --- Cálculo de la superficie de la parcela ---
+    # --- Superficie de la parcela ---
     superficie = "No disponible"
     try:
         if parcela_gdf is not None and not parcela_gdf.empty:
-            # Asegurar que la geometría está en metros (EPSG 25830)
             parcela_metros = parcela_gdf.to_crs("EPSG:25830")
             area_m2 = parcela_metros.geometry.area.iloc[0]
             superficie = f"{area_m2:,.2f} m²".replace(",", "X").replace(".", ",").replace("X", ".")
-    except:
-        pass
+    except Exception as e:
+        print("Error superficie:", e)
 
     pdf.set_font("Arial", "B", 11)
     pdf.cell(0, 10, f"Superficie de la parcela: {superficie}", ln=True)
@@ -1761,7 +1760,7 @@ if submitted:
             # === 10. GENERAR PDF (AL FINAL, CUANDO `datos` EXISTE) ===
             pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
             try:
-                generar_pdf(datos, x, y, pdf_filename)
+                generar_pdf(datos, x, y, filename, parcela_gdf)
                 st.session_state['pdf_file'] = pdf_filename
             except Exception as e:
                 st.error(f"Error al generar el PDF: {str(e)}")
