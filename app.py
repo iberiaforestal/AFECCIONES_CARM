@@ -983,8 +983,8 @@ def generar_pdf(datos, x, y, filename):
         pdf.ln(2)
 
         # --- ANCHO TOTAL DISPONIBLE ---
-        page_width = pdf.w - 2 * pdf.l_margin
-        col_widths = [page_width * 0.45, page_width * 0.55]  # 45% | 55%
+        ancho_total = 190
+        col_widths = [ancho_total * 0.45, ancho_total * 0.55]
         line_height = 5
 
         # --- CABECERA ---
