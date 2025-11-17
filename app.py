@@ -705,7 +705,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afección a Planeamiento Urbano (PGOU):", ln=True)
         pdf.ln(2)
         col_w_uso = 50
-        col_w_clas = pdf.w - 2 * pdf.l_margin - col_w_uso
+        col_w_clas = 190 - col_w_uso
         row_height = 5
         pdf.set_font("Arial", "B", 11)
         pdf.set_fill_color(*azul_rgb)
@@ -943,7 +943,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afecciones a Lugares de Importancia Comunitaria (LIC):", ln=True)
         pdf.ln(2)
         col_w_code = 30
-        col_w_name = pdf.w - 2 * pdf.l_margin - col_w_code
+        col_w_name = 190 - col_w_code
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
@@ -1092,7 +1092,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afección a Plan de Recuperación tortuga mora:", ln=True)
         pdf.ln(2)
         col_w_cat_id = 50
-        col_w_cat_desc = pdf.w - 2 * pdf.l_margin - col_w_cat_id
+        col_w_cat_desc = 190 - col_w_cat_id
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
@@ -1130,7 +1130,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afección a Plan de Recuperación águila perdicera:", ln=True)
         pdf.ln(2)
         col_w_zona = 50
-        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_zona
+        col_w_nombre = 190 - col_w_zona
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
@@ -1168,7 +1168,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afección a Plan de Recuperación nutria:", ln=True)
         pdf.ln(2)
         col_w_tipo_de_ar = 50
-        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo_de_ar
+        col_w_nombre = 190 - col_w_tipo_de_ar
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
@@ -1206,7 +1206,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afección a Plan de Recuperación fartet:", ln=True)
         pdf.ln(2)
         col_w_clasificac = 50
-        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
+        col_w_nombre = 190 - col_w_clasificac
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
@@ -1244,7 +1244,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afección a Plan de Recuperación malvasia:", ln=True)
         pdf.ln(2)
         col_w_clasificac = 50
-        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_clasificac
+        col_w_nombre = 190 - col_w_clasificac
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
@@ -1282,7 +1282,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afección a Plan de Recuperación garbancillo:", ln=True)
         pdf.ln(2)
         col_w_tipo = 50
-        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo
+        col_w_nombre = 190 - col_w_tipo
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
@@ -1320,7 +1320,7 @@ def generar_pdf(datos, x, y, filename):
         pdf.cell(0, 5, "Afección a Plan de Recuperación flora:", ln=True)
         pdf.ln(2)
         col_w_tipo = 50
-        col_w_nombre = pdf.w - 2 * pdf.l_margin - col_w_tipo
+        col_w_nombre = 190 - col_w_tipo
         row_height = 5
         pdf.set_font("Arial", "B", 10)
         pdf.set_fill_color(*azul_rgb)
