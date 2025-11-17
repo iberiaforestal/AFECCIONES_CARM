@@ -448,9 +448,10 @@ def generar_pdf(datos, x, y, filename, parcela_gdf=None):
         valor = datos.get(campo, "").strip()
         campo_orden(pdf, campo.capitalize(), valor if valor else "No disponible")
 
+    # Coordenadas
     pdf.set_font("Arial", "B", 11)
     pdf.cell(0, 10, f"Coordenadas ETRS89: X = {x}, Y = {y}", ln=True)
-
+    
     # --- Superficie de la parcela ---
     superficie = "No disponible"
     try:
@@ -460,7 +461,6 @@ def generar_pdf(datos, x, y, filename, parcela_gdf=None):
             superficie = f"{area_m2:,.2f} m²".replace(",", "X").replace(".", ",").replace("X", ".")
     except Exception as e:
         print("Error superficie:", e)
-
     pdf.set_font("Arial", "B", 11)
     pdf.cell(0, 10, f"Superficie de la parcela: {superficie}", ln=True)
 
