@@ -1617,6 +1617,7 @@ with st.form("formulario"):
         y = st.number_input("Coordenada Y (ETRS89)", format="%.2f")
         if x != 0.0 and y != 0.0:
             municipio_sel, masa_sel, parcela_sel, parcela = encontrar_municipio_poligono_parcela(x, y)
+            st.session_state['parcela_gdf'] = parcela_gdf
             if municipio_sel != "N/A":
                 st.success(f"Parcela encontrada: Municipio: {municipio_sel}, Polígono: {masa_sel}, Parcela: {parcela_sel}")
             else:
@@ -1760,7 +1761,7 @@ if submitted:
             # === 10. GENERAR PDF (AL FINAL, CUANDO `datos` EXISTE) ===
             pdf_filename = f"informe_{uuid.uuid4().hex[:8]}.pdf"
             try:
-                generar_pdf(datos, x, y, pdf_filename, parcela_gdf)
+                generar_pdf(datos, x, y, pdf_filename, st.session_state.get('parcela_gdf'))
                 st.session_state['pdf_file'] = pdf_filename
             except Exception as e:
                 st.error(f"Error al generar el PDF: {str(e)}")
