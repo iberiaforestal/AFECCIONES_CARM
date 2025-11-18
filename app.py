@@ -1386,7 +1386,7 @@ def generar_pdf(datos, x, y, filename):
     espacio_entre = 2
     x_codigo = margin
     x_texto = margin + codigo_width + espacio_entre
-    ancho_texto = pdf.w - x_texto - margin
+    ancho_texto = 190
 
     # Medir cuadro rojo
     lineas_rojo = len(pdf.multi_cell(pdf.w - 2*margin, 5, texto_rojo, border=0, align="J", split_only=True))
