@@ -412,6 +412,10 @@ def generar_pdf(datos, x, y, filename):
 
     def seccion_titulo(texto):
         pdf.set_fill_color(*azul_rgb)
+        ancho_deseado = 190
+        x = (pdf.w - ancho_deseado) / 2
+        pdf.cell(ancho_deseado, 10, "", ln=False, fill=True)
+        pdf.set_x(x)
         pdf.set_text_color(0, 0, 0)
         pdf.set_font("Arial", "B", 13)
         pdf.cell(0, 10, texto, ln=True, fill=True)
