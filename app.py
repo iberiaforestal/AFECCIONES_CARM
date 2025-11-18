@@ -20,6 +20,21 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import shutil
 from PIL import Image
+def normalize_name(name):
+    return name.upper()\
+               .replace(" ", "_")\
+               .replace("Á", "A")\
+               .replace("É", "E")\
+               .replace("Í", "I")\
+               .replace("Ó", "O")\
+               .replace("Ú", "U")\
+               .replace("Ñ", "N")\
+               .replace("Ü", "U")\
+               .replace("º", "")\
+               .replace("ª", "")\
+               .replace("-", "_")\
+               .replace("(", "")\
+               .replace(")", "")
 
 # Sesión segura con reintentos
 session = requests.Session()
@@ -1589,29 +1604,38 @@ parcela_sel = ""
 parcela = None
 
 if modo == "Por parcela":
-    municipio_sel = st.selectbox("Municipio", sorted(shp_urls.keys()))
-    archivo_base = shp_urls[municipio_sel]
+    provincia_sel = st.selectbox("Provincia", options=sorted(shp_urls.keys()))
+    municipios_de_provincia = sorted(shp_urls[provincia_sel].keys())
+    municipio_sel = st.selectbox("Municipio", options=municipios_de_provincia)
     
-    gdf = cargar_shapefile_desde_github(archivo_base)
+    # ← AQUÍ ESTÁ LA CLAVE: normalizamos para que coincida con el nombre real del archivo
+    provincia_folder = normalize_name(provincia_sel)
+    municipio_file = normalize_name(municipio_sel)
+    gdf = cargar_shapefile_clm(provincia_folder, municipio_file)
     
-    if gdf is not None:
-        masa_sel = st.selectbox("Polígono", sorted(gdf["MASA"].unique()))
-        parcela_sel = st.selectbox("Parcela", sorted(gdf[gdf["MASA"] == masa_sel]["PARCELA"].unique()))
-        parcela = gdf[(gdf["MASA"] == masa_sel) & (gdf["PARCELA"] == parcela_sel)]
+    if gdf is not None and not gdf.empty:
+        masa_sel = st.selectbox("Polígono", options=sorted(gdf["MASA"].astype(str).unique()))
+        parcelas_pol = gdf[gdf["MASA"] == masa_sel]
+        parcela_sel = st.selectbox("Parcela", options=sorted(parcelas_pol["PARCELA"].astype(str).unique()))
         
-        if parcela.geometry.geom_type.isin(['Polygon', 'MultiPolygon']).all():
-            centroide = parcela.geometry.centroid.iloc[0]
-            x = centroide.x
-            y = centroide.y         
-                    
+        seleccion = parcelas_pol[parcelas_pol["PARCELA"] == parcela_sel]
+        if not seleccion.empty:
+            parcela = seleccion.iloc[0]
+            x = parcela.geometry.centroid.x
+            y = parcela.geometry.centroid.y
+            
             st.success("Parcela cargada correctamente.")
+            st.write(f"Provincia: {provincia_sel}")
             st.write(f"Municipio: {municipio_sel}")
             st.write(f"Polígono: {masa_sel}")
             st.write(f"Parcela: {parcela_sel}")
         else:
-            st.error("La geometría seleccionada no es un polígono válido.")
+            st.error("Error interno al cargar la geometría de la parcela.")
+            parcela = None
+            x = y = 0.0
     else:
-        st.error(f"No se pudo cargar el shapefile para el municipio: {municipio_sel}")
+        st.error("No se pudo cargar el catastro de este municipio.")
+        x = y = 0.0
 
 with st.form("formulario"):
     if modo == "Por coordenadas":
