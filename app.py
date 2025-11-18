@@ -1456,6 +1456,16 @@ def generar_pdf(datos, x, y, filename):
         y += altura_linea
 
     pdf.ln(espacio_final)
+
+        # Volver a negrita para el resto del texto
+    pdf.set_font("Arial", "B", 9)  # Restaurar negrita
+    texto_final = (
+        "\nDe acuerdo con lo establecido en el artículo 22 de la ley 43/2003 de 21 de noviembre de Montes, toda inmatriculación o inscripción de exceso de cabida en el Registro de la Propiedad de un monte o de una finca colindante con monte demanial o ubicado en un término municipal en el que existan montes demaniales requerirá el previo informe favorable de los titulares de dichos montes y, para los montes catalogados, el del órgano forestal de la comunidad autónoma.\n\n"
+        "En cuanto a vías pecuarias, salvaguardando lo que pudiera resultar de los futuros deslindes, en las parcelas objeto este informe-borrador, cualquier construcción, plantación, vallado, obras, instalaciones, etc., no deberían realizarse dentro del área delimitada como dominio público pecuario provisional para evitar invadir éste.\n\n"
+        "En todo caso, no podrá interrumpirse el tránsito por las Vías Pecuarias, dejando siempre el paso adecuado para el tránsito ganadero y otros usos legalmente establecidos en la Ley 3/1995, de 23 de marzo, de Vías Pecuarias."
+    )
+    pdf.multi_cell(pdf.w - 2 * pdf.l_margin, 5, texto_final, border=0, align="J")
+    pdf.ln(2)
     
     # === CONDICIONADO:===
     pdf.add_page()  # Nueva página
