@@ -126,20 +126,30 @@ def cargar_shapefile_desde_github(base_name):
 def encontrar_municipio_poligono_parcela(x, y):
     try:
         punto = Point(x, y)
-        for municipio, archivo_base in shp_urls.items():
-            gdf = cargar_shapefile_desde_github(archivo_base)
-            if gdf is None:
-                continue
-            seleccion = gdf[gdf.contains(punto)]
-            if not seleccion.empty:
-                parcela_gdf = seleccion.iloc[[0]]
-                masa = parcela_gdf["MASA"].iloc[0]
-                parcela = parcela_gdf["PARCELA"].iloc[0]
-                return municipio, masa, parcela, parcela_gdf
-        return "N/A", "N/A", "N/A", None
+        
+        for provincia, municipios_dict in shp_urls.items():
+            for municipio_display in municipios_dict.keys():  # nombre bonito para mostrar
+                # Normalizamos para coincidir con los archivos reales en GitHub
+                provincia_folder = normalize_name(provincia)
+                municipio_file = normalize_name(municipio_display)
+                
+                gdf = cargar_shapefile_clm(provincia_folder, municipio_file)
+                if gdf is None or gdf.empty:
+                    continue
+                    
+                seleccion = gdf[gdf.contains(punto)]
+                if not seleccion.empty:
+                    fila = seleccion.iloc[0]
+                    masa = str(fila["MASA"])
+                    parcela = str(fila["PARCELA"])
+                    return municipio_display, provincia, masa, parcela, seleccion
+        
+        # Si no encontró nada en ningún municipio
+        return "N/A", "N/A", "N/A", "N/A", None
+    
     except Exception as e:
         st.error(f"Error al buscar parcela: {str(e)}")
-        return "N/A", "N/A", "N/A", None
+        return "N/A", "N/A", "N/A", "N/A", None
 
 # Función para transformar coordenadas de ETRS89 a WGS84
 def transformar_coordenadas(x, y):
@@ -1608,9 +1618,10 @@ if modo == "Por parcela":
     municipios_de_provincia = sorted(shp_urls[provincia_sel].keys())
     municipio_sel = st.selectbox("Municipio", options=municipios_de_provincia)
     
-    # ← AQUÍ ESTÁ LA CLAVE: normalizamos para que coincida con el nombre real del archivo
+    # Normalizamos nombres para coincidir con los archivos reales en GitHub
     provincia_folder = normalize_name(provincia_sel)
     municipio_file = normalize_name(municipio_sel)
+    
     gdf = cargar_shapefile_clm(provincia_folder, municipio_file)
     
     if gdf is not None and not gdf.empty:
@@ -1623,18 +1634,14 @@ if modo == "Por parcela":
             parcela = seleccion.iloc[0]
             x = parcela.geometry.centroid.x
             y = parcela.geometry.centroid.y
-            
             st.success("Parcela cargada correctamente.")
-            st.write(f"Provincia: {provincia_sel}")
-            st.write(f"Municipio: {municipio_sel}")
-            st.write(f"Polígono: {masa_sel}")
-            st.write(f"Parcela: {parcela_sel}")
+            st.write(f"Provincia: {provincia_sel} | Municipio: {municipio_sel} | Polígono: {masa_sel} | Parcela: {parcela_sel}")
         else:
-            st.error("Error interno al cargar la geometría de la parcela.")
+            st.error("No se encontró la parcela seleccionada.")
             parcela = None
             x = y = 0.0
     else:
-        st.error("No se pudo cargar el catastro de este municipio.")
+        st.error(f"No se pudo cargar el catastro de {municipio_sel} ({provincia_sel}).")
         x = y = 0.0
 
 with st.form("formulario"):
@@ -1794,15 +1801,18 @@ if submitted:
             # === 11. LIMPIAR DATOS TEMPORALES ===
             st.session_state.pop('query_geom', None)
             st.session_state.pop('wfs_urls', None)
-if st.session_state['mapa_html'] and st.session_state['pdf_file']:
+
+# === BOTONES DE DESCARGA (seguros) ===
+if st.session_state.get('pdf_file'):
     try:
         with open(st.session_state['pdf_file'], "rb") as f:
-            st.download_button("📄 Descargar informe PDF", f, file_name="informe_afecciones.pdf")
-    except Exception as e:
-        st.error(f"Error al descargar el PDF: {str(e)}")
+            st.download_button("📄 Descargar informe PDF", f, file_name="informe_afecciones_jccm.pdf", mime="application/pdf")
+    except:
+        pass
 
+if st.session_state.get('mapa_html'):
     try:
-        with open(st.session_state['mapa_html'], "r") as f:
-            st.download_button("🌍 Descargar mapa HTML", f, file_name="mapa_busqueda.html")
-    except Exception as e:
-        st.error(f"Error al descargar el mapa HTML: {str(e)}")
+        with open(st.session_state['mapa_html'], "r", encoding="utf-8") as f:
+            st.download_button("🌍 Descargar mapa HTML", f, file_name="mapa_afecciones.html")
+    except:
+        pass
